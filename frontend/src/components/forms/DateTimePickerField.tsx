@@ -26,7 +26,12 @@ const dayFormatter = new Intl.DateTimeFormat('es-ES', {
 });
 
 const weekdays = ['LU', 'MA', 'MI', 'JU', 'VI', 'SA', 'DO'];
-const timeSlots = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00'];
+const timeSlots = Array.from({ length: 48 }, (_, index) => {
+  const hours = String(Math.floor(index / 2)).padStart(2, '0');
+  const minutes = index % 2 === 0 ? '00' : '30';
+
+  return `${hours}:${minutes}`;
+});
 
 function toDateInputValue(date: Date) {
   const year = date.getFullYear();
