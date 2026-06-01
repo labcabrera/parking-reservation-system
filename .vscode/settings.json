@@ -11,5 +11,11 @@
     ".specify/scripts/powershell/": true
   },
   "java.configuration.updateBuildConfiguration": "automatic",
-  "java.compile.nullAnalysis.mode": "automatic"
+  "java.compile.nullAnalysis.mode": "automatic",
+
+
+  "files.associations": {
+    "application.yml": "plaintext",
+    "application.yaml": "plaintext"
+  }
 }

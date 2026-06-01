@@ -1,7 +1,42 @@
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-    Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.parking-marker {
+  align-items: center;
+  background: #ffffff;
+  border: 3px solid #ff7900;
+  border-radius: 50% 50% 50% 0;
+  box-shadow: 0 8px 18px rgba(17, 24, 39, 0.18);
+  color: #111827;
+  display: flex;
+  font-weight: 900;
+  justify-content: center;
+  transform: rotate(-45deg);
+}
+
+.parking-marker span {
+  transform: rotate(45deg);
+}
+
+.parking-marker--selected {
+  background: #0d2a66;
+  border-color: #0d2a66;
+  color: #ffffff;
+  z-index: 500 !important;
+}
+
+.parking-marker--muted {
+  opacity: 0.58;
+}
+
+.leaflet-container {
+  background: #eef0f4;
+  font-family: inherit;
 }
