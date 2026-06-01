@@ -43,10 +43,11 @@ infrastructure → application → domain.
   ports defined in the application/domain layers.
 - Cross-layer imports in the wrong direction are a **build-breaking violation** and MUST
   be caught by ArchUnit tests running in CI.
-- Package structure MUST reflect layer separation:
-  - `com.parking.domain` — entities, value objects, aggregates, ports, domain services
-  - `com.parking.application` — use cases, input/output ports, application DTOs
-  - `com.parking.infrastructure` — adapters (web, persistence, messaging, external)
+- Package structure MUST reflect layer separation (root package `org.labcabrera.parking.<service>`):
+  - `org.labcabrera.parking.<service>.domain` — entities, value objects, aggregates, ports, domain services
+  - `org.labcabrera.parking.<service>.application` — command handlers, query handlers, application DTOs
+  - `org.labcabrera.parking.<service>.infrastructure` — adapters (web, persistence, messaging, external)
+  - `org.labcabrera.parking.<service>.interfaces` — inbound adapters (REST controllers, Kafka consumers)
 
 ### II. Domain-Driven Design
 
@@ -206,4 +207,4 @@ semantic versioning rules below. Amendments that affect Principles I, II, or III
 review. Repeated violations MUST be escalated and resolved via an amendment or a
 documented team decision.
 
-**Version**: 1.0.0 | **Ratified**: 2026-06-01 | **Last Amended**: 2026-06-01
+**Version**: 1.0.1 | **Ratified**: 2026-06-01 | **Last Amended**: 2026-06-01
