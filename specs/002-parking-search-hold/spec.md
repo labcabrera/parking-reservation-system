@@ -17,6 +17,13 @@
 - Q: Are FR-004 (paginated results) and FR-005 (filter by facility characteristics) in scope for this iteration? → A: Both in scope. FR-004 pagination and FR-005 characteristic filters (covered, EV charging, free cancellation) are confirmed MUST requirements for this feature. Tasks will be added to tasks.md.
 - Q: The Assumptions section named `catalog-service` as requiring Axon migration — which service is the actual prerequisite? → A: `reservation-service` (currently on Axon 4.10.3). `catalog-service` has never used Axon and requires no migration. Assumption corrected.
 
+### Session 2026-06-01 (clarify round 2)
+
+- Q: What idempotency strategy should `POST /holds` use to satisfy constitution §IV? → A: Use `searchSessionId` as the natural idempotency key. If a PENDING_PRICE or ACTIVE hold already exists for the same `searchSessionId` + facility + period combination (i.e., a retry of the identical request), the server MUST return the existing hold (`200 OK` with the original `holdId` and current status) instead of creating a new one or releasing and recreating. FR-011 (auto-release on *different-facility* selection within the same session) remains unchanged — the distinction is same-facility retry vs. new-facility selection.
+- Q: What should the `pricing-timeout` Axon deadline duration be for the `HoldPricingCoordinatorSaga`? → A: 30 seconds, configurable via `reservation.hold.pricing-timeout-seconds`. This absorbs transient Kafka broker delays and pricing-service restarts without leaving the user waiting indefinitely. When the deadline fires, the saga issues `FailHoldPricingCommand` and the SpotHold transitions `PENDING_PRICE → FAILED`.
+- Q: Does FR-011 (auto-release on new-facility selection) apply when the current hold is in `PENDING_PRICE` state? → A: Yes. FR-011 applies uniformly to both `PENDING_PRICE` and `ACTIVE` holds. When a visitor selects a different facility, the existing hold (regardless of state) is released immediately and the new hold is created. This preserves the “at most one hold per session” invariant without requiring the client to wait for pricing resolution.
+- Q: What HTTP status should `GET /holds/{holdId}` return for an unknown ID (never existed or already purged)? → A: `404 Not Found` for all unknown IDs, regardless of whether the ID never existed or the hold was purged. The server is not required to distinguish “never existed” from “purged terminal state”; clients treat any `404` as “hold is gone” and fall back to showing search results.- Q: After a hold reaches `FAILED` state, can the visitor retry using the same `searchSessionId`? → A: Yes. `FAILED` is a terminal state (like `EXPIRED`), so the "at most one hold per session" invariant is no longer blocked. A new `POST /holds` with the same `searchSessionId` creates a fresh hold normally. The visitor does not need to abandon their search or generate a new session.
+
 ### Session 2026-06-01
 
 - Q: Does hold creation require authentication or can it be anonymous? → A: Anonymous hold creation is allowed; rate-limited per IP and `searchSessionId` to prevent abuse. A `userId` is optional on a hold and is populated only when the visitor is authenticated at checkout time.
@@ -135,8 +142,12 @@ as expired.
   to the check-in date/time? The system must reject the request with a clear validation
   message; no search is performed.
 - What happens if the price calculation service is unavailable when a hold is created?
-  The hold must not be created; the visitor must receive an error message indicating the
-  service is temporarily unavailable.
+  The hold IS created and enters `PENDING_PRICE` state (spot is locked). The system then
+  waits up to `reservation.hold.pricing-timeout-seconds` (default 30 s) for the pricing
+  round-trip. If no confirmed price arrives within that window, the Axon saga fires
+  `FailHoldPricingCommand`, transitioning the hold to `FAILED` and releasing the spot.
+  The visitor sees a `FAILED` status on polling and may retry with a new `POST /holds`
+  using the same `searchSessionId` (per FR-023).
 - What happens if a visitor's search results become stale while they are browsing? A
   stale `searchSessionId` remains usable for initiating a hold, but the system must
   re-validate spot availability at hold-creation time.
@@ -188,8 +199,11 @@ as expired.
   MUST be configurable via a system parameter.
 - **FR-010**: After a hold is created, the system MUST calculate and return a confirmed
   price for that specific hold.
-- **FR-011**: If a visitor already has an active hold within the same search session,
-  the system MUST release the previous hold automatically when a new one is created.
+- **FR-011**: If a visitor already has a hold (in `PENDING_PRICE` or `ACTIVE` state)
+  within the same search session, the system MUST release the previous hold
+  automatically when a new one is created for a **different** facility or period. FR-011
+  applies regardless of whether the existing hold has received pricing confirmation;
+  the “at most one hold per session” invariant is always enforced.
 - **FR-012**: A hold MUST be automatically released when its TTL expires, restoring the
   spot to available inventory.
 - **FR-013**: If no available spots exist in the selected facility for the requested
@@ -202,6 +216,23 @@ as expired.
   MUST be rejected with a descriptive validation error before any processing occurs. No
   minimum advance booking time is enforced; check-in may be in the past or present as
   long as check-out is strictly after check-in.
+- **FR-021**: The `POST /holds` endpoint MUST be idempotent with respect to the
+  `searchSessionId` + facility + period combination. If a hold in `PENDING_PRICE` or
+  `ACTIVE` state already exists for an identical request (same session, same facility,
+  same check-in/check-out), the server MUST return `200 OK` with the existing hold
+  (including its current `holdId` and `status`) rather than creating a new hold or
+  releasing the existing one. This is distinct from FR-011 (auto-release on
+  different-facility selection): FR-021 governs same-request retries; FR-011 governs
+  new-facility selections within the same session.
+- **FR-022**: `GET /holds/{holdId}` MUST return `404 Not Found` for any `holdId` that
+  the system has no record of, regardless of whether the ID never existed or was purged
+  after reaching a terminal state. The server is not required to distinguish between
+  the two cases; no `410 Gone` response is used.
+- **FR-023**: `FAILED` is a terminal state. Once a hold reaches `FAILED`, the
+  "at most one active hold per session" constraint is no longer blocked by it. A visitor
+  MAY retry by submitting a new `POST /holds` with the same `searchSessionId`; the
+  server MUST treat this as a fresh hold creation (not an idempotency match, since the
+  previous hold is terminal). No new `searchSessionId` is required.
 
 ### Key Entities
 
@@ -269,8 +300,12 @@ as expired.
 - Confirmed price is calculated by a dedicated `pricing-service` invoked after hold
   creation; the pricing factors include the number of days, facility type, and spot
   availability at the time of the hold.
-- Hold TTL defaults to 10 minutes, configurable; a visitor can have at most one active
-  hold per search session.
+- Hold TTL defaults to 10 minutes, configurable via `reservation.hold.ttl-seconds`; a
+  visitor can have at most one active hold per search session.
+- The pricing-resolution timeout (`reservation.hold.pricing-timeout-seconds`) defaults
+  to 30 seconds. If pricing-service does not respond within this deadline, the Axon
+  saga fires `FailHoldPricingCommand` and the SpotHold transitions `PENDING_PRICE →
+  FAILED`. The value is configurable to allow environment-specific tuning.
 - Both search and hold creation are publicly accessible without authentication. Rate
   limiting per IP and `searchSessionId` prevents abuse of the anonymous hold endpoint.
   The `userId` on a hold is nullable; it is populated when the visitor authenticates at
