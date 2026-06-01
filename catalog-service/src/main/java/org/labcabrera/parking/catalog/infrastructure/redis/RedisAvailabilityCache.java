@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.Optional;
+import java.util.Set;
 
 @Component
 public class RedisAvailabilityCache implements AvailabilityCache {
@@ -33,6 +34,14 @@ public class RedisAvailabilityCache implements AvailabilityCache {
     @Override
     public void putAvailableSpotCount(FacilityId facilityId, AvailabilityWindow window, int count) {
         redisTemplate.opsForValue().set(buildKey(facilityId, window), String.valueOf(count), TTL);
+    }
+
+    @Override
+    public void invalidate(String facilityId) {
+        Set<String> keys = redisTemplate.keys(KEY_PREFIX + facilityId + ":*");
+        if (keys != null && !keys.isEmpty()) {
+            redisTemplate.delete(keys);
+        }
     }
 
     private String buildKey(FacilityId facilityId, AvailabilityWindow window) {

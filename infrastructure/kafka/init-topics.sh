@@ -26,5 +26,12 @@ create_topic "parking.reservations" 3
 create_topic "parking.payments.requests" 3
 create_topic "parking.payments.results" 3
 
+# Pricing request/result topics (Hold pricing saga)
+create_topic "parking.pricing.requests" 3
+create_topic "parking.pricing.results" 3
+
+# Availability change events (SSE push)
+create_topic "parking.availability.changes" 3
+
 echo "All topics created successfully."
 kafka-topics.sh --bootstrap-server "$KAFKA_BOOTSTRAP" --list

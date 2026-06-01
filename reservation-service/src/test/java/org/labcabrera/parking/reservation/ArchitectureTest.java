@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 @DisplayName("Reservation Service — Hexagonal Architecture Layer Enforcement")
@@ -68,6 +69,35 @@ class ArchitectureTest {
                 .that().resideInAPackage(BASE_PACKAGE + ".infrastructure..")
                 .should().dependOnClassesThat()
                 .resideInAPackage(BASE_PACKAGE + ".interfaces..");
+        rule.check(importedClasses);
+    }
+
+    @Test
+    @DisplayName("SpotHold domain model must not import Spring or JPA classes")
+    void spotHoldMustNotHaveSpringOrJpaImports() {
+        ArchRule rule = noClasses()
+                .that().haveSimpleName("SpotHold")
+                .should().dependOnClassesThat()
+                .resideInAnyPackage("org.springframework..", "jakarta.persistence..");
+        rule.check(importedClasses);
+    }
+
+    @Test
+    @DisplayName("HoldController must not import infrastructure classes directly")
+    void holdControllerMustNotImportInfrastructureDirectly() {
+        ArchRule rule = noClasses()
+                .that().haveSimpleName("HoldController")
+                .should().dependOnClassesThat()
+                .resideInAPackage(BASE_PACKAGE + ".infrastructure..");
+        rule.check(importedClasses);
+    }
+
+    @Test
+    @DisplayName("HoldPricingCoordinator must reside in application package")
+    void holdPricingCoordinatorMustResideInApplicationPackage() {
+        ArchRule rule = classes()
+                .that().haveSimpleName("HoldPricingCoordinator")
+                .should().resideInAPackage(BASE_PACKAGE + ".application..");
         rule.check(importedClasses);
     }
 }

@@ -54,7 +54,7 @@ export function FacilityResultCard({
       }}
     >
       <CardContent sx={{ p: { xs: 2, md: 2.5 }, '&:last-child': { pb: { xs: 2, md: 2.5 } } }}>
-        <LowAvailabilityLabel isVisible={facility.lowAvailabilityWarning} label={t('results.lowAvailability')} />
+        <LowAvailabilityLabel isVisible={facility.lowAvailability ?? facility.lowAvailabilityWarning ?? false} label={t('results.lowAvailability')} />
         <FacilitySummary facility={facility} isSelected={isSelected} />
         <FacilityBenefits facility={facility} />
       </CardContent>
@@ -87,7 +87,9 @@ function LowAvailabilityLabel({ isVisible, label }: { isVisible: boolean; label:
 
 function FacilitySummary({ facility, isSelected }: { facility: FacilityResult; isSelected: boolean }) {
   const { t } = useTranslation();
-  const price = formatPrice(facility.dailyRate);
+  const displayAmount = facility.estimatedPrice?.amount ?? facility.dailyRate;
+  const displayCurrency = facility.estimatedPrice?.currency ?? facility.currency;
+  const price = formatPrice(displayAmount);
 
   return (
     <Stack
@@ -114,10 +116,10 @@ function FacilitySummary({ facility, isSelected }: { facility: FacilityResult; i
 
       <Box sx={{ minWidth: 150, textAlign: { xs: 'left', sm: 'right' } }}>
         <Typography color="primary" sx={{ fontSize: 18, fontWeight: 900 }}>
-          {t('results.totalPrice', { price })}
+          {t('results.totalPrice', { price, currency: displayCurrency })}
         </Typography>
         <Typography color="text.secondary" sx={{ fontSize: 12 }}>
-          {t('results.dayPrice', { price })}
+          {t('results.dayPrice', { price: formatPrice(facility.dailyRate), currency: facility.currency })}
         </Typography>
       </Box>
     </Stack>

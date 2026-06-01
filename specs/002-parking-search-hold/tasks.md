@@ -21,13 +21,13 @@ description: "Task list for Parking Search & Hold Flow (Shopping Session)"
 **Purpose**: Axon 5.x upgrade, new `pricing-service` module scaffold, Kafka topic provisioning.
 This phase blocks all reservation-service work (US2, US3). catalog-service (US1 search part) can start in parallel.
 
-- [ ] T001 Update `axon-spring-boot-starter` from `4.10.3` to `5.x` stable in `reservation-service/build.gradle`
-- [ ] T002 [P] Add `:pricing-service` to `settings.gradle`
-- [ ] T003 [P] Create `pricing-service/build.gradle` with Spring Boot 4.0.6, Axon 5.x, Spring Kafka, springdoc-openapi, and Testcontainers dependencies
-- [ ] T004 [P] Create `pricing-service/Dockerfile` following `catalog-service/Dockerfile` pattern
-- [ ] T005 [P] Create `pricing-service/src/main/java/org/labcabrera/parking/pricing/PricingServiceApplication.java` and empty hexagonal package structure (`domain/`, `application/`, `infrastructure/`, `interfaces/`)
-- [ ] T006 [P] Add `parking.pricing.requests`, `parking.pricing.results`, `parking.availability.changes` to `infrastructure/kafka/init-topics.sh`
-- [ ] T007 Run `./gradlew :reservation-service:test` to validate Axon 5.x compatibility and fix any breaking API changes in existing sagas or event handlers
+- [X] T001 Update `axon-spring-boot-starter` from `4.10.3` to `5.x` stable in `reservation-service/build.gradle`
+- [X] T002 [P] Add `:pricing-service` to `settings.gradle`
+- [X] T003 [P] Create `pricing-service/build.gradle` with Spring Boot 4.0.6, Axon 5.x, Spring Kafka, springdoc-openapi, and Testcontainers dependencies
+- [X] T004 [P] Create `pricing-service/Dockerfile` following `catalog-service/Dockerfile` pattern
+- [X] T005 [P] Create `pricing-service/src/main/java/org/labcabrera/parking/pricing/PricingServiceApplication.java` and empty hexagonal package structure (`domain/`, `application/`, `infrastructure/`, `interfaces/`)
+- [X] T006 [P] Add `parking.pricing.requests`, `parking.pricing.results`, `parking.availability.changes` to `infrastructure/kafka/init-topics.sh`
+- [X] T007 Run `./gradlew :reservation-service:test` to validate Axon 5.x compatibility and fix any breaking API changes in existing sagas or event handlers
 
 **Checkpoint**: `reservation-service` compiles and all existing tests pass with Axon 5.x. `pricing-service` builds. Kafka topics are provisioned.
 
@@ -38,12 +38,12 @@ This phase blocks all reservation-service work (US2, US3). catalog-service (US1 
 **Purpose**: Database migration, JPA entity, ports, and command/event classes shared across US2 and US3.
 **⚠️ CRITICAL**: No hold-related user story work (US2, US3) can begin until this phase is complete.
 
-- [ ] T008 Create Flyway migration `reservation-service/src/main/resources/db/migration/V2__create_spot_hold.sql` — `spot_hold` table, unique index `idx_spot_hold_active` on `(spot_id, check_in, check_out) WHERE status IN ('PENDING_PRICE', 'ACTIVE')`, and `@Version` column, per `data-model.md`
-- [ ] T009 [P] Create `HoldStatus.java` enum (`PENDING_PRICE`, `ACTIVE`, `EXPIRED`, `RELEASED`, `FAILED`, `CONVERTED`) in `reservation-service/src/main/java/org/labcabrera/parking/reservation/domain/model/HoldStatus.java`
-- [ ] T010 [P] Create `SpotHoldJpaEntity.java` in `reservation-service/src/main/java/org/labcabrera/parking/reservation/infrastructure/persistence/SpotHoldJpaEntity.java` mapping all fields from `data-model.md` to the `spot_hold` table
-- [ ] T011 [P] Create `HoldRepository.java` port interface in `reservation-service/src/main/java/org/labcabrera/parking/reservation/domain/port/outbound/HoldRepository.java`
-- [ ] T012 [P] Create all 6 Hold command classes in `reservation-service/src/main/java/org/labcabrera/parking/reservation/application/commands/`: `CreateHoldCommand`, `ConfirmHoldPriceCommand`, `FailHoldPricingCommand`, `ReleaseHoldCommand`, `ExpireHoldCommand`, `ConvertHoldCommand`
-- [ ] T013 [P] Create all 6 Hold domain event classes in `reservation-service/src/main/java/org/labcabrera/parking/reservation/domain/model/events/`: `HoldCreated`, `HoldPriceConfirmed`, `HoldPricingFailed`, `HoldReleased`, `HoldExpired`, `HoldConverted`
+- [X] T008 Create Flyway migration `reservation-service/src/main/resources/db/migration/V2__create_spot_hold.sql` — `spot_hold` table, unique index `idx_spot_hold_active` on `(spot_id, check_in, check_out) WHERE status IN ('PENDING_PRICE', 'ACTIVE')`, and `@Version` column, per `data-model.md`
+- [X] T009 [P] Create `HoldStatus.java` enum (`PENDING_PRICE`, `ACTIVE`, `EXPIRED`, `RELEASED`, `FAILED`, `CONVERTED`) in `reservation-service/src/main/java/org/labcabrera/parking/reservation/domain/model/HoldStatus.java`
+- [X] T010 [P] Create `SpotHoldJpaEntity.java` in `reservation-service/src/main/java/org/labcabrera/parking/reservation/infrastructure/persistence/SpotHoldJpaEntity.java` mapping all fields from `data-model.md` to the `spot_hold` table
+- [X] T011 [P] Create `HoldRepository.java` port interface in `reservation-service/src/main/java/org/labcabrera/parking/reservation/domain/port/outbound/HoldRepository.java`
+- [X] T012 [P] Create all 6 Hold command classes in `reservation-service/src/main/java/org/labcabrera/parking/reservation/application/commands/`: `CreateHoldCommand`, `ConfirmHoldPriceCommand`, `FailHoldPricingCommand`, `ReleaseHoldCommand`, `ExpireHoldCommand`, `ConvertHoldCommand`
+- [X] T013 [P] Create all 6 Hold domain event classes in `reservation-service/src/main/java/org/labcabrera/parking/reservation/domain/model/events/`: `HoldCreated`, `HoldPriceConfirmed`, `HoldPricingFailed`, `HoldReleased`, `HoldExpired`, `HoldConverted`
 
 **Checkpoint**: Foundation ready — US2 and US3 implementation can now begin.
 
@@ -57,27 +57,27 @@ This phase blocks all reservation-service work (US2, US3). catalog-service (US1 
 
 ### Implementation — catalog-service DTOs
 
-- [ ] T014 [P] [US1] Add `lat`, `lng`, `radiusKm` (optional) fields to `catalog-service/src/main/java/org/labcabrera/parking/catalog/application/dto/SearchRequest.java`
-- [ ] T015 [P] [US1] Add `searchSessionId` (String/UUID) and `stale` (boolean) fields to `catalog-service/src/main/java/org/labcabrera/parking/catalog/application/dto/SearchResponse.java`
-- [ ] T016 [P] [US1] Add `estimatedPrice` (`Money` value object: amount + currency) field to `catalog-service/src/main/java/org/labcabrera/parking/catalog/application/dto/FacilityResult.java`
+- [X] T014 [P] [US1] Add `lat`, `lng`, `radiusKm` (optional) fields to `catalog-service/src/main/java/org/labcabrera/parking/catalog/application/dto/SearchRequest.java`
+- [X] T015 [P] [US1] Add `searchSessionId` (String/UUID) and `stale` (boolean) fields to `catalog-service/src/main/java/org/labcabrera/parking/catalog/application/dto/SearchResponse.java`
+- [X] T016 [P] [US1] Add `estimatedPrice` (`Money` value object: amount + currency) field to `catalog-service/src/main/java/org/labcabrera/parking/catalog/application/dto/FacilityResult.java`
 
 ### Implementation — catalog-service query handler
 
-- [ ] T017 [US1] Update `catalog-service/src/main/java/org/labcabrera/parking/catalog/application/queries/SearchParkingQueryHandler.java`: generate UUID v4 `searchSessionId`, compute `estimatedPrice = dailyRate × days`, apply haversine proximity filter when `lat`/`lng`/`radiusKm` are present
-- [ ] T018 [US1] Add Redis cache-aside degraded-mode fallback to `SearchParkingQueryHandler`: on `DataAccessException` attempt Redis lookup; set `stale: true` in response; return 503 only if both DB and cache are unavailable
+- [X] T017 [US1] Update `catalog-service/src/main/java/org/labcabrera/parking/catalog/application/queries/SearchParkingQueryHandler.java`: generate UUID v4 `searchSessionId`, compute `estimatedPrice = dailyRate × days`, apply haversine proximity filter when `lat`/`lng`/`radiusKm` are present
+- [X] T018 [US1] Add Redis cache-aside degraded-mode fallback to `SearchParkingQueryHandler`: on `DataAccessException` attempt Redis lookup; set `stale: true` in response; return 503 only if both DB and cache are unavailable
 
 ### Implementation — catalog-service SSE stream
 
-- [ ] T019 [P] [US1] Create `catalog-service/src/main/java/org/labcabrera/parking/catalog/interfaces/rest/AvailabilityStreamRegistry.java` — `CopyOnWriteArrayList<SseEmitter>` per `facilityId`, emitter cleanup on `onCompletion`/`onTimeout`/`onError`, heartbeat every 30 s via `@Scheduled`
-- [ ] T020 [US1] Add `GET /api/v1/catalog/availability/stream` `SseEmitter` endpoint to `catalog-service/src/main/java/org/labcabrera/parking/catalog/interfaces/rest/CatalogController.java` — validates `facilityId`, registers in `AvailabilityStreamRegistry`
-- [ ] T021 [US1] Create `catalog-service/src/main/java/org/labcabrera/parking/catalog/infrastructure/messaging/AvailabilityChangeConsumer.java` — Kafka consumer for `parking.availability.changes`; on message, push `availability-update` SSE event via `AvailabilityStreamRegistry` and invalidate Redis cache for affected `facilityId`
+- [X] T019 [P] [US1] Create `catalog-service/src/main/java/org/labcabrera/parking/catalog/interfaces/rest/AvailabilityStreamRegistry.java` — `CopyOnWriteArrayList<SseEmitter>` per `facilityId`, emitter cleanup on `onCompletion`/`onTimeout`/`onError`, heartbeat every 30 s via `@Scheduled`
+- [X] T020 [US1] Add `GET /api/v1/catalog/availability/stream` `SseEmitter` endpoint to `catalog-service/src/main/java/org/labcabrera/parking/catalog/interfaces/rest/CatalogController.java` — validates `facilityId`, registers in `AvailabilityStreamRegistry`
+- [X] T021 [US1] Create `catalog-service/src/main/java/org/labcabrera/parking/catalog/infrastructure/messaging/AvailabilityChangeConsumer.java` — Kafka consumer for `parking.availability.changes`; on message, push `availability-update` SSE event via `AvailabilityStreamRegistry` and invalidate Redis cache for affected `facilityId`
 
 ### Implementation — frontend
 
-- [ ] T022 [P] [US1] Update `frontend/src/types/` with extended search types: `SearchResponse` (add `searchSessionId`, `stale`), `FacilityResult` (add `estimatedPrice`)
-- [ ] T023 [P] [US1] Update `frontend/src/services/catalogApi.ts` `searchParking()` to return extended response type including `searchSessionId` and `estimatedPrice` per result
-- [ ] T024 [US1] Update `frontend/src/hooks/useParkingSearch.ts` to expose `searchSessionId` from the search response for use by downstream hold creation
-- [ ] T025 [US1] Update `frontend/src/components/search/ParkingCard.tsx` to display `estimatedPrice` per facility result (FR-002)
+- [X] T022 [P] [US1] Update `frontend/src/types/` with extended search types: `SearchResponse` (add `searchSessionId`, `stale`), `FacilityResult` (add `estimatedPrice`)
+- [X] T023 [P] [US1] Update `frontend/src/services/catalogApi.ts` `searchParking()` to return extended response type including `searchSessionId` and `estimatedPrice` per result
+- [X] T024 [US1] Update `frontend/src/hooks/useParkingSearch.ts` to expose `searchSessionId` from the search response for use by downstream hold creation
+- [X] T025 [US1] Update `frontend/src/components/search/ParkingCard.tsx` to display `estimatedPrice` per facility result (FR-002)
 
 **Checkpoint**: Search returns `searchSessionId`, `estimatedPrice`, proximity filtering works, SSE stream emits heartbeats and availability events. Frontend displays estimated price.
 
@@ -91,37 +91,37 @@ This phase blocks all reservation-service work (US2, US3). catalog-service (US1 
 
 ### Implementation — pricing-service MVP
 
-- [ ] T026 [US2] Create `pricing-service/src/main/java/org/labcabrera/parking/pricing/domain/service/PricingCalculationService.java` — MVP formula: `confirmedPrice = baseRatePerDay × days`. **(depends on T055 — TDD: tests must exist and fail before this task)**
-- [ ] T027 [US2] Create `pricing-service/src/main/java/org/labcabrera/parking/pricing/infrastructure/messaging/PricingRequestConsumer.java` — Kafka consumer on `parking.pricing.requests` (group-id: `pricing-service`); delegates to `PricingCalculationService`
-- [ ] T028 [US2] Create `pricing-service/src/main/java/org/labcabrera/parking/pricing/infrastructure/messaging/PricingResultPublisher.java` — Kafka producer to `parking.pricing.results`
+- [X] T026 [US2] Create `pricing-service/src/main/java/org/labcabrera/parking/pricing/domain/service/PricingCalculationService.java` — MVP formula: `confirmedPrice = baseRatePerDay × days`. **(depends on T055 — TDD: tests must exist and fail before this task)**
+- [X] T027 [US2] Create `pricing-service/src/main/java/org/labcabrera/parking/pricing/infrastructure/messaging/PricingRequestConsumer.java` — Kafka consumer on `parking.pricing.requests` (group-id: `pricing-service`); delegates to `PricingCalculationService`
+- [X] T028 [US2] Create `pricing-service/src/main/java/org/labcabrera/parking/pricing/infrastructure/messaging/PricingResultPublisher.java` — Kafka producer to `parking.pricing.results`
 
 ### Implementation — SpotHold aggregate (TDD)
 
-- [ ] T029 [US2] Write `AggregateTestFixture<SpotHold>` unit tests in `reservation-service/src/test/java/org/labcabrera/parking/reservation/domain/model/SpotHoldTest.java` covering: all 6 state transitions, double-hold rejection, deadline firing → `HoldExpiredEvent`, and FR-023 (new `CreateHoldCommand` succeeds when previous hold is in terminal `FAILED` state). **TDD: confirm tests FAIL before implementing T030.**
-- [ ] T030 [US2] Implement `reservation-service/src/main/java/org/labcabrera/parking/reservation/domain/model/SpotHold.java` as Axon 5.x `@Aggregate` with full 6-state machine, all 6 `@CommandHandler` methods, all 6 `@EventSourcingHandler` methods, `@DeadlineHandler("hold-expiry")` for TTL, and double-hold invariant guard. All tests from T029 must pass.
+- [X] T029 [US2] Write `AggregateTestFixture<SpotHold>` unit tests in `reservation-service/src/test/java/org/labcabrera/parking/reservation/domain/model/SpotHoldTest.java` covering: all 6 state transitions, double-hold rejection, deadline firing → `HoldExpiredEvent`, and FR-023 (new `CreateHoldCommand` succeeds when previous hold is in terminal `FAILED` state). **TDD: confirm tests FAIL before implementing T030.**
+- [X] T030 [US2] Implement `reservation-service/src/main/java/org/labcabrera/parking/reservation/domain/model/SpotHold.java` as Axon 5.x `@Aggregate` with full 6-state machine, all 6 `@CommandHandler` methods, all 6 `@EventSourcingHandler` methods, `@DeadlineHandler("hold-expiry")` for TTL, and double-hold invariant guard. All tests from T029 must pass.
 
 ### Implementation — HoldPricingCoordinatorSaga (TDD)
 
-- [ ] T031 [US2] Write `SagaTestFixture<HoldPricingCoordinatorSaga>` tests in `reservation-service/src/test/java/org/labcabrera/parking/reservation/application/saga/HoldPricingCoordinatorSagaTest.java` covering: saga start on `HoldCreated`, pricing result → `ConfirmHoldPriceCommand`, deadline timeout → `FailHoldPricingCommand`. **TDD: confirm tests FAIL before T032.**
-- [ ] T032 [US2] Implement `reservation-service/src/main/java/org/labcabrera/parking/reservation/application/saga/HoldPricingCoordinatorSaga.java` — Axon `@Saga` started by `HoldCreatedEvent`; publishes `PricingRequest` to Kafka via outbound port; schedules `pricing-timeout` deadline using `reservation.hold.pricing-timeout-seconds` (default 30 s, wired from `application.yml`); on `PricingResultReceived` cancels deadline and sends `ConfirmHoldPriceCommand`; on deadline sends `FailHoldPricingCommand`. All tests from T031 must pass.
+- [X] T031 [US2] Write `SagaTestFixture<HoldPricingCoordinatorSaga>` tests in `reservation-service/src/test/java/org/labcabrera/parking/reservation/application/saga/HoldPricingCoordinatorSagaTest.java` covering: saga start on `HoldCreated`, pricing result → `ConfirmHoldPriceCommand`, deadline timeout → `FailHoldPricingCommand`. **TDD: confirm tests FAIL before T032.**
+- [X] T032 [US2] Implement `reservation-service/src/main/java/org/labcabrera/parking/reservation/application/saga/HoldPricingCoordinatorSaga.java` — Axon `@Saga` started by `HoldCreatedEvent`; publishes `PricingRequest` to Kafka via outbound port; schedules `pricing-timeout` deadline using `reservation.hold.pricing-timeout-seconds` (default 30 s, wired from `application.yml`); on `PricingResultReceived` cancels deadline and sends `ConfirmHoldPriceCommand`; on deadline sends `FailHoldPricingCommand`. All tests from T031 must pass.
 
 ### Implementation — reservation-service messaging adapters
 
-- [ ] T033 [P] [US2] Create `reservation-service/src/main/java/org/labcabrera/parking/reservation/infrastructure/messaging/PricingRequestPublisher.java` — Kafka producer to `parking.pricing.requests` (called by saga)
-- [ ] T034 [P] [US2] Create `reservation-service/src/main/java/org/labcabrera/parking/reservation/infrastructure/messaging/PricingResultConsumer.java` — Kafka consumer on `parking.pricing.results`; dispatches `PricingResultReceivedEvent` to Axon event bus for saga pickup
-- [ ] T035 [P] [US2] Create `reservation-service/src/main/java/org/labcabrera/parking/reservation/infrastructure/messaging/AvailabilityChangePublisher.java` — Kafka producer to `parking.availability.changes`; triggered by `HoldCreatedEvent` and `HoldReleasedEvent`. Note: `HoldExpiredEvent` subscription is handled in T045 (US3) to avoid split between phases; T035 must expose a generic `publish(facilityId, availableSpots)` method reusable by both
+- [X] T033 [P] [US2] Create `reservation-service/src/main/java/org/labcabrera/parking/reservation/infrastructure/messaging/PricingRequestPublisher.java` — Kafka producer to `parking.pricing.requests` (called by saga)
+- [X] T034 [P] [US2] Create `reservation-service/src/main/java/org/labcabrera/parking/reservation/infrastructure/messaging/PricingResultConsumer.java` — Kafka consumer on `parking.pricing.results`; dispatches `PricingResultReceivedEvent` to Axon event bus for saga pickup
+- [X] T035 [P] [US2] Create `reservation-service/src/main/java/org/labcabrera/parking/reservation/infrastructure/messaging/AvailabilityChangePublisher.java` — Kafka producer to `parking.availability.changes`; triggered by `HoldCreatedEvent` and `HoldReleasedEvent`. Note: `HoldExpiredEvent` subscription is handled in T045 (US3) to avoid split between phases; T035 must expose a generic `publish(facilityId, availableSpots)` method reusable by both
 
 ### Implementation — rate limiting and REST adapter
 
-- [ ] T036 [US2] Configure Resilience4j `RateLimiter` beans in `reservation-service` application configuration: `hold-creation-by-ip` (5 req/60 s per IP) and `hold-creation-by-session` (3 req/60 s per `searchSessionId`); apply to hold creation endpoint
-- [ ] T037 [US2] Create `reservation-service/src/main/java/org/labcabrera/parking/reservation/interfaces/rest/HoldController.java` with: `POST /api/v1/reservations/holds` → `202 Accepted`; `GET /api/v1/reservations/holds/{holdId}` → `200` (any state) or `404 Not Found` for unknown/purged IDs (per FR-022); `DELETE /api/v1/reservations/holds/{holdId}` → `204` or `409 Conflict` for terminal states
+- [X] T036 [US2] Configure Resilience4j `RateLimiter` beans in `reservation-service` application configuration: `hold-creation-by-ip` (5 req/60 s per IP) and `hold-creation-by-session` (3 req/60 s per `searchSessionId`); apply to hold creation endpoint
+- [X] T037 [US2] Create `reservation-service/src/main/java/org/labcabrera/parking/reservation/interfaces/rest/HoldController.java` with: `POST /api/v1/reservations/holds` → `202 Accepted`; `GET /api/v1/reservations/holds/{holdId}` → `200` (any state) or `404 Not Found` for unknown/purged IDs (per FR-022); `DELETE /api/v1/reservations/holds/{holdId}` → `204` or `409 Conflict` for terminal states
 
 ### Implementation — frontend hold flow
 
-- [ ] T038 [P] [US2] Create `frontend/src/types/hold.ts` with `HoldResponse` interface and `HoldStatus` type (`PENDING_PRICE | ACTIVE | EXPIRED | RELEASED | FAILED | CONVERTED`)
-- [ ] T039 [P] [US2] Create `frontend/src/services/holdApi.ts` with `createHold()`, `getHold()`, `releaseHold()` functions calling the reservation-service hold endpoints
-- [ ] T040 [US2] Create `frontend/src/hooks/useParkingHold.ts` — calls `createHold()`, then polls `getHold()` every 500 ms while `status === 'PENDING_PRICE'`; returns `{ hold, isLoading, isError }`
-- [ ] T041 [US2] Update `frontend/src/pages/SearchPage.tsx` and `frontend/src/components/search/ParkingCard.tsx` to trigger `useParkingHold` on facility selection, show spinner while `PENDING_PRICE`, and display confirmed price when `ACTIVE`
+- [X] T038 [P] [US2] Create `frontend/src/types/hold.ts` with `HoldResponse` interface and `HoldStatus` type (`PENDING_PRICE | ACTIVE | EXPIRED | RELEASED | FAILED | CONVERTED`)
+- [X] T039 [P] [US2] Create `frontend/src/services/holdApi.ts` with `createHold()`, `getHold()`, `releaseHold()` functions calling the reservation-service hold endpoints
+- [X] T040 [US2] Create `frontend/src/hooks/useParkingHold.ts` — calls `createHold()`, then polls `getHold()` every 500 ms while `status === 'PENDING_PRICE'`; returns `{ hold, isLoading, isError }`
+- [X] T041 [US2] Update `frontend/src/pages/SearchPage.tsx` and `frontend/src/components/search/ParkingCard.tsx` to trigger `useParkingHold` on facility selection, show spinner while `PENDING_PRICE`, and display confirmed price when `ACTIVE`
 
 **Checkpoint**: Full hold flow works end-to-end: search → select → 202 PENDING → pricing Kafka round-trip → ACTIVE with confirmedPrice. Rate limit returns 429 on excess requests.
 
@@ -133,10 +133,10 @@ This phase blocks all reservation-service work (US2, US3). catalog-service (US1 
 
 **Independent Test**: Create a hold. Set hold TTL to 1 minute (or trigger deadline manually in test). Wait for TTL to elapse. Verify `GET /holds/{holdId}` returns `status: EXPIRED` and `410 Gone` for further DELETE/confirm attempts. Verify `parking.availability.changes` event was published.
 
-- [ ] T042 [US3] Create `reservation-service/src/main/java/org/labcabrera/parking/reservation/infrastructure/scheduling/HoldExpiryScheduler.java` — `@Scheduled(fixedDelayString="PT5M")` fallback sweep that issues `ExpireHoldCommand` for all `PENDING_PRICE` or `ACTIVE` holds whose `expiresAt` is in the past (guards against Axon deadline delivery failures)
-- [ ] T043 [US3] Verify `HoldController` returns `404 Not Found` for `GET /holds/{holdId}` when the hold ID is unknown or has been purged (per FR-022), and `409 Conflict` for `DELETE /holds/{holdId}` when the hold is in a terminal state (`EXPIRED`, `RELEASED`, `CONVERTED`, `FAILED`) — add/fix response handling in `reservation-service/.../interfaces/rest/HoldController.java`
-- [ ] T044 [US3] Update `frontend/src/hooks/useParkingHold.ts` — stop polling when `status` is `EXPIRED` or `FAILED`; surface an expiry/error message to the caller so the UI can prompt the user to restart the search
-- [ ] T045 [US3] Verify `AvailabilityChangePublisher.java` in `reservation-service` publishes `parking.availability.changes` on `HoldExpiredEvent` (add `@EventHandler` subscription if not already covered by T035) so SSE clients receive availability updates when a hold expires
+- [X] T042 [US3] Create `reservation-service/src/main/java/org/labcabrera/parking/reservation/infrastructure/scheduling/HoldExpiryScheduler.java` — `@Scheduled(fixedDelayString="PT5M")` fallback sweep that issues `ExpireHoldCommand` for all `PENDING_PRICE` or `ACTIVE` holds whose `expiresAt` is in the past (guards against Axon deadline delivery failures)
+- [X] T043 [US3] Verify `HoldController` returns `404 Not Found` for `GET /holds/{holdId}` when the hold ID is unknown or has been purged (per FR-022), and `409 Conflict` for `DELETE /holds/{holdId}` when the hold is in a terminal state (`EXPIRED`, `RELEASED`, `CONVERTED`, `FAILED`) — add/fix response handling in `reservation-service/.../interfaces/rest/HoldController.java`
+- [X] T044 [US3] Update `frontend/src/hooks/useParkingHold.ts` — stop polling when `status` is `EXPIRED` or `FAILED`; surface an expiry/error message to the caller so the UI can prompt the user to restart the search
+- [X] T045 [US3] Verify `AvailabilityChangePublisher.java` in `reservation-service` publishes `parking.availability.changes` on `HoldExpiredEvent` (add `@EventHandler` subscription if not already covered by T035) so SSE clients receive availability updates when a hold expires
 
 **Checkpoint**: Expired holds are reflected as EXPIRED in API responses, spot is returned to available inventory, and frontend informs the user to start a new selection.
 
@@ -146,11 +146,11 @@ This phase blocks all reservation-service work (US2, US3). catalog-service (US1 
 
 **Purpose**: Observability, ArchUnit enforcement, and API documentation across all modified services.
 
-- [ ] T046 [P] Add `holdId` and `searchSessionId` to MDC context in `reservation-service/.../interfaces/rest/HoldController.java` and `catalog-service/.../application/queries/SearchParkingQueryHandler.java`
-- [ ] T047 [P] Add Micrometer counters in `reservation-service` domain event handlers: `hold.created`, `hold.expired`, `hold.pricing_timeout`, `hold.released`, `hold.converted` — expose via `/actuator/prometheus`
-- [ ] T048 [P] Add ArchUnit rules in `reservation-service/src/test/` verifying: `SpotHold` has no Spring/JPA imports in domain layer; `HoldController` imports no domain model classes directly (only port interfaces); `HoldPricingCoordinatorSaga` resides in `application.saga` package only
-- [ ] T049 [P] Add `@Operation`, `@ApiResponse`, `@Parameter` springdoc-openapi annotations to `reservation-service/.../interfaces/rest/HoldController.java` and to the SSE endpoint in `catalog-service/.../interfaces/rest/CatalogController.java`
-- [ ] T050 Update `README.md` for `reservation-service/README.md`, `catalog-service/README.md`, and `pricing-service/README.md` with hold flow configuration properties, Kafka topic setup, and quickstart commands from `quickstart.md`
+- [X] T046 [P] Add `holdId` and `searchSessionId` to MDC context in `reservation-service/.../interfaces/rest/HoldController.java` and `catalog-service/.../application/queries/SearchParkingQueryHandler.java`
+- [X] T047 [P] Add Micrometer counters in `reservation-service` domain event handlers: `hold.created`, `hold.expired`, `hold.pricing_timeout`, `hold.released`, `hold.converted` — expose via `/actuator/prometheus`
+- [X] T048 [P] Add ArchUnit rules in `reservation-service/src/test/` verifying: `SpotHold` has no Spring/JPA imports in domain layer; `HoldController` imports no domain model classes directly (only port interfaces); `HoldPricingCoordinatorSaga` resides in `application.saga` package only
+- [X] T049 [P] Add `@Operation`, `@ApiResponse`, `@Parameter` springdoc-openapi annotations to `reservation-service/.../interfaces/rest/HoldController.java` and to the SSE endpoint in `catalog-service/.../interfaces/rest/CatalogController.java`
+- [X] T050 Update `README.md` for `reservation-service/README.md`, `catalog-service/README.md`, and `pricing-service/README.md` with hold flow configuration properties, Kafka topic setup, and quickstart commands from `quickstart.md`
 
 ---
 
@@ -297,23 +297,23 @@ T001 → T002 → T003 → T004 → T005 → T006 → T007
 
 ### catalog-service — Pagination (FR-004)
 
-- [ ] T051 [US1] Extend `SearchRequest.java` with `page` (int, default 0) and `size` (int, default from config) fields; extend `SearchResponse.java` with `totalPages` (int) and `totalElements` (long) fields; add `catalog.search.max-page-size` property to `catalog-service/src/main/resources/application.yml`; update `SearchParkingQueryHandler` to use Spring Data `Pageable` and populate pagination metadata in `SearchResponse`. **Depends on T014, T015, T017.**
+- [X] T051 [US1] Extend `SearchRequest.java` with `page` (int, default 0) and `size` (int, default from config) fields; extend `SearchResponse.java` with `totalPages` (int) and `totalElements` (long) fields; add `catalog.search.max-page-size` property to `catalog-service/src/main/resources/application.yml`; update `SearchParkingQueryHandler` to use Spring Data `Pageable` and populate pagination metadata in `SearchResponse`. **Depends on T014, T015, T017.**
 
 ### catalog-service — Feature Filters (FR-005)
 
-- [ ] T052 [US1] Add `features: List<String>` field to `SearchRequest.java`; apply multi-value AND predicate in `SearchParkingQueryHandler` (only return facilities offering all requested features); add `INVALID_FEATURE_VALUE` input validation for unknown feature names. Accepted values: `COVERED`, `EV_CHARGING`, `FREE_CANCELLATION`, `WHEELCHAIR_ACCESSIBLE`, `VALET`. **Depends on T014, T017.**
+- [X] T052 [US1] Add `features: List<String>` field to `SearchRequest.java`; apply multi-value AND predicate in `SearchParkingQueryHandler` (only return facilities offering all requested features); add `INVALID_FEATURE_VALUE` input validation for unknown feature names. Accepted values: `COVERED`, `EV_CHARGING`, `FREE_CANCELLATION`, `WHEELCHAIR_ACCESSIBLE`, `VALET`. **Depends on T014, T017.**
 
 ### catalog-service — Low-Availability Warning (FR-006)
 
-- [ ] T053 [US1] Add `lowAvailability: boolean` field to `FacilityResult.java`; add `catalog.search.low-availability-threshold` config property (default: 5); apply threshold check in `SearchParkingQueryHandler` and set `lowAvailability = true` when `availableSpots < threshold`. **Depends on T016, T017.**
+- [X] T053 [US1] Add `lowAvailability: boolean` field to `FacilityResult.java`; add `catalog.search.low-availability-threshold` config property (default: 5); apply threshold check in `SearchParkingQueryHandler` and set `lowAvailability = true` when `availableSpots < threshold`. **Depends on T016, T017.**
 
 ### Frontend — Extended Search Types
 
-- [ ] T054 [P] [US1] Update `frontend/src/types/` search types to include pagination fields (`page`, `size`, `totalPages`, `totalElements`) in `SearchResponse`; add `lowAvailability: boolean` to `FacilityResult`; add `features?: string[]` to `SearchRequest` type; update `catalogApi.ts` and `useParkingSearch.ts` to expose pagination metadata; update `ParkingCard.tsx` to display `lowAvailability` badge. **Depends on T022, T023, T024, T025.**
+- [X] T054 [P] [US1] Update `frontend/src/types/` search types to include pagination fields (`page`, `size`, `totalPages`, `totalElements`) in `SearchResponse`; add `lowAvailability: boolean` to `FacilityResult`; add `features?: string[]` to `SearchRequest` type; update `catalogApi.ts` and `useParkingSearch.ts` to expose pagination metadata; update `ParkingCard.tsx` to display `lowAvailability` badge. **Depends on T022, T023, T024, T025.**
 
 ### TDD prerequisite — pricing-service (before T026)
 
-- [ ] T055 [US2] Write failing unit tests for `PricingCalculationService` in `pricing-service/src/test/java/org/labcabrera/parking/pricing/domain/service/PricingCalculationServiceTest.java` covering: `confirmedPrice = baseRatePerDay × days` with edge cases (same-day, multi-week, zero rate). **TDD: confirm tests FAIL before implementing T026. Depends on T002–T005.**
+- [X] T055 [US2] Write failing unit tests for `PricingCalculationService` in `pricing-service/src/test/java/org/labcabrera/parking/pricing/domain/service/PricingCalculationServiceTest.java` covering: `confirmedPrice = baseRatePerDay × days` with edge cases (same-day, multi-week, zero rate). **TDD: confirm tests FAIL before implementing T026. Depends on T002–T005.**
 
 ### Load test — DoD gate for SC-001 and SC-002b
 
@@ -329,23 +329,23 @@ T001 → T002 → T003 → T004 → T005 → T006 → T007
 
 ### Hold endpoint — Idempotency guard (FR-021)
 
-- [ ] T057 [US2] Implement idempotency guard in `reservation-service/.../interfaces/rest/HoldController.java` (or a pre-dispatch application service): before issuing `CreateHoldCommand`, query `HoldRepository` for an existing hold with matching `searchSessionId` + `facilityId` + period in `PENDING_PRICE` or `ACTIVE` state. If found, return `200 OK` with the existing hold response. If not found, proceed to dispatch command and return `202 Accepted`. **Depends on T011 (HoldRepository), T037 (HoldController).**
+- [ ] - [X] T057b [US2] Implement idempotency guard in `reservation-service/.../interfaces/rest/HoldController.java` (or a pre-dispatch application service): before issuing `CreateHoldCommand`, query `HoldRepository` for an existing hold with matching `searchSessionId` + `facilityId` + period in `PENDING_PRICE` or `ACTIVE` state. If found, return `200 OK` with the existing hold response. If not found, proceed to dispatch command and return `202 Accepted`. **Depends on T011 (HoldRepository), T037 (HoldController).**
 
 ### Pricing-timeout configuration wiring (H3)
 
-- [ ] T057b Add `reservation.hold.pricing-timeout-seconds=30` to `reservation-service/src/main/resources/application.yml`; inject value into `HoldPricingCoordinatorSaga` via `@Value`; use it as the `DeadlineManager` deadline duration. Add corresponding test in `HoldPricingCoordinatorSagaTest` asserting deadline fires at the configured duration. **Depends on T031, T032.**
+- [X] T057b  Add `reservation.hold.pricing-timeout-seconds=30` to `reservation-service/src/main/resources/application.yml`; inject value into `HoldPricingCoordinatorSaga` via `@Value`; use it as the `DeadlineManager` deadline duration. Add corresponding test in `HoldPricingCoordinatorSagaTest` asserting deadline fires at the configured duration. **Depends on T031, T032.**
 
 ### Observability — OTEL span instrumentation (§VI, M4)
 
-- [ ] T058 [P] Add OTEL span instrumentation to the pricing round-trip: annotate `HoldPricingCoordinatorSaga` `@SagaEventHandler` methods with Micrometer `@Observed` (or manual `Tracer.startScopedSpan`); add trace propagation header to the `PricingRequest` Kafka message; add span to `PricingResultConsumer` when dispatching `PricingResultReceivedEvent`. **Depends on T032, T034.**
+- [X] T058 [P] Add OTEL span instrumentation to the pricing round-trip: annotate `HoldPricingCoordinatorSaga` `@SagaEventHandler` methods with Micrometer `@Observed` (or manual `Tracer.startScopedSpan`); add trace propagation header to the `PricingRequest` Kafka message; add span to `PricingResultConsumer` when dispatching `PricingResultReceivedEvent`. **Depends on T032, T034.**
 
 ### SC-003 TTL integration test (M3)
 
-- [ ] T059 Write Testcontainers integration test in `reservation-service/src/test/java/.../SpotHoldTtlIntegrationTest.java`: create a hold with a 10-second TTL override; assert `GET /holds/{holdId}` returns `status: EXPIRED` within 30 seconds of TTL elapse (SC-003). **Depends on T030, T037, T042.**
+- [X] T059 Write Testcontainers integration test in `reservation-service/src/test/java/.../SpotHoldTtlIntegrationTest.java`: create a hold with a 10-second TTL override; assert `GET /holds/{holdId}` returns `status: EXPIRED` within 30 seconds of TTL elapse (SC-003). **Depends on T030, T037, T042.**
 
 ### catalog-service ArchUnit enforcement (§I, M2)
 
-- [ ] T060 [P] Add ArchUnit rules in `catalog-service/src/test/java/.../CatalogArchitectureTest.java` verifying: `SearchParkingQueryHandler` has no infrastructure imports; `CatalogController` imports no domain model classes directly; `AvailabilityChangeConsumer` resides in `infrastructure.messaging` package; `AvailabilityStreamRegistry` resides in `interfaces.rest` or `infrastructure` package. **Depends on T021.**
+- [X] T060 [P] Add ArchUnit rules in `catalog-service/src/test/java/.../CatalogArchitectureTest.java` verifying: `SearchParkingQueryHandler` has no infrastructure imports; `CatalogController` imports no domain model classes directly; `AvailabilityChangeConsumer` resides in `infrastructure.messaging` package; `AvailabilityStreamRegistry` resides in `interfaces.rest` or `infrastructure` package. **Depends on T021.**
 
 **Checkpoint**: Idempotency guard prevents duplicate holds on retry; pricing-timeout is configurable and tested; OTEL spans trace the full pricing round-trip; SC-003 integration test proves TTL expiry within 30 s; catalog-service architecture boundaries are enforced in CI.
 
@@ -359,7 +359,7 @@ T001 → T002 → T003 → T004 → T005 → T006 → T007
 - T054 depends on T022, T023, T024, T025 (can be done in parallel with T051–T053)
 - T055 must precede T026 (TDD prerequisite)
 - T056 depends on T017, T018, T037 (last DoD gate before Phase 8)
-- T057 depends on T011, T037
+- - [X] T057b depends on T011, T037
 - T057b depends on T031, T032
 - T058 depends on T032, T034
 - T059 depends on T030, T037, T042

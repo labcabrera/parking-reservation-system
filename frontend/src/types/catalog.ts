@@ -4,9 +4,16 @@ export const FacilityTag = {
   COVERED: 'COVERED',
   EV_CHARGING: 'EV_CHARGING',
   GUARDED: 'GUARDED',
+  WHEELCHAIR_ACCESSIBLE: 'WHEELCHAIR_ACCESSIBLE',
+  VALET: 'VALET',
 } as const;
 
 export type FacilityTag = (typeof FacilityTag)[keyof typeof FacilityTag];
+
+export interface Money {
+  amount: number;
+  currency: string;
+}
 
 export interface FacilityResult {
   facilityId: string;
@@ -18,8 +25,11 @@ export interface FacilityResult {
   dailyRate: number;
   currency: string;
   tags: FacilityTag[];
-  lowAvailabilityWarning: boolean;
+  /** @deprecated use lowAvailability */
+  lowAvailabilityWarning?: boolean;
+  lowAvailability: boolean;
   availableSpots: number;
+  estimatedPrice?: Money;
 }
 
 export interface SearchRequest {
@@ -28,4 +38,18 @@ export interface SearchRequest {
   checkOut: string;
   page?: number;
   size?: number;
+  lat?: number;
+  lng?: number;
+  radiusKm?: number;
+  features?: string[];
+}
+
+export interface SearchResponse {
+  searchSessionId: string;
+  stale: boolean;
+  content: FacilityResult[];
+  page: number;
+  size: number;
+  totalPages: number;
+  totalElements: number;
 }

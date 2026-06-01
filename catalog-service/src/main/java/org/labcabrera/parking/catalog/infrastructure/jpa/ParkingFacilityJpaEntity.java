@@ -6,6 +6,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -45,6 +46,12 @@ public class ParkingFacilityJpaEntity {
 
     @Column(name = "penalty_cancel_minutes", nullable = false)
     private int penaltyCancelMinutes;
+
+    @Column(name = "daily_rate", nullable = false, precision = 10, scale = 2)
+    private BigDecimal dailyRate;
+
+    @Column(nullable = false, length = 3)
+    private String currency;
 
     @Version
     private Long version;
@@ -89,6 +96,12 @@ public class ParkingFacilityJpaEntity {
 
     public int getPenaltyCancelMinutes() { return penaltyCancelMinutes; }
     public void setPenaltyCancelMinutes(int penaltyCancelMinutes) { this.penaltyCancelMinutes = penaltyCancelMinutes; }
+
+    public BigDecimal getDailyRate() { return dailyRate; }
+    public void setDailyRate(BigDecimal dailyRate) { this.dailyRate = dailyRate; }
+
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
 
     public Long getVersion() { return version; }
     public void setVersion(Long version) { this.version = version; }

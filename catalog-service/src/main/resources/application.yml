@@ -59,3 +59,8 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+catalog:
+  search:
+    max-page-size: 100
+    low-availability-threshold: 5

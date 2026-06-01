@@ -5,5 +5,7 @@ public enum FacilityTag {
     FREE_CANCELLATION,
     COVERED,
     EV_CHARGING,
-    GUARDED
+    GUARDED,
+    WHEELCHAIR_ACCESSIBLE,
+    VALET
 }

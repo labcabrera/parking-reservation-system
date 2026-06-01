@@ -23,8 +23,8 @@ dependencies {
     implementation 'org.springframework.kafka:spring-kafka'
 
     // Axon
-    implementation 'org.axonframework:axon-spring-boot-starter:4.10.3'
-    implementation 'org.axonframework:axon-messaging:4.10.3'
+    implementation 'org.axonframework:axon-spring-boot-starter:5.0.0-preview'
+    testImplementation 'org.axonframework:axon-test:5.0.0-preview'
 
     // API Documentation
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9'
@@ -32,14 +32,21 @@ dependencies {
     // Resilience
     implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.3.0'
 
+    // Observability / OTEL tracing
+    implementation 'io.micrometer:micrometer-tracing-bridge-otel'
+    implementation 'io.opentelemetry:opentelemetry-exporter-otlp'
+
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-test-autoconfigure'
+    testImplementation 'org.springframework.boot:spring-boot-resttestclient'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'org.springframework.kafka:spring-kafka-test'
     testImplementation 'com.tngtech.archunit:archunit-junit5:1.4.1'
     testImplementation 'org.testcontainers:junit-jupiter'
     testImplementation 'org.testcontainers:postgresql'
     testImplementation 'org.testcontainers:kafka'
+    testImplementation 'org.awaitility:awaitility:4.2.2'
 }
 
 dependencyManagement {

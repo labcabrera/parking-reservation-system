@@ -15,8 +15,8 @@ export default function SearchPage() {
   const [checkOut, setCheckOut] = useState('');
   const [submittedParams, setSubmittedParams] = useState<SearchRequest | null>(null);
 
-  const { data, isLoading, isError, error } = useParkingSearch(submittedParams);
-  const { reservationTimeLeft, selectedFacilityId, selectFacility } = useParkingSelection(data);
+  const { isLoading, isError, error, result } = useParkingSearch(submittedParams);
+  const { reservationTimeLeft, selectedFacilityId, selectFacility } = useParkingSelection(result.facilities);
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -45,13 +45,13 @@ export default function SearchPage() {
         <Alert severity="error">{error?.message ?? t('search.error')}</Alert>
       )}
 
-      {data && data.length === 0 && !isLoading && (
+      {result.facilities.length === 0 && !isLoading && submittedParams && (
         <Alert severity="info">{t('search.empty')}</Alert>
       )}
 
-      {data && data.length > 0 && (
+      {result.facilities.length > 0 && (
         <ParkingResultsSection
-          facilities={data}
+          facilities={result.facilities}
           location={submittedParams?.q ?? location}
           onSelectFacility={selectFacility}
           reservationTimeLeft={reservationTimeLeft}

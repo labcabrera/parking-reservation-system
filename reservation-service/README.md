@@ -1,20 +1,97 @@
 # Reservation Service
 
-**Bounded Context**: Reservations & SAGA
+**Bounded Context**: Parking Spot Hold & Reservation
 
-Manages the full lifecycle of a parking reservation — creation, payment orchestration
-via SAGA, cancellation, and history. Enforces business invariants using Axon Framework
-`@Aggregate` and `@Saga`.
+Manages the lifecycle of parking spot holds — creation, pricing confirmation via async Kafka flow,
+expiry, release, and conversion to full reservations. Uses Axon Framework 5 `@EventSourcedEntity`
+for the `SpotHold` aggregate.
 
 ---
 
 ## Responsibilities
 
-- Accept `CreateReservationCommand` and `CancelReservationCommand` through its inbound ports.
-- Orchestrate the payment flow using `ReservationPaymentSaga` (Axon tracking saga with deadline).
-- Publish domain events to Kafka via the Transactional Outbox pattern.
+- Accept `CreateHoldCommand`, `ConfirmHoldPriceCommand`, `ReleaseHoldCommand`, `ExpireHoldCommand`,
+  `ConvertHoldCommand` through REST and Kafka adapters.
+- Coordinate async pricing via `HoldPricingCoordinator` (Kafka round-trip to `pricing-service`).
+- Publish availability changes to `parking.availability.changes` on hold lifecycle events.
+- Apply per-IP and per-session rate limiting (Resilience4j) on hold creation.
 - Validate JWT tokens issued by Keycloak (OAuth2 resource server).
-- Register new users in Keycloak when they complete their first reservation.
+
+---
+
+## Hexagonal Architecture
+
+```
+reservation/
+├── domain/
+│   ├── model/         # SpotHold (@EventSourcedEntity), HoldStatus, Money, HoldReadModel
+│   ├── port/
+│   │   ├── inbound/   # (commands dispatched via CommandGateway)
+│   │   └── outbound/  # HoldRepository, PricingRequestPort
+│   └── model/events/  # HoldCreatedEvent, HoldPriceConfirmedEvent, ...
+├── application/
+│   ├── commands/      # CreateHoldCommand, ConfirmHoldPriceCommand, etc.
+│   ├── SpotHoldCommandHandler.java  (Axon @CommandHandler beans)
+│   └── HoldPricingCoordinator.java  (coordinates pricing Kafka round-trip)
+├── infrastructure/
+│   ├── config/        # ResilienceConfig (Resilience4j RateLimiter + CircuitBreaker)
+│   ├── messaging/     # PricingRequestPublisher, PricingResultConsumer, AvailabilityChangePublisher
+│   ├── metrics/       # HoldMetricsListener (Micrometer counters)
+│   ├── persistence/   # SpotHoldJpaEntity (Flyway + PostgreSQL)
+│   └── scheduling/    # HoldExpiryScheduler (fallback TTL sweep)
+└── interfaces/rest/   # HoldController (POST /api/v1/reservations/holds)
+```
+
+---
+
+## Configuration Properties
+
+| Property | Default | Description |
+|---|---|---|
+| `reservation.hold.ttl-seconds` | `600` | Hold TTL in seconds (10 min) |
+| `reservation.hold.pricing-timeout-seconds` | `30` | Max wait for pricing result |
+
+---
+
+## Kafka Topics
+
+| Topic | Direction | Description |
+|---|---|---|
+| `parking.pricing.requests` | Producer | Send pricing request to pricing-service |
+| `parking.pricing.results` | Consumer | Receive pricing result from pricing-service |
+| `parking.availability.changes` | Producer | Notify catalog-service of spot availability changes |
+
+---
+
+## REST Endpoints
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/v1/reservations/holds` | Create hold — 202 Accepted, pricing async |
+| `GET` | `/api/v1/reservations/holds/{holdId}` | Get hold status — 200 or 404 |
+| `DELETE` | `/api/v1/reservations/holds/{holdId}` | Release hold — 204 or 409 Conflict |
+
+---
+
+## Quickstart
+
+```bash
+# Start infrastructure
+docker compose -f docker-compose-infra.yaml up -d
+
+# Run the service
+./gradlew :reservation-service:bootRun
+
+# Create a hold
+curl -X POST http://localhost:8082/api/v1/reservations/holds \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <jwt>" \
+  -d '{"searchSessionId":"sess-1","spotId":"<uuid>","facilityId":"<uuid>","checkIn":"2026-07-01T10:00:00Z","checkOut":"2026-07-03T10:00:00Z","estimatedPriceAmount":50.00,"currency":"EUR"}'
+
+# Poll for ACTIVE status (up to ~30s while pricing-service processes)
+curl http://localhost:8082/api/v1/reservations/holds/<holdId>
+```
+
 
 ---
 

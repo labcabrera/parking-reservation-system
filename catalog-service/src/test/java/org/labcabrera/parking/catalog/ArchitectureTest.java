@@ -72,4 +72,32 @@ class ArchitectureTest {
                 .resideInAPackage(BASE_PACKAGE + ".interfaces..");
         rule.check(importedClasses);
     }
+
+    @Test
+    @DisplayName("AvailabilityChangeConsumer must reside in infrastructure.messaging")
+    void availabilityChangeConsumerMustResideInInfrastructureMessaging() {
+        ArchRule rule = noClasses()
+                .that().haveSimpleName("AvailabilityChangeConsumer")
+                .should().resideOutsideOfPackage(BASE_PACKAGE + ".infrastructure.messaging");
+        rule.check(importedClasses);
+    }
+
+    @Test
+    @DisplayName("AvailabilityStreamRegistry must reside in interfaces.rest")
+    void availabilityStreamRegistryMustResideInInterfacesRest() {
+        ArchRule rule = noClasses()
+                .that().haveSimpleName("AvailabilityStreamRegistry")
+                .should().resideOutsideOfPackage(BASE_PACKAGE + ".interfaces.rest");
+        rule.check(importedClasses);
+    }
+
+    @Test
+    @DisplayName("SearchParkingQueryHandler must not import infrastructure classes directly")
+    void searchQueryHandlerMustNotImportInfrastructure() {
+        ArchRule rule = noClasses()
+                .that().haveSimpleName("SearchParkingQueryHandler")
+                .should().dependOnClassesThat()
+                .resideInAPackage(BASE_PACKAGE + ".infrastructure..");
+        rule.check(importedClasses);
+    }
 }

@@ -54,6 +54,11 @@ keycloak:
 catalog-service:
   url: ${CATALOG_SERVICE_URL:http://localhost:8081}
 
+reservation:
+  hold:
+    ttl-seconds: 600
+    pricing-timeout-seconds: 30
+
 management:
   endpoints:
     web:
@@ -62,6 +67,15 @@ management:
   endpoint:
     health:
       show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
+  observations:
+    annotations:
+      enabled: true
 
 springdoc:
   api-docs:

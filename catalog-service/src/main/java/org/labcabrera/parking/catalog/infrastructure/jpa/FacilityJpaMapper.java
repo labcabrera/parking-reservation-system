@@ -19,7 +19,8 @@ public class FacilityJpaMapper {
     public static ParkingFacility toDomain(ParkingFacilityJpaEntity entity) {
         Set<FacilityTag> tags = entity.getTags() != null
                 ? Arrays.stream(entity.getTags())
-                        .map(FacilityTag::valueOf)
+                        .map(FacilityJpaMapper::safeTagValueOf)
+                        .filter(t -> t != null)
                         .collect(Collectors.toCollection(() -> EnumSet.noneOf(FacilityTag.class)))
                 : EnumSet.noneOf(FacilityTag.class);
 
@@ -33,6 +34,16 @@ public class FacilityJpaMapper {
                 tags,
                 FacilityStatus.valueOf(entity.getStatus()),
                 new CancellationPolicy(entity.getFreeCancelHours(), entity.getPenaltyCancelMinutes()),
+                entity.getDailyRate(),
+                entity.getCurrency(),
                 entity.getVersion());
+    }
+
+    private static FacilityTag safeTagValueOf(String tag) {
+        try {
+            return FacilityTag.valueOf(tag);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 }

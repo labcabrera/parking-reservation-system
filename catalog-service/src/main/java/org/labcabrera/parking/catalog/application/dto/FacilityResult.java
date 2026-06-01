@@ -1,5 +1,7 @@
 package org.labcabrera.parking.catalog.application.dto;
 
+import org.labcabrera.parking.catalog.domain.model.Money;
+
 import java.math.BigDecimal;
 import java.util.Set;
 
@@ -13,6 +15,7 @@ public record FacilityResult(
         BigDecimal dailyRate,
         String currency,
         Set<String> tags,
-        boolean lowAvailabilityWarning,
-        int availableSpots) {
+        boolean lowAvailability,
+        int availableSpots,
+        Money estimatedPrice) {
 }
