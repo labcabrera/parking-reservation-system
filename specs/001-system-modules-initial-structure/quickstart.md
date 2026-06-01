@@ -1,7 +1,10 @@
 # Quickstart: Parking Reservation System — Local Development
 
 **Date**: 2026-06-01
-**Prerequisite tools**: `git`, `docker` ≥ 24.0, `docker compose` ≥ 2.20, `java` 21, `mvn` 3.9+, `node` 20 LTS, `npm` 10+
+**Prerequisite tools**: `git`, `docker` ≥ 24.0, `docker compose` ≥ 2.20, `java` 21, `node` 20 LTS, `npm` 10+
+
+> **Note**: No local Gradle installation is required. All backend builds use the committed
+> `gradlew` wrapper.
 
 ---
 
@@ -64,7 +67,8 @@ This command starts the following containers (in dependency order):
 | catalog-service | 8081 | Spring Boot |
 | reservation-service | 8082 | Spring Boot |
 | payment-service | 8083 | Spring Boot |
-| frontend (Vite dev server) | 3000 | React + TypeScript |
+| frontend (Vite dev server) | 3000 | React + TypeScript (main SPA) |
+| payment-gateway (Vite dev server) | 3001 | React + TypeScript (mock payment gateway) |
 
 **First-run note**: Keycloak realm import and Flyway migrations run automatically. Allow
 approximately 60–90 seconds for all services to reach `RUNNING` health status.
@@ -99,11 +103,12 @@ Expected output for each:
 
 | URL | Description |
 |-----|-------------|
-| `http://localhost:3000` | Frontend SPA |
+| `http://localhost:3000` | Main frontend SPA |
+| `http://localhost:3001` | Payment gateway SPA (mock) |
 | `http://localhost:8080` | Keycloak Admin Console |
-| `http://localhost:8081/swagger-ui.html` | Catalog Service API docs |
-| `http://localhost:8082/swagger-ui.html` | Reservation Service API docs |
-| `http://localhost:8083/swagger-ui.html` | Payment Service API docs |
+| `http://localhost:8081/swagger-ui.html` | Catalog Service API docs (SpringDoc) |
+| `http://localhost:8082/swagger-ui.html` | Reservation Service API docs (SpringDoc) |
+| `http://localhost:8083/swagger-ui.html` | Payment Service API docs (SpringDoc) |
 
 ---
 
@@ -203,13 +208,13 @@ Expected final status: `"CONFIRMED"` (85% probability, configurable)
 ### Backend (all services)
 
 ```bash
-mvn test
+./gradlew test
 ```
 
 ### Backend (integration tests only — requires Docker for Testcontainers)
 
 ```bash
-mvn verify -P integration-tests
+./gradlew integrationTest
 ```
 
 ### Frontend
@@ -222,7 +227,7 @@ npm test
 ### Architecture enforcement (ArchUnit)
 
 ```bash
-mvn test -pl catalog-service,reservation-service,payment-service -Dtest="*ArchitectureTest"
+./gradlew :catalog-service:test :reservation-service:test :payment-service:test --tests "*ArchitectureTest"
 ```
 
 ---

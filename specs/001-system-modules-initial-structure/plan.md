@@ -11,12 +11,15 @@ hexagonal architecture, a React + TypeScript frontend, shared infrastructure con
 (Keycloak, Kafka, PostgreSQL, Redis), and a single `docker-compose.yml` that boots the
 entire ecosystem with one command. The architecture is built on Axon Framework aggregates
 (no event sourcing) for command handling and SAGA orchestration, Redis cache-aside for
-sub-100 ms availability queries, and Keycloak for OAuth2/OIDC authentication.
+sub-100 ms availability queries, and Keycloak for OAuth2/OIDC authentication. All backend
+Java modules use a Gradle multi-project build with an integrated `gradlew` wrapper. APIs
+are documented code-first via `springdoc-openapi`.
 
 ## Technical Context
 
 **Language/Version**: Java 21 (backend) · TypeScript 5.x / Node 20 LTS (frontend)
-**Primary Dependencies**: Spring Boot 4.x · Axon Framework 4.10+ · Spring Security OAuth2 Resource Server · Spring Data JPA · Spring Kafka · Resilience4j · Flyway · React 18+ · React Query v5 · React Router v6 · Vite 5 · React Testing Library · Vitest · ArchUnit 1.x · Testcontainers 1.x · Keycloak 24+
+**Spring Boot Version**: 4.0.6
+**Primary Dependencies**: Spring Boot 4.x · Axon Framework 4.10+ · Spring Security OAuth2 Resource Server · Spring Data JPA · Spring Kafka · Resilience4j · Flyway · springdoc-openapi 2.x · React 18+ · React Query v5 · React Router v6 · Vite 5 · React Testing Library · Vitest · ArchUnit 1.x · Testcontainers 1.x · Keycloak 24+
 **Storage**: PostgreSQL 16 (primary relational store) · Redis 7 (cache-aside + optional distributed lock)
 **Testing**: JUnit 5 + Mockito (backend unit) · Testcontainers + Spring Boot Test (integration) · ArchUnit (layer enforcement) · Vitest + React Testing Library (frontend)
 **Target Platform**: Linux server — Docker / Kubernetes-compatible, 12-factor principles
@@ -31,7 +34,7 @@ sub-100 ms availability queries, and Keycloak for OAuth2/OIDC authentication.
 
 | Principle | Gate | Status |
 |-----------|------|--------|
-| I. Hexagonal Architecture | domain/application/infrastructure per service; no outward dependency violations; ArchUnit in CI | ✅ PASS |
+| I. Hexagonal Architecture | domain/application/infrastructure/interfaces per service; no outward dependency violations; ArchUnit in CI | ✅ PASS |
 | II. DDD | Axon aggregates own invariants; domain events raised by aggregate roots; immutable VOs | ✅ PASS |
 | III. TDD | Tests written first; ≥ 90% domain coverage gate in CI; Testcontainers for infra tests | ✅ PASS |
 | IV. Concurrency & Consistency | Axon command serialization + `@Version` optimistic lock + Transactional Outbox + idempotency keys | ✅ PASS |
@@ -65,12 +68,15 @@ specs/001-system-modules-initial-structure/
 ```text
 / (repository root)
 ├── docker-compose.yml                          # Single entry point for full local stack
-├── pom.xml                                     # Parent Maven POM — dependency management
+├── settings.gradle                             # Gradle multi-project settings (includes all subprojects)
+├── build.gradle                                # Root build file — shared dependency management (BOM)
+├── gradle/wrapper/                             # gradlew + gradle-wrapper.jar + properties
+├── gradlew / gradlew.bat                       # Wrapper scripts committed to repo
 │
 ├── catalog-service/                            # Bounded Context: Catalog & Availability
-│   ├── pom.xml
+│   ├── build.gradle
 │   └── src/
-│       ├── main/java/com/parking/catalog/
+│       ├── main/java/org/labcabrera/parking/catalog/
 │       │   ├── domain/
 │       │   │   ├── model/                      # ParkingFacility (aggregate root), ParkingSpot, value objects
 │       │   │   ├── port/
@@ -78,25 +84,26 @@ specs/001-system-modules-initial-structure/
 │       │   │   │   └── outbound/               # FacilityRepository, AvailabilityCache
 │       │   │   └── service/                    # AvailabilityDomainService
 │       │   ├── application/
-│       │   │   ├── usecase/                    # SearchParkingUseCase
+│       │   │   ├── queries/                    # SearchParkingQuery, SearchParkingQueryHandler
 │       │   │   └── dto/                        # SearchRequest, FacilityResult
-│       │   └── infrastructure/
-│       │       ├── web/                        # CatalogController (REST adapter)
-│       │       ├── persistence/                # JPA entities, FacilityJpaRepository, mappers
-│       │       ├── cache/                      # RedisAvailabilityCache (cache-aside adapter)
-│       │       └── config/                     # Spring beans, Security config (permit-all for search)
+│       │   ├── infrastructure/
+│       │   │   ├── persistence/                # JPA entities, FacilityJpaRepository, mappers
+│       │   │   ├── cache/                      # RedisAvailabilityCache (cache-aside adapter)
+│       │   │   └── config/                     # Spring beans, Security config (permit-all for search), SpringDoc config
+│       │   └── interfaces/
+│       │       └── rest/                       # CatalogController (inbound REST adapter)
 │       ├── main/resources/
 │       │   ├── application.yml
 │       │   └── db/migration/                   # Flyway V1__create_catalog_schema.sql
-│       └── test/java/com/parking/catalog/
+│       └── test/java/org/labcabrera/parking/catalog/
 │           ├── domain/                         # Pure unit tests (no Spring context)
-│           ├── application/                    # Use-case unit tests (mocked ports)
+│           ├── application/                    # Command/query handler tests (mocked ports)
 │           └── infrastructure/                 # Testcontainers (PostgreSQL, Redis)
 │
 ├── reservation-service/                        # Bounded Context: Reservations & SAGA
-│   ├── pom.xml
+│   ├── build.gradle
 │   └── src/
-│       ├── main/java/com/parking/reservation/
+│       ├── main/java/org/labcabrera/parking/reservation/
 │       │   ├── domain/
 │       │   │   ├── model/                      # Reservation (Axon @Aggregate), PriceLock VO, ReservationPeriod VO, Money VO
 │       │   │   ├── port/
@@ -104,51 +111,57 @@ specs/001-system-modules-initial-structure/
 │       │   │   │   └── outbound/               # ReservationRepository, PricingServicePort, SpotAvailabilityPort
 │       │   │   └── service/                    # CancellationPolicyService (domain service)
 │       │   ├── application/
-│       │   │   ├── usecase/                    # CreateReservationUseCase, CancelReservationUseCase, GetReservationHistoryUseCase
+│       │   │   ├── commands/                   # CreateReservationCommand, CancelReservationCommand + handlers
+│       │   │   ├── queries/                    # GetReservationQuery, GetReservationHistoryQuery + handlers
 │       │   │   ├── saga/                       # ReservationPaymentSaga (@Saga, tracking saga + deadline)
-│       │   │   └── dto/                        # Commands, Queries, Responses
-│       │   └── infrastructure/
-│       │       ├── web/                        # ReservationController, RegistrationController
-│       │       ├── persistence/                # JPA entities, OutboxEntry entity, ReservationJpaRepository
-│       │       ├── messaging/                  # OutboxPoller (Kafka publisher), KafkaEventConsumer
-│       │       ├── external/                   # PricingServiceClient (RestClient + Resilience4j CB)
-│       │       ├── keycloak/                   # KeycloakRegistrationAdapter (Admin REST API)
-│       │       └── config/                     # Axon config, Kafka config, Security (JWT resource server)
+│       │   │   └── dto/                        # Response DTOs, shared value types
+│       │   ├── infrastructure/
+│       │   │   ├── persistence/                # JPA entities, OutboxEntry entity, ReservationJpaRepository
+│       │   │   ├── messaging/                  # OutboxPoller (Kafka publisher — outbound)
+│       │   │   ├── external/                   # PricingServiceClient (RestClient + Resilience4j CB)
+│       │   │   ├── keycloak/                   # KeycloakRegistrationAdapter (Admin REST API)
+│       │   │   └── config/                     # Axon config, Kafka config, Security (JWT resource server)
+│       │   └── interfaces/
+│       │       ├── rest/                       # ReservationController, RegistrationController (inbound REST)
+│       │       └── messaging/                  # KafkaEventConsumer (inbound Kafka adapter)
 │       ├── main/resources/
 │       │   ├── application.yml
 │       │   └── db/migration/
-│       └── test/java/com/parking/reservation/
+│       └── test/java/org/labcabrera/parking/reservation/
 │
 ├── payment-service/                            # Bounded Context: Payment Simulation
-│   ├── pom.xml
+│   ├── build.gradle
 │   └── src/
-│       ├── main/java/com/parking/payment/
+│       ├── main/java/org/labcabrera/parking/payment/
 │       │   ├── domain/
 │       │   │   ├── model/                      # Payment (Axon @Aggregate), PaymentMethod VO
 │       │   │   └── port/
 │       │   │       ├── inbound/                # ProcessPaymentPort
 │       │   │       └── outbound/               # PaymentRepository
 │       │   ├── application/
-│       │   │   ├── usecase/                    # ProcessPaymentUseCase (simulated async delay + random outcome)
+│       │   │   ├── commands/                   # ProcessPaymentCommand + handler (simulated async delay + random outcome)
+│       │   │   ├── queries/                    # GetPaymentMethodsQuery + handler
 │       │   │   └── dto/
-│       │   └── infrastructure/
-│       │       ├── web/                        # PaymentController (GET /methods)
-│       │       ├── messaging/                  # KafkaPaymentRequestConsumer, KafkaPaymentResultPublisher
-│       │       ├── persistence/                # JPA entities
-│       │       └── config/
+│       │   ├── infrastructure/
+│       │   │   ├── messaging/                  # KafkaPaymentResultPublisher (outbound)
+│       │   │   ├── persistence/                # JPA entities
+│       │   │   └── config/
+│       │   └── interfaces/
+│       │       ├── rest/                       # PaymentController (GET /methods — inbound REST adapter)
+│       │       └── messaging/                  # KafkaPaymentRequestConsumer (inbound Kafka adapter)
 │       ├── main/resources/
 │       │   ├── application.yml
 │       │   └── db/migration/
-│       └── test/java/com/parking/payment/
+│       └── test/java/org/labcabrera/parking/payment/
 │
-├── frontend/                                   # React + TypeScript SPA
+├── frontend/                                   # React + TypeScript SPA (main application)
 │   ├── package.json
 │   ├── vite.config.ts
 │   ├── tsconfig.json
 │   └── src/
 │       ├── pages/
 │       │   ├── SearchPage.tsx
-│       │   ├── ReservationPage.tsx
+│       │   ├── ReservationPage.tsx           # reads ?result= on return from gateway
 │       │   ├── ReservationHistoryPage.tsx
 │       │   ├── AdminDashboardPage.tsx
 │       │   └── RegistrationPage.tsx
@@ -161,6 +174,20 @@ specs/001-system-modules-initial-structure/
 │       ├── hooks/                              # React Query hooks (useParkingSearch, useReservation…)
 │       ├── auth/                               # oidc-client-ts integration (NO direct Keycloak calls)
 │       └── types/                              # TypeScript interfaces mirroring API contracts
+│   └── tests/                                  # Vitest + React Testing Library
+│
+├── payment-gateway/                            # React + TypeScript SPA (mock payment gateway)
+│   ├── package.json
+│   ├── vite.config.ts
+│   ├── tsconfig.json
+│   └── src/
+│       ├── pages/
+│       │   └── GatewayPage.tsx               # reads reservationId/paymentId/amount/returnUrl from URL
+│       ├── components/
+│       │   └── MockPaymentForm.tsx           # confirm / decline buttons
+│       ├── services/
+│       │   └── paymentApi.ts                 # calls payment-service POST /confirm or /decline
+│       └── types/
 │   └── tests/                                  # Vitest + React Testing Library
 │
 ├── infrastructure/
@@ -179,12 +206,17 @@ specs/001-system-modules-initial-structure/
         └── 001-technology-choices.md
 ```
 
-**Structure Decision**: Multi-module monorepo with a Maven parent POM for shared
-dependency management. Each backend service is an independent Maven module with its own
-Docker image build target. The frontend is a standalone Vite project. Infrastructure
-configuration lives in `/infrastructure/` consumed by `docker-compose.yml`. No shared
-Java library module is introduced in this feature (deferred until an actual cross-service
-contract warrants it).
+**Structure Decision**: Multi-module monorepo with a Gradle multi-project build
+(`settings.gradle` at root with Groovy DSL, per-service `build.gradle`) for shared
+dependency management. Spring Boot 4.0.6 + Java 21 are the pinned platform versions. Each backend service is an independent Gradle subproject with
+its own Docker image build target. The system includes **two independent React + Vite
+frontend projects**: `frontend/` (main SPA) and `payment-gateway/` (mock payment
+gateway). Infrastructure configuration lives in `/infrastructure/` consumed by
+`docker-compose.yml`. No shared Java library module is introduced in this feature.
+All backend services follow a **four-layer hexagonal package structure**: `domain`
+(model + port interfaces), `application` (commands + queries handlers), `infrastructure`
+(outbound adapters), `interfaces` (inbound adapters: REST + Kafka consumers). ArchUnit
+enforces strict layer dependency rules in CI.
 
 ## Complexity Tracking
 

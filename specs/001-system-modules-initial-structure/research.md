@@ -9,9 +9,9 @@
 ## R-001 · Spring Boot 4.x + Axon Framework Compatibility
 
 **Decision**: Use Axon Framework 4.10+ with the official `axon-spring-boot-starter`. If
-the Spring Boot 4 starter is not yet released at implementation time, pin to the latest
-Axon 4.x release that declares Spring Boot 4 compatibility; monitor the Axon GitHub
-milestone tracker and update the parent POM once confirmed.
+the Spring Boot 4.0.6 starter is not yet released at implementation time, pin to the
+latest Axon 4.x release that declares Spring Boot 4 compatibility; monitor the Axon GitHub
+milestone tracker and update the root `build.gradle` once confirmed.
 
 **Rationale**: Axon Framework follows Spring Boot's release cadence closely and provides
 first-class Spring Boot auto-configuration. Spring Boot 4.x requires Spring Framework 7.x
@@ -27,6 +27,52 @@ this monorepo deployment).
 - *MediatR-style command bus without Axon*: Rejected. Axon provides built-in SAGA support
   (tracking sagas, deadline management) that would require significant bespoke
   implementation otherwise.
+
+---
+
+## R-008 · API Documentation — SpringDoc Code-First
+
+**Decision**: Every Spring Boot service MUST include `springdoc-openapi-starter-webmvc-ui`
+(version aligned with Spring Boot 4.x). API specifications are generated at runtime from
+Java annotations (`@Operation`, `@ApiResponse`, `@Parameter`, `@Schema`). No hand-written
+OpenAPI YAML files are maintained.
+
+**Endpoints exposed per service**:
+- `GET /v3/api-docs` — machine-readable OpenAPI 3.x JSON
+- `GET /swagger-ui.html` — interactive Swagger UI
+
+**Rationale**: Code-first keeps the API contract in sync with the implementation by
+construction; there is no drift between a separate YAML file and the actual controller.
+SpringDoc integrates with Spring Security so protected endpoints are correctly annotated
+with their security requirements.
+
+**Alternatives considered**:
+- *Hand-written OpenAPI YAML (design-first)*: Rejected. Adds a manual sync obligation;
+  the team is small and the spec is the source of truth rather than a separate YAML.
+- *Springfox*: Rejected. Springfox is no longer actively maintained and does not support
+  Spring Boot 3+/4+.
+
+---
+
+## R-009 · Build Tool — Gradle Multi-Project with gradlew Wrapper
+
+**Decision**: Use Gradle with **Groovy DSL** (`*.gradle`) for all backend Java modules.
+The monorepo root contains `settings.gradle` (listing all subprojects) and `build.gradle`
+(shared version catalog / platform BOM). Each subproject has its own `build.gradle`. The
+`gradlew` and `gradlew.bat` wrapper scripts plus `gradle/wrapper/gradle-wrapper.jar` and
+`gradle-wrapper.properties` MUST be committed to the repository. All services MUST
+declare `org.springframework.boot` version `4.0.6` and set `sourceCompatibility = '21'`.
+
+**Rationale**: Gradle's incremental build and build-cache support reduce CI build times
+compared to Maven for large multi-module projects. The `gradlew` wrapper ensures every
+developer and CI runner uses exactly the same Gradle version without a local installation
+requirement. Groovy DSL is chosen over Kotlin DSL per explicit project constraint
+(FR-034).
+
+**Alternatives considered**:
+- *Maven*: Rejected per spec (FR-034). Replaced by Gradle.
+- *Kotlin DSL (`*.gradle.kts`)*: Rejected per explicit project constraint — Groovy DSL
+  is mandated.
 
 ---
 

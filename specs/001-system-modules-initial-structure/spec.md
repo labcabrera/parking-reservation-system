@@ -130,7 +130,11 @@ them, even if the data is seeded mock data.
 - Q: Who owns Keycloak account creation during the self-registration flow — the frontend directly or a backend API? → A: The frontend calls a dedicated backend Registration API; the backend holds Keycloak admin credentials and creates the account via the Keycloak Admin REST API server-side. No Keycloak admin secret is ever exposed to the browser.
 - Q: What happens when the price-lock window expires before the user completes payment? → A: Auto-cancel on expiry — the SAGA deadline fires; the reservation transitions `PENDING → EXPIRED`; the spot lock is released; the user must initiate a new reservation.
 - Q: Should the search p95 latency target in SC-002 be 200 ms or align with the constitution's 100 ms threshold? → A: Align to constitution — SC-002 updated to p95 ≤ 100 ms; the Catalog Service MUST use a Redis cache-aside pattern on the availability index hot path to meet this target.
-
+- Q: What build tool MUST be used for backend Java modules? → A: Gradle with integrated `gradlew` wrapper using Groovy DSL (`*.gradle`) — the monorepo MUST use a Gradle multi-project build with Groovy DSL; Kotlin DSL (`*.gradle.kts`) MUST NOT be used; Maven is not used.
+- Q: What are the exact Java and Spring Boot versions? → A: Java 21 and Spring Boot 4.0.6 — all backend services MUST target Java 21 and declare `org.springframework.boot` version `4.0.6`.
+- Q: How is the mock payment gateway implemented and integrated with the main frontend? → A: Separate React SPA (`payment-gateway/`) — the main frontend redirects to the gateway with reservation and payment context via URL parameters; the gateway displays a mock payment form, calls the Payment Service API to record the outcome, and redirects back to the main frontend with a result parameter (`?result=approved` or `?result=declined`). Both SPAs run as independent Vite projects.
+- Q: How MUST backend REST APIs be documented? → A: Code-first with SpringDoc — each Spring Boot service MUST include `springdoc-openapi` and expose the generated OpenAPI 3.x spec at `/v3/api-docs` and the Swagger UI at `/swagger-ui.html`.
+- Q: What are the four hexagonal package layers and how is the application layer structured? → A: Four layers — `domain` (aggregates, VOs, domain services, port interfaces), `application` (command handlers + query handlers using commands/queries CQRS model; no use-case classes), `infrastructure` (outbound adapters: JPA, Redis, external HTTP clients, Kafka producers, Keycloak adapter, Spring config), `interfaces` (inbound adapters: REST controllers, Kafka consumers). Use-case pattern MUST NOT be used.- Q: What is the root Java package for all backend services? → A: `org.labcabrera.parking` — all backend Java modules MUST use `org.labcabrera.parking.<service>` as their root package (e.g. `org.labcabrera.parking.catalog`, `org.labcabrera.parking.reservation`, `org.labcabrera.parking.payment`).
 ---
 
 ## Requirements *(mandatory)*
@@ -142,10 +146,27 @@ them, even if the data is seeded mock data.
 - **FR-001**: The repository MUST be organized as a monorepo containing all modules:
   `catalog-service`, `reservation-service`, `payment-service`, `frontend`, and shared
   infrastructure configuration.
-- **FR-002**: Each backend module MUST implement hexagonal architecture with clearly
-  separated `domain`, `application`, and `infrastructure` packages.
+- **FR-002**: Each backend module MUST implement hexagonal architecture with four clearly
+  separated packages:
+  - `domain` — aggregate roots, value objects, domain services, and port interfaces
+    (`port/inbound/`, `port/outbound/`)
+  - `application` — command handlers and query handlers following the commands/queries
+    CQRS model (packages `commands/` and `queries/`); use-case classes MUST NOT be used
+  - `infrastructure` — outbound adapters: JPA persistence, Redis cache, external HTTP
+    clients, Kafka producers / Outbox publisher, Keycloak adapter, Spring configuration
+  - `interfaces` — inbound adapters: REST controllers, Kafka consumers
+  ArchUnit MUST enforce that no class in `domain` depends on `application`,
+  `infrastructure`, or `interfaces`; no class in `application` depends on
+  `infrastructure` or `interfaces`.
 - **FR-003**: The monorepo MUST include a single `docker-compose.yml` at the repository
   root that starts the entire system (all services, databases, cache, broker, Keycloak).
+- **FR-034**: All backend Java modules MUST use Gradle as the build tool with **Groovy
+  DSL** (`settings.gradle`, `build.gradle`). Kotlin DSL (`*.gradle.kts`) MUST NOT be
+  used. The monorepo MUST use a Gradle multi-project build with a root `settings.gradle`
+  and a root `build.gradle` for shared dependency management. An integrated `gradlew`
+  wrapper MUST be committed to the repository so the build can run without a local Gradle
+  installation. Maven MUST NOT be used. All backend services MUST target **Java 21** and
+  declare **Spring Boot 4.0.6** as the parent/platform version.
 
 **Catalog Service**
 
@@ -234,6 +255,18 @@ them, even if the data is seeded mock data.
   facility status, and cancellation reports (with no sensitive user data).
 - **FR-029**: The frontend MUST display real-time availability updates (e.g., low-spot
   warnings) without requiring a full page reload.
+- **FR-036**: The system MUST include a second React SPA (`payment-gateway`) that acts as
+  the mock payment gateway. When a user selects a payment method in the main frontend,
+  the main frontend MUST redirect the browser to the `payment-gateway` application,
+  passing the following as URL query parameters: `reservationId`, `paymentId`, `amount`,
+  `currency`, and `returnUrl` (the full URL of the main frontend reservation page).
+- **FR-037**: The `payment-gateway` SPA MUST display a mock payment form showing the
+  amount and selected payment method. On user confirmation, it MUST call the Payment
+  Service API to register the payment outcome and then redirect the browser to the
+  `returnUrl` appending `?result=approved` or `?result=declined`. The main frontend MUST
+  read this `result` parameter on load and display the final reservation status
+  accordingly. The `payment-gateway` is a standalone Vite project; it does NOT share
+  source code with the main frontend.
 
 **Observability & Resilience**
 
@@ -244,6 +277,11 @@ them, even if the data is seeded mock data.
   across all service calls.
 - **FR-033**: The system MUST implement retry with exponential back-off and circuit
   breaker patterns on all inter-service HTTP and external integrations.
+- **FR-035**: Every backend Spring Boot service MUST adopt a code-first OpenAPI strategy
+  using `springdoc-openapi`. Each service MUST expose its generated OpenAPI 3.x
+  specification at `/v3/api-docs` and the interactive Swagger UI at `/swagger-ui.html`.
+  API annotations (`@Operation`, `@ApiResponse`, `@Schema`) MUST be kept on DTOs and
+  controller methods; no hand-written OpenAPI YAML files are produced.
 
 ---
 
@@ -285,6 +323,13 @@ them, even if the data is seeded mock data.
   contains no user PII.
 - **SC-007**: All module boundaries are validated by automated architecture tests; zero
   cross-layer import violations exist in the codebase.
+- **SC-008**: Each backend service MUST successfully serve its OpenAPI 3.x document at
+  `/v3/api-docs` (HTTP 200) in all environments where the service is running, including
+  the local Docker Compose stack.
+- **SC-009**: The end-to-end redirect flow (main frontend → payment-gateway → main
+  frontend) MUST complete without browser errors; the `result` parameter MUST be present
+  on the return URL and the main frontend MUST render the correct reservation status for
+  both `approved` and `declined` outcomes.
 
 ---
 
@@ -303,3 +348,7 @@ them, even if the data is seeded mock data.
 - Payments are fully mocked; no real payment processor integration is required.
 - The Keycloak realm, roles, and a seed test user MUST be provisioned automatically via
   realm import on container startup.
+- The `payment-gateway` SPA runs on its own port in the local Docker Compose stack and
+  is accessed by the main frontend via a fully-qualified URL configured as an environment
+  variable (`VITE_PAYMENT_GATEWAY_URL`). No authentication is required to access the
+  payment gateway.

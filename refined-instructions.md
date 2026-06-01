@@ -30,6 +30,16 @@ Diseñar un servicio de gestión de reservas de parking basado en las siguientes
 
 - La información de los usuarios se considerará sensible y deberá estar convenientemente protegida en el sistema.
 
+- Los módulos de Java usaran gradle (con gradlew integrado) sin kotling.
+
+- Las APIs se definirán code-first utilizando SpringDoc para generar la documentación OpenAPI.
+
+- La estructura de paquetes usada de Hex Architecture sera:
+  - domain
+  - application: se utilizará el modelo de commands y queries en lugar de la sintaxis de use-cases.
+  - infrastructure
+  - interfaces: elementos inbound (apis rest, kafka, etc)
+
 ## Flujo de ejemplo
 
 ### Busqueda parkings disponibles
