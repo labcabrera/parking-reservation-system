@@ -5,7 +5,7 @@ import org.labcabrera.parking.catalog.domain.model.AvailabilityWindow;
 import org.labcabrera.parking.catalog.domain.model.FacilityStatus;
 import org.labcabrera.parking.catalog.domain.model.FacilityTag;
 import org.labcabrera.parking.catalog.domain.model.ParkingFacility;
-import org.labcabrera.parking.catalog.domain.port.inbound.SearchParkingPort;
+import org.labcabrera.parking.catalog.application.port.inbound.SearchParkingPort;
 import org.labcabrera.parking.catalog.domain.port.outbound.AvailabilityCache;
 import org.labcabrera.parking.catalog.domain.port.outbound.FacilityRepository;
 import org.labcabrera.parking.catalog.domain.service.AvailabilityDomainService;

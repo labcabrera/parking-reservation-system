@@ -1,6 +1,9 @@
 -- V1: Catalog Service Initial Schema
 -- Manages: parking_facility, parking_spot
 
+-- Create schema (idempotent: safe to run on fresh databases)
+CREATE SCHEMA IF NOT EXISTS catalog;
+
 CREATE TABLE catalog.parking_facility (
     id              UUID PRIMARY KEY,
     name            VARCHAR(255) NOT NULL,

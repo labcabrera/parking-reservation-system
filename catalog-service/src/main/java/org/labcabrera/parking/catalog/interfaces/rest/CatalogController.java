@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.labcabrera.parking.catalog.application.dto.FacilityResult;
 import org.labcabrera.parking.catalog.application.queries.SearchParkingQuery;
-import org.labcabrera.parking.catalog.domain.port.inbound.SearchParkingPort;
+import org.labcabrera.parking.catalog.application.port.inbound.SearchParkingPort;
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;

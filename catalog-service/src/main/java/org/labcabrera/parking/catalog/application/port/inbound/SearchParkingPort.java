@@ -1,4 +1,4 @@
-package org.labcabrera.parking.catalog.domain.port.inbound;
+package org.labcabrera.parking.catalog.application.port.inbound;
 
 import org.labcabrera.parking.catalog.application.dto.FacilityResult;
 import org.labcabrera.parking.catalog.application.queries.SearchParkingQuery;
