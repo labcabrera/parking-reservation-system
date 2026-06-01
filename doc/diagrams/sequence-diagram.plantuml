@@ -1,0 +1,40 @@
+@startuml sequence-diagram
+title Sequence diagram
+hide footbox
+
+skinparam sequence {
+    ParticipantBackgroundColor #005b72
+    ParticipantFontColor #ffffff
+    ArrowColor #235872
+    LifeLineBorderColor #005b72
+    LifeLineBackgroundColor #005b72
+}
+
+participant "Customer" as Customer
+participant "Frontend" as Frontend
+participant "Kafka" as Kafka
+participant "Keycloak" as Keycloak
+participant "Parking Discovery API" as ParkingDiscoveryAPI
+participant "Booking Service" as BookingService
+participant "Keycloak" as Keycloak
+participant "Parking DB" as ParkingDB
+
+== Search available options ==
+
+Customer -> Frontend: Start booking process
+Frontend -> ParkingDiscoveryAPI : Text search
+ParkingDiscoveryAPI -> ParkingDB : Search parking
+ParkingDB --> ParkingDiscoveryAPI : Search results
+ParkingDiscoveryAPI --> Frontend : Search results
+
+== Booking creation ==
+
+Customer -> Frontend: Select parking lot
+Frontend --> Customer : Search parking lots
+
+' Customer -> Frontend: Login OIDC
+
+
+
+
+@enduml
