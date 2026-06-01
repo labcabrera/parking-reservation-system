@@ -3,6 +3,7 @@ import BlockIcon from '@mui/icons-material/Block';
 import BoltOutlinedIcon from '@mui/icons-material/BoltOutlined';
 import SyncAltIcon from '@mui/icons-material/SyncAlt';
 import { Box, Button, Card, CardContent, Collapse, Stack, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import type { FacilityResult } from '../../types/catalog';
 import { formatPrice, formatReservationTime } from '../../utils/formatters';
 
@@ -19,6 +20,8 @@ export function FacilityResultCard({
   onSelect,
   reservationTimeLeft,
 }: FacilityResultCardProps) {
+  const { t } = useTranslation();
+
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
@@ -51,7 +54,7 @@ export function FacilityResultCard({
       }}
     >
       <CardContent sx={{ p: { xs: 2, md: 2.5 }, '&:last-child': { pb: { xs: 2, md: 2.5 } } }}>
-        <LowAvailabilityLabel isVisible={facility.lowAvailabilityWarning} />
+        <LowAvailabilityLabel isVisible={facility.lowAvailabilityWarning} label={t('results.lowAvailability')} />
         <FacilitySummary facility={facility} isSelected={isSelected} />
         <FacilityBenefits facility={facility} />
       </CardContent>
@@ -60,7 +63,7 @@ export function FacilityResultCard({
   );
 }
 
-function LowAvailabilityLabel({ isVisible }: { isVisible: boolean }) {
+function LowAvailabilityLabel({ isVisible, label }: { isVisible: boolean; label: string }) {
   if (!isVisible) return null;
 
   return (
@@ -77,12 +80,15 @@ function LowAvailabilityLabel({ isVisible }: { isVisible: boolean }) {
         textTransform: 'uppercase',
       }}
     >
-      Quedan pocas plazas para este parking
+      {label}
     </Box>
   );
 }
 
 function FacilitySummary({ facility, isSelected }: { facility: FacilityResult; isSelected: boolean }) {
+  const { t } = useTranslation();
+  const price = formatPrice(facility.dailyRate);
+
   return (
     <Stack
       direction={{ xs: 'column', sm: 'row' }}
@@ -108,10 +114,10 @@ function FacilitySummary({ facility, isSelected }: { facility: FacilityResult; i
 
       <Box sx={{ minWidth: 150, textAlign: { xs: 'left', sm: 'right' } }}>
         <Typography color="primary" sx={{ fontSize: 18, fontWeight: 900 }}>
-          {formatPrice(facility.dailyRate)} total
+          {t('results.totalPrice', { price })}
         </Typography>
         <Typography color="text.secondary" sx={{ fontSize: 12 }}>
-          {formatPrice(facility.dailyRate)}/dia
+          {t('results.dayPrice', { price })}
         </Typography>
       </Box>
     </Stack>
@@ -119,6 +125,8 @@ function FacilitySummary({ facility, isSelected }: { facility: FacilityResult; i
 }
 
 function FacilityBenefits({ facility }: { facility: FacilityResult }) {
+  const { t } = useTranslation();
+
   return (
     <Stack
       direction="row"
@@ -130,20 +138,20 @@ function FacilityBenefits({ facility }: { facility: FacilityResult }) {
         mt: 2.5,
       }}
     >
-      <Benefit label="2h de cortesia" />
-      <Benefit icon={<SyncAltIcon sx={{ fontSize: 17 }} />} label="Entradas y salidas ilimitadas" />
+      <Benefit label={t('results.benefits.courtesy')} />
+      <Benefit icon={<SyncAltIcon sx={{ fontSize: 17 }} />} label={t('results.benefits.unlimited')} />
       {facility.tags.includes('EXPRESS_ENTRY') && (
-        <Benefit icon={<BoltOutlinedIcon sx={{ fontSize: 17 }} />} label="Entrada express" />
+        <Benefit icon={<BoltOutlinedIcon sx={{ fontSize: 17 }} />} label={t('results.benefits.express')} />
       )}
       {facility.tags.includes('FREE_CANCELLATION') && (
-        <Benefit icon={<BlockIcon sx={{ fontSize: 17 }} />} label="Cancelacion gratuita" />
+        <Benefit icon={<BlockIcon sx={{ fontSize: 17 }} />} label={t('results.benefits.freeCancellation')} />
       )}
       <Box sx={{ flexGrow: 1 }} />
       <Typography
         color={facility.availableSpots <= 5 ? 'secondary.main' : 'text.secondary'}
         sx={{ fontSize: 14, fontWeight: 800 }}
       >
-        {facility.availableSpots} plazas
+        {t('results.spots', { count: facility.availableSpots })}
       </Typography>
     </Stack>
   );
@@ -165,6 +173,8 @@ function SelectionPanel({
   isOpen: boolean;
   reservationTimeLeft: number;
 }) {
+  const { t } = useTranslation();
+
   return (
     <Collapse in={isOpen} timeout={180} unmountOnExit>
       <Box
@@ -180,7 +190,7 @@ function SelectionPanel({
         }}
       >
         <Typography sx={{ fontSize: 14 }}>
-          Te reservamos estas opciones durante {formatReservationTime(reservationTimeLeft)} minutos.
+          {t('results.reserveHold', { time: formatReservationTime(reservationTimeLeft) })}
         </Typography>
         <Button
           color="secondary"
@@ -190,7 +200,7 @@ function SelectionPanel({
           sx={{ borderRadius: 999, minWidth: { sm: 250 } }}
           variant="contained"
         >
-          Elige este parking
+          {t('results.choose')}
         </Button>
       </Box>
     </Collapse>

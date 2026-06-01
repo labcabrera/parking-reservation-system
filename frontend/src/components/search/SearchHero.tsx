@@ -1,7 +1,10 @@
 import { Box, Stack, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export function SearchHero({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
+
   return (
     <Box
       sx={{
@@ -28,10 +31,10 @@ export function SearchHero({ children }: { children: ReactNode }) {
       <Stack spacing={4} sx={{ position: 'relative', zIndex: 1 }}>
         <Box sx={{ maxWidth: 650, pt: { md: 6 } }}>
           <Typography variant="h1" sx={{ color: 'inherit', fontSize: { xs: 36, md: 56 }, mb: 2 }}>
-            Reserva justo la plaza que necesitas
+            {t('search.hero.title')}
           </Typography>
           <Typography sx={{ color: 'rgba(255, 255, 255, 0.78)', fontSize: { xs: 17, md: 20 } }}>
-            Aparcamientos urbanos, reservas para empresas y control de disponibilidad en tiempo real.
+            {t('search.hero.subtitle')}
           </Typography>
         </Box>
         {children}

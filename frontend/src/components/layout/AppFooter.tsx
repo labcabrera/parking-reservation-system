@@ -1,6 +1,9 @@
 import { Box, Container, Link, Stack, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 export function AppFooter() {
+  const { t } = useTranslation();
+
   return (
     <Box
       component="footer"
@@ -18,11 +21,11 @@ export function AppFooter() {
           sx={{ justifyContent: 'space-between' }}
         >
           <Typography variant="body2" color="text.secondary">
-            Parking Reservation System
+            {t('footer.product')}
           </Typography>
           <Stack direction="row" spacing={2}>
             <Link href="/" color="text.secondary" underline="hover">
-              Busqueda
+              {t('footer.search')}
             </Link>
             <Typography variant="body2" color="text.secondary">
               v0.0.1

@@ -7,21 +7,33 @@ import {
   Button,
   Container,
   Link,
+  ToggleButton,
+  ToggleButtonGroup,
   Stack,
   Toolbar,
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
+import { supportedLanguages, type SupportedLanguage } from '../../i18n';
 
-function getUserDisplayName(profileName?: string, email?: string) {
-  return profileName ?? email ?? 'Usuario';
+function getUserDisplayName(profileName: string | undefined, email: string | undefined, fallback: string) {
+  return profileName ?? email ?? fallback;
 }
 
 export function AppHeader() {
   const { isAuthenticated, isConfigured, isLoading, login, logout, user } = useAuth();
-  const displayName = getUserDisplayName(user?.profile.name, user?.profile.email);
+  const { i18n, t } = useTranslation();
+  const displayName = getUserDisplayName(user?.profile.name, user?.profile.email, t('auth.defaultUser'));
+
+  function handleLanguageChange(_: React.MouseEvent<HTMLElement>, language: SupportedLanguage | null) {
+    if (!language) return;
+
+    void i18n.changeLanguage(language);
+    window.localStorage.setItem('language', language);
+  }
 
   return (
     <AppBar
@@ -65,13 +77,13 @@ export function AppHeader() {
                 component="p"
                 sx={{ letterSpacing: 0, lineHeight: 1, fontWeight: 900 }}
               >
-                Parking Demo Service
+                {t('header.brand')}
               </Typography>
               <Typography
                 variant="caption"
                 sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 0.4 }}
               >
-                Mobility services
+                {t('header.subtitle')}
               </Typography>
             </Box>
           </Stack>
@@ -82,7 +94,12 @@ export function AppHeader() {
             spacing={3}
             sx={{ display: { xs: 'none', md: 'flex' } }}
           >
-            {['Parkings', 'Reservas', 'Empresas', 'Soporte'].map((item) => (
+            {[
+              t('header.nav.parkings'),
+              t('header.nav.bookings'),
+              t('header.nav.business'),
+              t('header.nav.support'),
+            ].map((item) => (
               <Link
                 key={item}
                 color="text.primary"
@@ -96,6 +113,32 @@ export function AppHeader() {
           </Stack>
 
           <Box sx={{ flexGrow: 1 }} />
+
+          <ToggleButtonGroup
+            exclusive
+            onChange={handleLanguageChange}
+            size="small"
+            value={i18n.resolvedLanguage}
+            sx={{
+              '& .MuiToggleButton-root': {
+                border: 0,
+                color: 'text.secondary',
+                fontSize: 12,
+                fontWeight: 900,
+                px: 1,
+              },
+              '& .Mui-selected': {
+                bgcolor: 'transparent',
+                color: 'secondary.main',
+              },
+            }}
+          >
+            {supportedLanguages.map((language) => (
+              <ToggleButton aria-label={language.label} key={language.code} value={language.code}>
+                {language.label}
+              </ToggleButton>
+            ))}
+          </ToggleButtonGroup>
 
           {isAuthenticated ? (
             <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
@@ -113,15 +156,15 @@ export function AppHeader() {
                 onClick={() => void logout()}
                 sx={{ borderRadius: 999 }}
               >
-                Salir
+                {t('auth.logout')}
               </Button>
             </Stack>
           ) : (
             <Tooltip
               title={
                 isConfigured
-                  ? 'Iniciar sesion'
-                  : 'Configura VITE_OIDC_AUTHORITY y VITE_OIDC_CLIENT_ID'
+                  ? t('auth.loginTooltip')
+                  : t('auth.missingConfig')
               }
             >
               <span>
@@ -133,7 +176,7 @@ export function AppHeader() {
                   onClick={() => void login()}
                   sx={{ borderRadius: 999, px: 2.5 }}
                 >
-                  Entrar
+                  {t('auth.login')}
                 </Button>
               </span>
             </Tooltip>

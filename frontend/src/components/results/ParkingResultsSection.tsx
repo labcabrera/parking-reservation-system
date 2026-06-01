@@ -1,5 +1,6 @@
 import SwapVertIcon from '@mui/icons-material/SwapVert';
 import { Box, Chip, Paper, Stack, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import type { FacilityResult } from '../../types/catalog';
 import { FacilityResultCard } from './FacilityResultCard';
 import { ParkingResultsMap } from './ParkingResultsMap';
@@ -46,6 +47,8 @@ export function ParkingResultsSection({
 }
 
 function ParkingResultsHeader({ count, location }: { count: number; location: string }) {
+  const { t } = useTranslation();
+
   return (
     <Stack
       direction={{ xs: 'column', md: 'row' }}
@@ -53,11 +56,11 @@ function ParkingResultsHeader({ count, location }: { count: number; location: st
       sx={{ alignItems: { xs: 'flex-start', md: 'center' }, justifyContent: 'space-between', mb: 2.5 }}
     >
       <Typography variant="h2" sx={{ fontSize: { xs: 24, md: 28 }, fontWeight: 900 }}>
-        {count} parkings cerca de {location}
+        {t('results.title', { count, location })}
       </Typography>
       <Chip
         icon={<SwapVertIcon />}
-        label="Ordenar: Recomendados"
+        label={t('results.sortRecommended')}
         sx={{
           bgcolor: 'background.paper',
           border: 1,

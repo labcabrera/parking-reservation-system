@@ -1,6 +1,7 @@
 import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
 import SearchIcon from '@mui/icons-material/Search';
 import { Box, CircularProgress, IconButton, InputBase, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { DateTimePickerField } from '../forms/DateTimePickerField';
 
 interface ParkingSearchFormProps {
@@ -24,6 +25,8 @@ export function ParkingSearchForm({
   onLocationChange,
   onSubmit,
 }: ParkingSearchFormProps) {
+  const { t } = useTranslation();
+
   return (
     <Box
       component="form"
@@ -54,13 +57,13 @@ export function ParkingSearchForm({
         <LocationOnOutlinedIcon sx={{ color: 'text.secondary', fontSize: 22 }} />
         <Box sx={{ minWidth: 0, width: '100%' }}>
           <Typography color="text.secondary" variant="caption">
-            ¿A donde vas?
+            {t('search.form.locationHelp')}
           </Typography>
           <InputBase
             fullWidth
-            inputProps={{ 'aria-label': 'Ubicacion' }}
+            inputProps={{ 'aria-label': t('search.form.locationAria') }}
             onChange={(event) => onLocationChange(event.target.value)}
-            placeholder="Madrid, Spain"
+            placeholder={t('search.form.locationPlaceholder')}
             required
             sx={{ fontSize: 17, lineHeight: 1.2 }}
             value={location}
@@ -70,23 +73,23 @@ export function ParkingSearchForm({
 
       <Box sx={{ borderBottom: { xs: 1, md: 0 }, borderColor: 'divider', borderRight: { md: 1 } }}>
         <DateTimePickerField
-          helperText="Entrada"
-          label="¿Cuando llegas?"
+          helperText={t('search.form.checkInHelp')}
+          label={t('search.form.checkInLabel')}
           onChange={onCheckInChange}
           value={checkIn}
         />
       </Box>
       <Box sx={{ borderBottom: { xs: 1, md: 0 }, borderColor: 'divider', borderRight: { md: 1 } }}>
         <DateTimePickerField
-          helperText="Salida"
-          label="¿Cuando te vas?"
+          helperText={t('search.form.checkOutHelp')}
+          label={t('search.form.checkOutLabel')}
           onChange={onCheckOutChange}
           value={checkOut}
         />
       </Box>
       <Box sx={{ alignItems: 'center', display: 'flex', justifyContent: 'center', p: { xs: 2, md: 1.5 } }}>
         <IconButton
-          aria-label="Buscar parking"
+          aria-label={t('common.search')}
           disabled={isLoading}
           type="submit"
           sx={{

@@ -5,10 +5,8 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { Box, Button, ButtonBase, Divider, IconButton, Popover, Stack, Typography } from '@mui/material';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
-const monthFormatter = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' });
-const dayFormatter = new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: 'short' });
-const weekdays = ['LU', 'MA', 'MI', 'JU', 'VI', 'SA', 'DO'];
 const timeSlots = Array.from({ length: 48 }, (_, index) => {
   const hours = String(Math.floor(index / 2)).padStart(2, '0');
   const minutes = index % 2 === 0 ? '00' : '30';
@@ -29,6 +27,7 @@ interface DateTimePickerFieldProps {
 }
 
 export function DateTimePickerField({ helperText, label, onChange, value }: DateTimePickerFieldProps) {
+  const { i18n, t } = useTranslation();
   const parsedValue = parseDateTimeValue(value);
   const initialDate = parsedValue?.date ?? new Date();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -58,19 +57,19 @@ export function DateTimePickerField({ helperText, label, onChange, value }: Date
       <DateTimeTrigger
         helperText={helperText}
         isOpen={isOpen}
-        label={getSelectedLabel(parsedValue, label)}
+        label={getSelectedLabel(parsedValue, label, i18n.language)}
         onOpen={handleOpen}
       />
       <DateTimePopover anchorEl={anchorEl} isOpen={isOpen} onClose={() => setAnchorEl(null)}>
         <MonthNavigation displayMonth={displayMonth} onDisplayMonthChange={setDisplayMonth} />
-        <CalendarGrid days={monthDays} onSelectDate={setSelectedDate} selectedDate={selectedDate} />
+        <CalendarGrid days={monthDays} locale={i18n.language} onSelectDate={setSelectedDate} selectedDate={selectedDate} />
         <Divider />
         <TimeSlotList onSelectTime={setSelectedTime} selectedTime={selectedTime} />
         <Button fullWidth onClick={handleSave} size="large" variant="contained">
-          Guardar
+          {t('dateTime.save')}
         </Button>
         <Typography align="center" color="text.secondary" variant="caption">
-          La tarifa siempre se calcula por periodos completos.
+          {t('dateTime.tariffNote')}
         </Typography>
       </DateTimePopover>
     </>
@@ -174,19 +173,21 @@ function MonthNavigation({
   displayMonth: Date;
   onDisplayMonthChange: (date: Date) => void;
 }) {
+  const { i18n, t } = useTranslation();
+
   function changeMonth(offset: number) {
     onDisplayMonthChange(new Date(displayMonth.getFullYear(), displayMonth.getMonth() + offset, 1));
   }
 
   return (
     <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-      <IconButton aria-label="Mes anterior" onClick={() => changeMonth(-1)} size="small">
+      <IconButton aria-label={t('dateTime.previousMonth')} onClick={() => changeMonth(-1)} size="small">
         <ChevronLeftIcon />
       </IconButton>
       <Typography sx={{ fontWeight: 700, textTransform: 'capitalize' }}>
-        {monthFormatter.format(displayMonth)}
+        {new Intl.DateTimeFormat(i18n.language, { month: 'long', year: 'numeric' }).format(displayMonth)}
       </Typography>
-      <IconButton aria-label="Mes siguiente" onClick={() => changeMonth(1)} size="small">
+      <IconButton aria-label={t('dateTime.nextMonth')} onClick={() => changeMonth(1)} size="small">
         <ChevronRightIcon />
       </IconButton>
     </Stack>
@@ -195,13 +196,18 @@ function MonthNavigation({
 
 function CalendarGrid({
   days,
+  locale,
   onSelectDate,
   selectedDate,
 }: {
   days: Array<Date | null>;
+  locale: string;
   onSelectDate: (date: Date) => void;
   selectedDate: Date | null;
 }) {
+  const { t } = useTranslation();
+  const weekdays = t('dateTime.weekdays', { returnObjects: true }) as string[];
+
   return (
     <Box
       sx={{
@@ -230,6 +236,7 @@ function CalendarGrid({
             day={day}
             isSelected={isSameDay(day, selectedDate)}
             key={day.toISOString()}
+            locale={locale}
             onSelect={onSelectDate}
           />
         ) : (
@@ -243,15 +250,19 @@ function CalendarGrid({
 function CalendarDay({
   day,
   isSelected,
+  locale,
   onSelect,
 }: {
   day: Date;
   isSelected: boolean;
+  locale: string;
   onSelect: (date: Date) => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <ButtonBase
-      aria-label={`Seleccionar ${day.toLocaleDateString('es-ES')}`}
+      aria-label={t('dateTime.selectDate', { date: day.toLocaleDateString(locale) })}
       onClick={() => onSelect(day)}
       sx={{
         borderRadius: '50%',
@@ -281,11 +292,13 @@ function TimeSlotList({
   onSelectTime: (time: string) => void;
   selectedTime: string;
 }) {
+  const { t } = useTranslation();
+
   return (
     <Stack spacing={1}>
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
         <AccessTimeIcon sx={{ color: 'primary.main', fontSize: 18 }} />
-        <Typography sx={{ fontWeight: 700 }}>¿A que hora llegas?</Typography>
+        <Typography sx={{ fontWeight: 700 }}>{t('dateTime.timePrompt')}</Typography>
       </Stack>
       <Box
         sx={{
@@ -337,8 +350,10 @@ function TimeSlot({
   );
 }
 
-function getSelectedLabel(parsedValue: ParsedDateTime | null, fallbackLabel: string) {
-  return parsedValue ? `${dayFormatter.format(parsedValue.date)} · ${parsedValue.time}` : fallbackLabel;
+function getSelectedLabel(parsedValue: ParsedDateTime | null, fallbackLabel: string, locale: string) {
+  return parsedValue
+    ? `${new Intl.DateTimeFormat(locale, { day: '2-digit', month: 'short' }).format(parsedValue.date)} · ${parsedValue.time}`
+    : fallbackLabel;
 }
 
 function toDateInputValue(date: Date) {

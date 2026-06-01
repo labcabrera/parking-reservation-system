@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Alert, Stack } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { ParkingResultsSection } from '../components/results/ParkingResultsSection';
 import { ParkingSearchForm } from '../components/search/ParkingSearchForm';
 import { SearchHero } from '../components/search/SearchHero';
@@ -8,6 +9,7 @@ import { useParkingSelection } from '../hooks/useParkingSelection';
 import type { SearchRequest } from '../types/catalog';
 
 export default function SearchPage() {
+  const { t } = useTranslation();
   const [location, setLocation] = useState('');
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
@@ -40,11 +42,11 @@ export default function SearchPage() {
       </SearchHero>
 
       {isError && (
-        <Alert severity="error">{error?.message ?? 'No se pudieron cargar los resultados'}</Alert>
+        <Alert severity="error">{error?.message ?? t('search.error')}</Alert>
       )}
 
       {data && data.length === 0 && !isLoading && (
-        <Alert severity="info">No se encontraron parkings para la busqueda.</Alert>
+        <Alert severity="info">{t('search.empty')}</Alert>
       )}
 
       {data && data.length > 0 && (
