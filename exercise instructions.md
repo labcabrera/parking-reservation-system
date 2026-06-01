@@ -54,7 +54,7 @@ No se pide el sistema global completo, pero la demo debe ser un Mínimo Producto
 
 - Servicio de Catálogo/Disponibilidad: Consulta rápida de parkings y plazas libres.
 
-- Servicio de Reservas: Flujo de creación, conﬁrmación y cancelación de una reserva.
+- Servicio de Reservas: Flujo de creación, confirmación y cancelación de una reserva.
 
 - Simulador de Pagos: Un componente asíncrono que procese el pago de la reserva y transicione el estado de la misma (Pendiente -> Conﬁrmada / Rechazada).
 
