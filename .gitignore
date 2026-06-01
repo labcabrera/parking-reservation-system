@@ -1,0 +1,45 @@
+# Gradle
+.gradle/
+build/
+out/
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# Java
+*.log
+hs_err_pid*
+
+# Node.js / npm
+node_modules/
+dist/
+*.local
+
+# Frontend build artifacts
+frontend/dist/
+payment-gateway/dist/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+*.tmp
+
+# Spring Boot
+/HELP.md
+target/
+
+# Docker
+.dockerignore

@@ -1,0 +1,5 @@
+rootProject.name = 'parking-reservation-system'
+
+include 'catalog-service'
+include 'reservation-service'
+include 'payment-service'
