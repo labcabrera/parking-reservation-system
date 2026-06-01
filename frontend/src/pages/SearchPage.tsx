@@ -1,62 +1,62 @@
 import { useState } from 'react';
+import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
+import SearchIcon from '@mui/icons-material/Search';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import {
+  Alert,
+  Box,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  IconButton,
+  InputBase,
+  Stack,
+  Typography,
+} from '@mui/material';
+import { DateTimePickerField } from '../components/forms/DateTimePickerField';
 import { useParkingSearch } from '../hooks/useParkingSearch';
 import type { FacilityResult, SearchRequest } from '../types/catalog';
 
 function FacilityResultCard({ facility }: { facility: FacilityResult }) {
   return (
-    <div
-      style={{
-        border: '1px solid #ddd',
-        borderRadius: '8px',
-        padding: '16px',
-        marginBottom: '12px',
-        background: '#fff',
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <h3 style={{ margin: '0 0 4px' }}>{facility.name}</h3>
-          <p style={{ margin: '0 0 4px', color: '#555' }}>
-            {facility.city} — {facility.address}
-          </p>
-        </div>
-        {facility.lowAvailabilityWarning && (
-          <span
-            style={{
-              background: '#fff3cd',
-              border: '1px solid #ffc107',
-              borderRadius: '4px',
-              padding: '4px 8px',
-              fontSize: '12px',
-              fontWeight: 600,
-              color: '#856404',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            ⚠ Low availability
-          </span>
-        )}
-      </div>
-      <p style={{ margin: '8px 0 4px', fontSize: '14px' }}>
-        Available spots: <strong>{facility.availableSpots}</strong>
-      </p>
-      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
-        {facility.tags.map((tag) => (
-          <span
-            key={tag}
-            style={{
-              background: '#e9ecef',
-              borderRadius: '4px',
-              padding: '2px 8px',
-              fontSize: '12px',
-              color: '#495057',
-            }}
-          >
-            {tag.replace(/_/g, ' ')}
-          </span>
-        ))}
-      </div>
-    </div>
+    <Card>
+      <CardContent>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={2}
+          sx={{ justifyContent: 'space-between' }}
+        >
+          <Box>
+            <Typography variant="h6" component="h2">
+              {facility.name}
+            </Typography>
+            <Typography color="text.secondary">
+              {facility.city} - {facility.address}
+            </Typography>
+          </Box>
+
+          {facility.lowAvailabilityWarning && (
+            <Chip
+              color="warning"
+              icon={<WarningAmberIcon />}
+              label="Poca disponibilidad"
+              variant="outlined"
+            />
+          )}
+        </Stack>
+
+        <Typography sx={{ mt: 2 }}>
+          Plazas disponibles: <strong>{facility.availableSpots}</strong>
+        </Typography>
+
+        <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 1, mt: 2 }}>
+          {facility.tags.map((tag) => (
+            <Chip key={tag} label={tag.replace(/_/g, ' ')} size="small" />
+          ))}
+        </Stack>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -75,79 +75,134 @@ export default function SearchPage() {
   }
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '32px 16px' }}>
-      <h1 style={{ marginBottom: '24px' }}>Find Parking</h1>
+    <Stack spacing={4}>
+      <Box
+        sx={{
+          bgcolor: 'primary.main',
+          borderRadius: 3,
+          color: 'primary.contrastText',
+          mb: { xs: 1, md: 3 },
+          minHeight: { xs: 430, md: 500 },
+          overflow: 'visible',
+          px: { xs: 2, md: 6 },
+          py: { xs: 4, md: 7 },
+          position: 'relative',
+          '&::after': {
+            background:
+              'linear-gradient(135deg, rgba(255, 121, 0, 0.34), rgba(255, 255, 255, 0.05)), repeating-linear-gradient(115deg, transparent 0 34px, rgba(255,255,255,0.06) 34px 36px)',
+            borderRadius: 3,
+            content: '""',
+            inset: 0,
+            opacity: 0.8,
+            position: 'absolute',
+          },
+        }}
+      >
+        <Stack spacing={4} sx={{ position: 'relative', zIndex: 1 }}>
+          <Box sx={{ maxWidth: 650, pt: { md: 6 } }}>
+            <Typography variant="h1" sx={{ color: 'inherit', fontSize: { xs: 36, md: 56 }, mb: 2 }}>
+              Reserva justo la plaza que necesitas
+            </Typography>
+            <Typography sx={{ color: 'rgba(255, 255, 255, 0.78)', fontSize: { xs: 17, md: 20 } }}>
+              Aparcamientos urbanos, reservas para empresas y control de disponibilidad en tiempo real.
+            </Typography>
+          </Box>
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
-        <label>
-          Location
-          <input
-            type="text"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="City or facility name"
-            style={{ display: 'block', width: '100%', padding: '8px', marginTop: '4px', boxSizing: 'border-box' }}
-            required
-          />
-        </label>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <label style={{ flex: 1 }}>
-            Check-in
-            <input
-              type="datetime-local"
-              value={checkIn}
-              onChange={(e) => setCheckIn(e.target.value)}
-              style={{ display: 'block', width: '100%', padding: '8px', marginTop: '4px', boxSizing: 'border-box' }}
-              required
-            />
-          </label>
-          <label style={{ flex: 1 }}>
-            Check-out
-            <input
-              type="datetime-local"
-              value={checkOut}
-              onChange={(e) => setCheckOut(e.target.value)}
-              style={{ display: 'block', width: '100%', padding: '8px', marginTop: '4px', boxSizing: 'border-box' }}
-              required
-            />
-          </label>
-        </div>
-        <button
-          type="submit"
-          style={{
-            padding: '10px 24px',
-            background: '#0d6efd',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            alignSelf: 'flex-start',
-          }}
-        >
-          Search
-        </button>
-      </form>
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            sx={{
+              bgcolor: 'background.paper',
+              borderRadius: { xs: 4, md: 999 },
+              boxShadow: '0 28px 80px rgba(0, 0, 0, 0.28)',
+              color: 'text.primary',
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: '1.2fr 1fr 1fr 112px' },
+              maxWidth: 1060,
+              overflow: 'visible',
+            }}
+          >
+            <Box
+              sx={{
+                alignItems: 'center',
+                borderBottom: { xs: 1, md: 0 },
+                borderColor: 'divider',
+                borderRight: { md: 1 },
+                display: 'flex',
+                gap: 1.5,
+                px: { xs: 2.5, md: 3 },
+                py: 2,
+              }}
+            >
+              <LocationOnOutlinedIcon sx={{ color: 'text.secondary', fontSize: 22 }} />
+              <Box sx={{ minWidth: 0, width: '100%' }}>
+                <Typography color="text.secondary" variant="caption">
+                  ¿A donde vas?
+                </Typography>
+                <InputBase
+                  fullWidth
+                  inputProps={{ 'aria-label': 'Ubicacion' }}
+                  onChange={(e) => setText(e.target.value)}
+                  placeholder="Madrid, Spain"
+                  required
+                  sx={{ fontSize: 17, lineHeight: 1.2 }}
+                  value={text}
+                />
+              </Box>
+            </Box>
 
-      {isLoading && <p>Searching...</p>}
+            <Box sx={{ borderBottom: { xs: 1, md: 0 }, borderColor: 'divider', borderRight: { md: 1 } }}>
+              <DateTimePickerField
+                helperText="Entrada"
+                label="¿Cuando llegas?"
+                onChange={setCheckIn}
+                value={checkIn}
+              />
+            </Box>
+            <Box sx={{ borderBottom: { xs: 1, md: 0 }, borderColor: 'divider', borderRight: { md: 1 } }}>
+              <DateTimePickerField
+                helperText="Salida"
+                label="¿Cuando te vas?"
+                onChange={setCheckOut}
+                value={checkOut}
+              />
+            </Box>
+            <Box sx={{ alignItems: 'center', display: 'flex', justifyContent: 'center', p: { xs: 2, md: 1.5 } }}>
+              <IconButton
+                aria-label="Buscar parking"
+                disabled={isLoading}
+                type="submit"
+                sx={{
+                  bgcolor: 'secondary.main',
+                  color: 'secondary.contrastText',
+                  height: 56,
+                  width: 56,
+                  '&:hover': { bgcolor: 'secondary.dark' },
+                }}
+              >
+                {isLoading ? <CircularProgress color="inherit" size={22} /> : <SearchIcon />}
+              </IconButton>
+            </Box>
+          </Box>
+        </Stack>
+      </Box>
 
       {isError && (
-        <p style={{ color: '#dc3545' }}>
-          Error: {error?.message ?? 'Failed to load results'}
-        </p>
+        <Alert severity="error">{error?.message ?? 'No se pudieron cargar los resultados'}</Alert>
       )}
 
       {data && data.length === 0 && !isLoading && (
-        <p style={{ color: '#6c757d' }}>No parking facilities found for your search.</p>
+        <Alert severity="info">No se encontraron parkings para la busqueda.</Alert>
       )}
 
       {data && data.length > 0 && (
-        <div>
-          <p style={{ marginBottom: '12px', color: '#6c757d' }}>{data.length} result(s)</p>
+        <Stack spacing={2}>
+          <Typography color="text.secondary">{data.length} resultado(s)</Typography>
           {data.map((facility) => (
             <FacilityResultCard key={facility.facilityId} facility={facility} />
           ))}
-        </div>
+        </Stack>
       )}
-    </div>
+    </Stack>
   );
 }

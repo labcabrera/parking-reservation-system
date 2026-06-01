@@ -36,10 +36,10 @@ public class CatalogController {
     public ResponseEntity<Page<FacilityResult>> search(
             @Parameter(description = "Free-text search (name or city)", required = true)
             @RequestParam String q,
-            @Parameter(description = "Check-in datetime (ISO 8601)", required = true)
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkIn,
-            @Parameter(description = "Check-out datetime (ISO 8601)", required = true)
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkOut,
+            @Parameter(description = "Check-in datetime (ISO 8601)", required = true, example = "2026-06-03T00:00:00")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime checkIn,
+            @Parameter(description = "Check-out datetime (ISO 8601)", required = true, example = "2026-06-01T00:00:00")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime checkOut,
             @Parameter(description = "Page number (0-based)")
             @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Page size")
