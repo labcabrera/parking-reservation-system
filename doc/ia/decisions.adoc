@@ -1,0 +1,63 @@
+# Flujo de decisiones
+
+## Question 1 of 5 — Overselling Prevention Mechanism
+
+FR-010 states the system MUST prevent double-booking under concurrent requests, but does not specify the strategy. This choice directly shapes the aggregate design, database schema, Redis usage, and SAGA compensation logic.
+
+Recommended: Option A — Axon aggregate + optimistic locking
+
+Axon enforces single-threaded command handling per aggregate instance by default, which naturally serializes concurrent booking commands for the same ParkingSpot. Combined with a database @Version column for persistence-level protection, this gives consistency without requiring an external lock infrastructure on the hot path. It aligns with the AXON-without-event-sourcing approach already specified.
+
+Option	Description
+A	Axon aggregate serialization + DB optimistic locking — Axon serializes commands per aggregate; @Version on the ParkingSpot entity catches any race at persistence layer
+B	Distributed Redis lock — acquire a Redis lock keyed on spotId before processing; works across instances but adds Redis as a synchronization dependency on every booking
+C	DB pessimistic lock (SELECT FOR UPDATE) — lock the spot row at DB level; simple but reduces throughput under high concurrency
+
+A
+
+## Question 2 of 5 — Cancellation Eligibility Rules
+
+FR-008 mentions cancellation but FR-027 references "eligible reservations" without defining what makes a reservation cancellable (or cancellable with/without penalty). This directly impacts the Reservation domain model, state machine, and the admin cancellation report (FR-028).
+
+Recommended: Option B — Time-based eligibility with configurable penalty window
+
+This is the most common pattern for parking/travel booking and requires no complex external ruleset while remaining flexible enough for business changes. A free-cancellation window (e.g., configurable hours before check-in) and a penalised-cancellation window thereafter keeps the domain model simple but realistic.
+
+Option	Description
+A	Free cancellation only up to a fixed cut-off — cancellation is only allowed N hours before check-in; after that the reservation cannot be cancelled at all
+B	Time-based with penalty window — free cancellation up to N hours before check-in; penalised cancellation (partial refund) from N hours down to M minutes before; no cancellation inside M minutes
+C	Always cancellable, penalty decided at runtime — cancellation always allowed; the Pricing Service decides penalty amount at cancellation time
+D	Per-facility rules — each ParkingFacility defines its own cancellation policy; the domain model carries a CancellationPolicy value object
+You can reply with the option letter (e.g., "B"), accept the recommendation by saying "yes" or "recommended", or provide your own short answer.
+
+B
+
+## Question 3 of 5 — Self-Registration Flow Ownership
+
+FR-022 states that user creation during the reservation flow MUST register the user in Keycloak, but FR-025 describes an inline registration form shown to unauthenticated users. It is unclear whether the backend creates the Keycloak account directly (service-to-service), or whether the frontend uses Keycloak's own self-registration UI (redirect). This affects security architecture, data-flow design, and whether a separate User Service is needed.
+
+Recommended: Option B — Frontend calls a dedicated backend Registration API; backend creates the Keycloak account
+
+Keeping Keycloak client credentials server-side avoids exposing the Keycloak admin secret to the browser. The backend Registration API validates input, enforces password policy, creates the Keycloak account via the Admin REST API, and immediately issues a session token — all within a single HTTPS call from the frontend. No separate User Service is required; the Reservation Service's infrastructure adapter handles Keycloak provisioning.
+
+Option	Description
+A	Redirect to Keycloak self-registration page — frontend redirects to Keycloak's built-in registration flow; user returns with an auth code; no backend registration endpoint needed
+B	Frontend calls backend Registration API; backend calls Keycloak Admin API — custom registration form stays in the React app; backend holds Keycloak admin credentials and creates the account server-side
+C	Keycloak direct grant from frontend — frontend POSTs credentials directly to Keycloak's token endpoint; Keycloak handles registration natively via a custom flow/extension
+
+B
+
+## Question 5 of 5 — Search Latency Target
+
+The constitution (Principle V) sets a hard p95 latency target of ≤ 100 ms for availability search endpoints, but SC-002 in the spec currently states 200 ms. This inconsistency will block the constitution check gate at plan time. The target needs to be aligned before planning.
+
+Recommended: Option A — Align spec to constitution: p95 ≤ 100 ms
+
+The constitution is the governing document. 100 ms p95 is achievable with a read-optimised availability index backed by Redis cache-aside (already implied by FR-007 and constitution Principle IV). Keeping the spec at 200 ms would require an amendment to the constitution, which adds overhead and signals a lower quality bar.
+
+Option	Description
+A	Align to constitution: p95 ≤ 100 ms — tighten SC-002 to match Principle V; Redis cache-aside on the Catalog Service hot path is the implementation strategy
+B	Keep 200 ms; amend constitution — update the constitution to relax the target to 200 ms for this initial structure phase, with a path to 100 ms in a later feature
+C	Two-tier target: cached p95 ≤ 50 ms, uncached p95 ≤ 200 ms — differentiate between cache-hit and cache-miss response time targets
+
+A
