@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -12,6 +13,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "parking_facility", schema = "catalog")
+@Data
 public class ParkingFacilityJpaEntity {
 
     @Id
@@ -53,62 +55,52 @@ public class ParkingFacilityJpaEntity {
     @Column(nullable = false, length = 3)
     private String currency;
 
-    @Version
-    private Long version;
-
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
 
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
 
-    protected ParkingFacilityJpaEntity() {}
+    @Version
+    private Long version;
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
+    public void updateFrom(org.labcabrera.parking.catalog.domain.model.ParkingFacility domain) {
+        if (domain == null) {
+            return;
+        }
+        if (domain.getId() != null) {
+            this.id = domain.getId().value();
+        }
+        this.name = domain.getName();
+        this.city = domain.getCity();
+        this.address = domain.getAddress();
+        if (domain.getLocation() != null) {
+            this.latitude = domain.getLocation().latitude();
+            this.longitude = domain.getLocation().longitude();
+        }
+        this.totalSpots = domain.getTotalSpots();
+        if (domain.getTags() != null) {
+            this.tags = domain.getTags().stream().map(Enum::name).toArray(String[]::new);
+        }
+        else {
+            this.tags = null;
+        }
+        this.status = domain.getStatus() != null ? domain.getStatus().name() : null;
+        if (domain.getCancellationPolicy() != null) {
+            this.freeCancelHours = domain.getCancellationPolicy().freeCancelHours();
+            this.penaltyCancelMinutes = domain.getCancellationPolicy().penaltyCancelMinutes();
+        }
+        if (domain.getPricingRule() != null) {
+            this.dailyRate = domain.getPricingRule().estimatedDailyPrice();
+            if (this.currency == null) {
+                this.currency = "EUR";
+            }
+        }
+        this.version = domain.getVersion();
+        if (this.createdAt == null) {
+            this.createdAt = OffsetDateTime.now();
+        }
+        this.updatedAt = OffsetDateTime.now();
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-
-    public String getCity() { return city; }
-    public void setCity(String city) { this.city = city; }
-
-    public String getAddress() { return address; }
-    public void setAddress(String address) { this.address = address; }
-
-    public double getLatitude() { return latitude; }
-    public void setLatitude(double latitude) { this.latitude = latitude; }
-
-    public double getLongitude() { return longitude; }
-    public void setLongitude(double longitude) { this.longitude = longitude; }
-
-    public int getTotalSpots() { return totalSpots; }
-    public void setTotalSpots(int totalSpots) { this.totalSpots = totalSpots; }
-
-    public String[] getTags() { return tags; }
-    public void setTags(String[] tags) { this.tags = tags; }
-
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-
-    public int getFreeCancelHours() { return freeCancelHours; }
-    public void setFreeCancelHours(int freeCancelHours) { this.freeCancelHours = freeCancelHours; }
-
-    public int getPenaltyCancelMinutes() { return penaltyCancelMinutes; }
-    public void setPenaltyCancelMinutes(int penaltyCancelMinutes) { this.penaltyCancelMinutes = penaltyCancelMinutes; }
-
-    public BigDecimal getDailyRate() { return dailyRate; }
-    public void setDailyRate(BigDecimal dailyRate) { this.dailyRate = dailyRate; }
-
-    public String getCurrency() { return currency; }
-    public void setCurrency(String currency) { this.currency = currency; }
-
-    public Long getVersion() { return version; }
-    public void setVersion(Long version) { this.version = version; }
-
-    public OffsetDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
-
-    public OffsetDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(OffsetDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

@@ -1,7 +1,7 @@
 package org.labcabrera.parking.catalog.domain.port.outbound;
 
-import org.labcabrera.parking.catalog.domain.model.AvailabilityWindow;
-import org.labcabrera.parking.catalog.domain.model.FacilityId;
+import org.labcabrera.parking.catalog.domain.valueobjects.AvailabilityWindow;
+import org.labcabrera.parking.catalog.domain.valueobjects.FacilityId;
 
 import java.util.Optional;
 

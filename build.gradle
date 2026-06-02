@@ -5,7 +5,7 @@ plugins {
 
 allprojects {
     group = 'org.labcabrera.parking'
-    version = '0.0.1-SNAPSHOT'
+    version = '0.1.0-SNAPSHOT'
 
     repositories {
         mavenCentral()
@@ -22,6 +22,16 @@ subprojects {
         }
     }
 
+    ext {
+        axonVersion = '4.13.1'
+        springdocVersion = '3.0.3'
+
+        swaggerAnnotationsVersion = '2.2.13'
+        springCloudVersion = '2025.1.1'
+        rsqlParserVersion = '2.1.0'
+        mapstructVersion = '1.5.5.Final'
+    }
+
     dependencyManagement {
         imports {
             mavenBom "org.springframework.boot:spring-boot-dependencies:4.0.6"
@@ -34,7 +44,31 @@ subprojects {
         }
     }
 
+    dependencies {
+        implementation "org.axonframework:axon-spring-boot-starter:${axonVersion}"
+        implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
+	    implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+        implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
+
+        runtimeOnly 'org.postgresql:postgresql'
+
+        compileOnly 'org.projectlombok:lombok'
+
+        annotationProcessor 'org.projectlombok:lombok'
+	    annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+    }
+
     test {
         useJUnitPlatform()
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.annotationProcessorGeneratedSourcesDirectory = file("$buildDir/generated/sources/annotations")
+        options.compilerArgs += ["-Amapstruct.defaultComponentModel=spring"]
+    }
+
+    jar {
+        enabled = false
+        archiveClassifier = ''
     }
 }

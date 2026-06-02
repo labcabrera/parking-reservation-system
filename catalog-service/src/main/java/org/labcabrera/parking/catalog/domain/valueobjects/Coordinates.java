@@ -1,4 +1,4 @@
-package org.labcabrera.parking.catalog.domain.model;
+package org.labcabrera.parking.catalog.domain.valueobjects;
 
 public record Coordinates(double latitude, double longitude) {
 

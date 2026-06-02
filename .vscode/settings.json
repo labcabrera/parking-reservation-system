@@ -10,9 +10,10 @@
     ".specify/scripts/bash/": true,
     ".specify/scripts/powershell/": true
   },
+  "editor.formatOnSave": true,
   "java.configuration.updateBuildConfiguration": "automatic",
   "java.compile.nullAnalysis.mode": "automatic",
-
+  "java.format.settings.url": ".formatter/java-style.xml",
 
   "files.associations": {
     "application.yml": "plaintext",

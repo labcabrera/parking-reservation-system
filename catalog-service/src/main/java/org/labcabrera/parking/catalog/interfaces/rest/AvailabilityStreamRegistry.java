@@ -16,8 +16,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Component
 public class AvailabilityStreamRegistry implements AvailabilityBroadcastPort {
 
-    private static final Logger log = LoggerFactory.getLogger(AvailabilityStreamRegistry.class);
-
     private final Map<String, List<SseEmitter>> emittersByFacility = new ConcurrentHashMap<>();
 
     public SseEmitter register(String facilityId) {
@@ -27,7 +25,8 @@ public class AvailabilityStreamRegistry implements AvailabilityBroadcastPort {
 
         Runnable cleanup = () -> {
             List<SseEmitter> emitters = emittersByFacility.get(facilityId);
-            if (emitters != null) emitters.remove(emitter);
+            if (emitters != null)
+                emitters.remove(emitter);
         };
         emitter.onCompletion(cleanup);
         emitter.onTimeout(cleanup);
@@ -42,9 +41,10 @@ public class AvailabilityStreamRegistry implements AvailabilityBroadcastPort {
         for (SseEmitter emitter : emitters) {
             try {
                 emitter.send(SseEmitter.event()
-                        .name("availability-update")
-                        .data(payload));
-            } catch (IOException e) {
+                    .name("availability-update")
+                    .data(payload));
+            }
+            catch (IOException e) {
                 deadEmitters.add(emitter);
             }
         }
@@ -58,7 +58,8 @@ public class AvailabilityStreamRegistry implements AvailabilityBroadcastPort {
             for (SseEmitter emitter : emitters) {
                 try {
                     emitter.send(SseEmitter.event().comment("heartbeat"));
-                } catch (IOException e) {
+                }
+                catch (IOException e) {
                     dead.add(emitter);
                 }
             }

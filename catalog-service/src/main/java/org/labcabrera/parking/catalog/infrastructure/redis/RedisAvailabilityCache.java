@@ -1,8 +1,8 @@
 package org.labcabrera.parking.catalog.infrastructure.redis;
 
-import org.labcabrera.parking.catalog.domain.model.AvailabilityWindow;
-import org.labcabrera.parking.catalog.domain.model.FacilityId;
 import org.labcabrera.parking.catalog.domain.port.outbound.AvailabilityCache;
+import org.labcabrera.parking.catalog.domain.valueobjects.AvailabilityWindow;
+import org.labcabrera.parking.catalog.domain.valueobjects.FacilityId;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
@@ -24,27 +24,57 @@ public class RedisAvailabilityCache implements AvailabilityCache {
 
     @Override
     public Optional<Integer> getAvailableSpotCount(FacilityId facilityId, AvailabilityWindow window) {
-        String value = redisTemplate.opsForValue().get(buildKey(facilityId, window));
-        if (value == null) {
-            return Optional.empty();
-        }
-        return Optional.of(Integer.parseInt(value));
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getAvailableSpotCount'");
     }
 
     @Override
     public void putAvailableSpotCount(FacilityId facilityId, AvailabilityWindow window, int count) {
-        redisTemplate.opsForValue().set(buildKey(facilityId, window), String.valueOf(count), TTL);
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'putAvailableSpotCount'");
     }
 
     @Override
     public void invalidate(String facilityId) {
-        Set<String> keys = redisTemplate.keys(KEY_PREFIX + facilityId + ":*");
-        if (keys != null && !keys.isEmpty()) {
-            redisTemplate.delete(keys);
-        }
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'invalidate'");
     }
 
-    private String buildKey(FacilityId facilityId, AvailabilityWindow window) {
-        return KEY_PREFIX + facilityId + ":" + window.checkIn() + ":" + window.checkOut();
-    }
+    // @Override
+    // public Optional<Integer> getAvailableSpotCount(FacilityId facilityId, AvailabilityWindow window) {
+    //     String value = redisTemplate.opsForValue().get(buildKey(facilityId, window));
+    //     if (value == null) {
+    //         return Optional.empty();
+    //     }
+    //     return Optional.of(Integer.parseInt(value));
+    // }
+
+    // @Override
+    // public void putAvailableSpotCount(FacilityId facilityId, AvailabilityWindow window, int count) {
+    //     redisTemplate.opsForValue().set(buildKey(facilityId, window), String.valueOf(count), TTL);
+    // }
+
+    // @Override
+    // public void invalidate(String facilityId) {
+    //     Set<String> keys = redisTemplate.keys(KEY_PREFIX + facilityId + ":*");
+    //     if (keys != null && !keys.isEmpty()) {
+    //         redisTemplate.delete(keys);
+    //     }
+    // }
+
+    // private String buildKey(FacilityId facilityId, AvailabilityWindow window) {
+    //     return KEY_PREFIX + facilityId + ":" + window.checkIn() + ":" + window.checkOut();
+    // }
+
+    // @Override
+    // public Optional<Integer> getAvailableSpotCount(FacilityId facilityId, AvailabilityWindow window) {
+    //     // TODO Auto-generated method stub
+    //     throw new UnsupportedOperationException("Unimplemented method 'getAvailableSpotCount'");
+    // }
+
+    // @Override
+    // public void putAvailableSpotCount(FacilityId facilityId, AvailabilityWindow window, int count) {
+    //     // TODO Auto-generated method stub
+    //     throw new UnsupportedOperationException("Unimplemented method 'putAvailableSpotCount'");
+    // }
 }

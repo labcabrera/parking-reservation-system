@@ -1,10 +1,21 @@
 package org.labcabrera.parking.catalog.domain.model;
 
-import java.math.BigDecimal;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.UUID;
 
+import org.labcabrera.parking.catalog.domain.valueobjects.CancellationPolicy;
+import org.labcabrera.parking.catalog.domain.valueobjects.Coordinates;
+import org.labcabrera.parking.catalog.domain.valueobjects.FacilityId;
+import org.labcabrera.parking.catalog.domain.valueobjects.FacilityStatus;
+import org.labcabrera.parking.catalog.domain.valueobjects.FacilityTag;
+import org.labcabrera.parking.catalog.domain.valueobjects.ParkingPricingRule;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@Getter
+@AllArgsConstructor
 public class ParkingFacility {
 
     private final FacilityId id;
@@ -16,41 +27,24 @@ public class ParkingFacility {
     private final Set<FacilityTag> tags;
     private FacilityStatus status;
     private CancellationPolicy cancellationPolicy;
-    private BigDecimal dailyRate;
-    private String currency;
+    private ParkingPricingRule pricingRule;
     private Long version;
 
     public ParkingFacility(
-            FacilityId id,
-            String name,
-            String city,
-            String address,
-            Coordinates location,
-            int totalSpots,
-            Set<FacilityTag> tags,
-            FacilityStatus status,
-            CancellationPolicy cancellationPolicy,
-            Long version) {
-        this(id, name, city, address, location, totalSpots, tags, status, cancellationPolicy, BigDecimal.ZERO, "EUR", version);
-    }
+        String name,
+        String city,
+        String address,
+        Coordinates location,
+        int totalSpots,
+        final Set<FacilityTag> tags,
+        FacilityStatus status,
+        CancellationPolicy cancellationPolicy,
+        ParkingPricingRule pricingRule) {
 
-    public ParkingFacility(
-            FacilityId id,
-            String name,
-            String city,
-            String address,
-            Coordinates location,
-            int totalSpots,
-            Set<FacilityTag> tags,
-            FacilityStatus status,
-            CancellationPolicy cancellationPolicy,
-            BigDecimal dailyRate,
-            String currency,
-            Long version) {
         if (totalSpots < 1) {
             throw new IllegalArgumentException("totalSpots must be at least 1");
         }
-        this.id = id;
+        this.id = new FacilityId(UUID.randomUUID());
         this.name = name;
         this.city = city;
         this.address = address;
@@ -59,25 +53,11 @@ public class ParkingFacility {
         this.tags = tags != null ? EnumSet.copyOf(tags) : EnumSet.noneOf(FacilityTag.class);
         this.status = status;
         this.cancellationPolicy = cancellationPolicy;
-        this.dailyRate = dailyRate != null ? dailyRate : BigDecimal.ZERO;
-        this.currency = currency != null ? currency : "EUR";
-        this.version = version;
+        this.version = 0L;
     }
 
     public boolean isSearchable() {
         return status == FacilityStatus.ACTIVE;
     }
 
-    public FacilityId getId() { return id; }
-    public String getName() { return name; }
-    public String getCity() { return city; }
-    public String getAddress() { return address; }
-    public Coordinates getLocation() { return location; }
-    public int getTotalSpots() { return totalSpots; }
-    public Set<FacilityTag> getTags() { return Collections.unmodifiableSet(tags); }
-    public FacilityStatus getStatus() { return status; }
-    public CancellationPolicy getCancellationPolicy() { return cancellationPolicy; }
-    public BigDecimal getDailyRate() { return dailyRate; }
-    public String getCurrency() { return currency; }
-    public Long getVersion() { return version; }
 }
