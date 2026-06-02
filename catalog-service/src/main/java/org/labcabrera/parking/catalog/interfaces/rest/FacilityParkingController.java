@@ -11,12 +11,15 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 
+import java.util.UUID;
+
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.queryhandling.QueryGateway;
 import org.labcabrera.parking.catalog.application.cqrs.command.CreateParkingFacilityCommand;
 import org.labcabrera.parking.catalog.application.cqrs.query.GetParkingFacilitiesQuery;
 import org.labcabrera.parking.catalog.application.cqrs.query.GetParkingFacilityByIdQuery;
 import org.labcabrera.parking.catalog.domain.model.ParkingFacility;
+import org.labcabrera.parking.catalog.domain.valueobjects.FacilityId;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.ApiError;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.CreateParkingFacilityRequest;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.ParkingFacilityDto;
@@ -52,7 +55,8 @@ public class FacilityParkingController {
     //     @SecurityRequirement(name = "bearerAuth") }
     )
     public ResponseEntity<ParkingFacilityDto> getById(@PathVariable String parkingFacilityId) {
-        var query = new GetParkingFacilityByIdQuery(parkingFacilityId);
+        var id = FacilityId.of(UUID.fromString(parkingFacilityId));
+        var query = new GetParkingFacilityByIdQuery(id);
         ParkingFacility parkingFacility = queryGateway.query(query, ParkingFacility.class).join();
         return ResponseEntity.ok(mapper.toDto(parkingFacility));
     }

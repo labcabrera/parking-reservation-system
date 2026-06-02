@@ -32,18 +32,48 @@ spring:
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-    consumer:
-      group-id: catalog-service
-      auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
+#    consumer:
+#      group-id: catalog-service
+#      auto-offset-reset: earliest
+#      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+#      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+#    producer:
+#      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+#      value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 axon:
   axonserver:
     enabled: false
+
+  serializer:
+    general: jackson
+    events: jackson
+    messages: jackson
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    client-id: catalog-service
+    default-topic: domain-events
+    publisher:
+      confirmation-mode: transactional
+    producer:
+      transaction-id-prefix: catalog-service-axon-
+      event-processor-mode: subscribing
+      properties:
+        acks: all
+        enable.idempotence: true
+    consumer:
+      group-id: orders-service
+      event-processor-mode: tracking
+      properties:
+        auto.offset.reset: earliest
 
 management:
   endpoints:

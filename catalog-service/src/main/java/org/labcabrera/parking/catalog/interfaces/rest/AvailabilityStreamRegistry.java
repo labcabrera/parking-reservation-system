@@ -1,8 +1,6 @@
 package org.labcabrera.parking.catalog.interfaces.rest;
 
 import org.labcabrera.parking.catalog.domain.port.outbound.AvailabilityBroadcastPort;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;

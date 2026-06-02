@@ -1,7 +1,5 @@
 package org.labcabrera.parking.catalog.application.cqrs.handler;
 
-import java.util.UUID;
-
 import org.axonframework.queryhandling.QueryHandler;
 import org.labcabrera.parking.catalog.application.cqrs.query.GetParkingFacilitiesQuery;
 import org.labcabrera.parking.catalog.application.cqrs.query.GetParkingFacilityByIdQuery;
@@ -24,13 +22,14 @@ public class ParkingFacilityQueryHandler {
     @QueryHandler
     public ParkingFacility handle(GetParkingFacilityByIdQuery query) {
         log.info("Handling GetParkingFacilityByIdQuery {}", query);
-        FacilityId facilityId = FacilityId.of(UUID.fromString(query.parkingFacilityId()));
-        return repository.findById(facilityId)
-            .orElseThrow(() -> new RuntimeException("Parking facility not found with id: " + query.parkingFacilityId()));
+        return repository.findById(query.facilityId())
+            //TODO create custom exception and handle it in the controller advice
+            .orElseThrow(() -> new RuntimeException("Parking facility not found with id: " + query.facilityId()));
     }
 
+    //NOTE: Axon cant handle properly generic types, so we need to cast the response type in the controller
     @QueryHandler
-    public Page<ParkingFacility> handle(GetParkingFacilitiesQuery query) {
+    public Page handle(GetParkingFacilitiesQuery query) {
         log.info("Handling GetParkingFacilitiesQuery {}", query);
         return repository.findByRsql(query.rsql(), query.pageable());
     }

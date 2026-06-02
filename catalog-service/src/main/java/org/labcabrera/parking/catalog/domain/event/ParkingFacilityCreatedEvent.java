@@ -2,8 +2,10 @@ package org.labcabrera.parking.catalog.domain.event;
 
 import java.time.Instant;
 
+import org.labcabrera.parking.catalog.domain.valueobjects.FacilityId;
+
 public record ParkingFacilityCreatedEvent(
-    String parkingFacilityId,
+    FacilityId facilityId,
     String name,
     String city,
     String address,
