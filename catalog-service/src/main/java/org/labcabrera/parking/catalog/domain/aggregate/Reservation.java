@@ -7,7 +7,7 @@ import java.util.UUID;
 import lombok.Getter;
 
 @Getter
-public class SearchReservation {
+public class Reservation {
 
     private UUID id;
     private Optional<String> parkingFacilityId;
@@ -18,12 +18,12 @@ public class SearchReservation {
     private LocalDateTime createdAt;
     private LocalDateTime expiresAt;
 
-    public static SearchReservation create(String parkingFacilityId, String userId, String checkIn, String checkOut,
+    public static Reservation create(String parkingFacilityId, String userId, String checkIn, String checkOut,
         int expirationInSeconds) {
-        return new SearchReservation(parkingFacilityId, userId, checkIn, checkOut, expirationInSeconds);
+        return new Reservation(parkingFacilityId, userId, checkIn, checkOut, expirationInSeconds);
     }
 
-    private SearchReservation(String parkingFacilityId, String userId, String checkIn, String checkOut, int expirationInSeconds) {
+    private Reservation(String parkingFacilityId, String userId, String checkIn, String checkOut, int expirationInSeconds) {
         this.id = UUID.randomUUID();
         this.parkingFacilityId = Optional.of(parkingFacilityId);
         this.userId = userId;

@@ -3,7 +3,7 @@ package org.labcabrera.parking.catalog.application.cqrs.handler;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.labcabrera.parking.catalog.application.cqrs.command.StartReservationCommand;
-import org.labcabrera.parking.catalog.domain.aggregate.SearchReservation;
+import org.labcabrera.parking.catalog.domain.aggregate.Reservation;
 import org.labcabrera.parking.catalog.domain.port.outbound.SearchReservationRepository;
 import org.springframework.stereotype.Component;
 
@@ -24,11 +24,11 @@ public class SearchReservationCommandHandler {
 
     @Transactional
     @CommandHandler
-    public SearchReservation handle(StartReservationCommand command) {
+    public Reservation handle(StartReservationCommand command) {
         log.debug("Handling StartReservationCommand: {}", command);
         //TODO integrar con seguridad
         String userId = "user-test";
-        SearchReservation searchReservation = SearchReservation.create(userId, userId, userId, userId, expirationInSeconds);
+        Reservation searchReservation = Reservation.create(userId, userId, userId, userId, expirationInSeconds);
         repository.save(searchReservation);
         return searchReservation;
     }
