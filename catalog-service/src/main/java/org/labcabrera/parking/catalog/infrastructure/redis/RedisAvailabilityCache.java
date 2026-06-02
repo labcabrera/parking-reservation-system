@@ -1,8 +1,8 @@
 package org.labcabrera.parking.catalog.infrastructure.redis;
 
 import org.labcabrera.parking.catalog.domain.port.outbound.AvailabilityCache;
-import org.labcabrera.parking.catalog.domain.valueobjects.AvailabilityWindow;
-import org.labcabrera.parking.catalog.domain.valueobjects.FacilityId;
+import org.labcabrera.parking.catalog.domain.valueobject.AvailabilityWindow;
+import org.labcabrera.parking.catalog.domain.valueobject.FacilityId;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 

@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.labcabrera.parking.catalog.domain.aggregate.ParkingFacility;
-import org.labcabrera.parking.catalog.domain.valueobjects.FacilityStatus;
+import org.labcabrera.parking.catalog.domain.valueobject.FacilityStatus;
 
 @Entity
 @Table(name = "parking_facility", schema = "catalog")

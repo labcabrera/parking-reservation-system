@@ -20,7 +20,7 @@ import org.labcabrera.parking.catalog.application.cqrs.command.CreateParkingFaci
 import org.labcabrera.parking.catalog.application.cqrs.query.GetParkingFacilitiesQuery;
 import org.labcabrera.parking.catalog.application.cqrs.query.GetParkingFacilityByIdQuery;
 import org.labcabrera.parking.catalog.domain.aggregate.ParkingFacility;
-import org.labcabrera.parking.catalog.domain.valueobjects.FacilityId;
+import org.labcabrera.parking.catalog.domain.valueobject.FacilityId;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.ApiError;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.CreateParkingFacilityRequest;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.ParkingFacilityDto;

@@ -8,12 +8,12 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.labcabrera.parking.catalog.domain.aggregate.ParkingFacility;
-import org.labcabrera.parking.catalog.domain.valueobjects.CancellationPolicy;
-import org.labcabrera.parking.catalog.domain.valueobjects.Coordinates;
-import org.labcabrera.parking.catalog.domain.valueobjects.EntityMetadata;
-import org.labcabrera.parking.catalog.domain.valueobjects.FacilityId;
-import org.labcabrera.parking.catalog.domain.valueobjects.FacilityTag;
-import org.labcabrera.parking.catalog.domain.valueobjects.ParkingPricingRule;
+import org.labcabrera.parking.catalog.domain.valueobject.CancellationPolicy;
+import org.labcabrera.parking.catalog.domain.valueobject.Coordinates;
+import org.labcabrera.parking.catalog.domain.valueobject.EntityMetadata;
+import org.labcabrera.parking.catalog.domain.valueobject.FacilityId;
+import org.labcabrera.parking.catalog.domain.valueobject.FacilityTag;
+import org.labcabrera.parking.catalog.domain.valueobject.ParkingPricingRule;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

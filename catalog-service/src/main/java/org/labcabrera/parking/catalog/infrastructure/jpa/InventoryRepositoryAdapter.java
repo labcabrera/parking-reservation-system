@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.labcabrera.parking.catalog.domain.port.outbound.InventoryRepository;
-import org.labcabrera.parking.catalog.domain.valueobjects.SlotKey;
+import org.labcabrera.parking.catalog.domain.valueobject.SlotKey;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;

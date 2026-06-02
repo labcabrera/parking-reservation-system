@@ -1,4 +1,4 @@
-package org.labcabrera.parking.catalog.domain.valueobjects;
+package org.labcabrera.parking.catalog.domain.valueobject;
 
 import java.time.LocalDateTime;
 import java.util.Optional;

@@ -1,9 +1,9 @@
 package org.labcabrera.parking.catalog.domain.port.outbound;
 
-import org.labcabrera.parking.catalog.domain.valueobjects.AvailabilityWindow;
-import org.labcabrera.parking.catalog.domain.valueobjects.FacilityId;
-
 import java.util.Optional;
+
+import org.labcabrera.parking.catalog.domain.valueobject.AvailabilityWindow;
+import org.labcabrera.parking.catalog.domain.valueobject.FacilityId;
 
 public interface AvailabilityCache {
 

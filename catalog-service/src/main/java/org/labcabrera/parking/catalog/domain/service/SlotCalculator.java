@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.labcabrera.parking.catalog.domain.valueobjects.SlotKey;
+import org.labcabrera.parking.catalog.domain.valueobject.SlotKey;
 
 public final class SlotCalculator {
 

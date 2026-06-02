@@ -6,13 +6,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-import org.labcabrera.parking.catalog.domain.valueobjects.CancellationPolicy;
-import org.labcabrera.parking.catalog.domain.valueobjects.Coordinates;
-import org.labcabrera.parking.catalog.domain.valueobjects.EntityMetadata;
-import org.labcabrera.parking.catalog.domain.valueobjects.FacilityId;
-import org.labcabrera.parking.catalog.domain.valueobjects.FacilityStatus;
-import org.labcabrera.parking.catalog.domain.valueobjects.FacilityTag;
-import org.labcabrera.parking.catalog.domain.valueobjects.ParkingPricingRule;
+import org.labcabrera.parking.catalog.domain.valueobject.CancellationPolicy;
+import org.labcabrera.parking.catalog.domain.valueobject.Coordinates;
+import org.labcabrera.parking.catalog.domain.valueobject.EntityMetadata;
+import org.labcabrera.parking.catalog.domain.valueobject.FacilityId;
+import org.labcabrera.parking.catalog.domain.valueobject.FacilityStatus;
+import org.labcabrera.parking.catalog.domain.valueobject.FacilityTag;
+import org.labcabrera.parking.catalog.domain.valueobject.ParkingPricingRule;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

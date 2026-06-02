@@ -3,6 +3,7 @@ package org.labcabrera.parking.catalog.interfaces.rest;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
+import org.labcabrera.parking.catalog.domain.exception.DomainException;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.ApiError;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,12 +24,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RestExceptionHandler {
 
-    // @ExceptionHandler(DomainException.class)
-    // public ResponseEntity<ApiError> handleDomainException(DomainException ex) {
-    //     log.error("Caugth Domain exception: code={}, message={}", ex.getMessage(), ex);
-    //     var apiError = fromDomainException(ex);
-    //     return ResponseEntity.status(HttpStatus.valueOf(ex.getStatus())).body(apiError);
-    // }
+    @ExceptionHandler(DomainException.class)
+    public ResponseEntity<ApiError> handleDomainException(DomainException ex) {
+        log.error("Caugth Domain exception: code={}, message={}", ex.getMessage(), ex);
+        var apiError = fromDomainException(ex);
+        return ResponseEntity.status(HttpStatus.valueOf(ex.getStatus())).body(apiError);
+    }
 
     @ExceptionHandler(SecurityException.class)
     public ResponseEntity<ApiError> handleSecurityException(SecurityException ex) {
@@ -53,8 +54,9 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiError> handleIllegalArgumentException(IllegalArgumentException ex) {
-        log.error("Illegal argument exception", ex);
-        ApiError error = new ApiError("msg.err.illegal-argument", ex.getMessage(), LocalDateTime.now(),
+        // In this cases avoid stack trace pollution
+        log.warn("Illegal argument exception. {}", ex.getMessage());
+        ApiError error = new ApiError("ILLEGAL_ARGUMENT", ex.getMessage(), LocalDateTime.now(),
             new ArrayList<>());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
@@ -103,18 +105,12 @@ public class RestExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 
-    // private ApiError fromDomainException(DomainException ex) {
-    //     var list = new ArrayList<>();
-    //     list.add(ExceptionUtils.getStackTrace(ex));
-    //     if (ex instanceof ConstraintViolationException cvex) {
-    //         cvex.getViolations().stream()
-    //             .map(v -> new ApiErrorDetail("violation",
-    //                 String.format("%s %s", i18n(v.getPropertyPath().toString()), v.getMessage())))
-    //             .forEach(e -> list.add(e));
-    //     }
-    //     var err = new ApiError(ex.getMessage(), i18n(ex.getMessage(), ex.getArgs()),
-    //         LocalDateTime.now(), list);
-    //     return err;
-    // }
+    private ApiError fromDomainException(DomainException ex) {
+        var list = new ArrayList<String>();
+        list.add("Exception status: %s".formatted(ex.getStatus()));
+        list.add("Exception message: %s".formatted(ex.getMessage()));
+        list.add("Exception class: %s".formatted(ex.getClass().getName()));
+       return new ApiError(ex.getMessage(), ex.getMessage(),LocalDateTime.now(), list);
+    }
 
 }

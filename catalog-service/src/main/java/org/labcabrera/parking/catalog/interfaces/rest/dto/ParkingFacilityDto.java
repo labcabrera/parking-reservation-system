@@ -2,11 +2,11 @@ package org.labcabrera.parking.catalog.interfaces.rest.dto;
 
 import java.util.Set;
 
-import org.labcabrera.parking.catalog.domain.valueobjects.CancellationPolicy;
-import org.labcabrera.parking.catalog.domain.valueobjects.Coordinates;
-import org.labcabrera.parking.catalog.domain.valueobjects.FacilityStatus;
-import org.labcabrera.parking.catalog.domain.valueobjects.FacilityTag;
-import org.labcabrera.parking.catalog.domain.valueobjects.ParkingPricingRule;
+import org.labcabrera.parking.catalog.domain.valueobject.CancellationPolicy;
+import org.labcabrera.parking.catalog.domain.valueobject.Coordinates;
+import org.labcabrera.parking.catalog.domain.valueobject.FacilityStatus;
+import org.labcabrera.parking.catalog.domain.valueobject.FacilityTag;
+import org.labcabrera.parking.catalog.domain.valueobject.ParkingPricingRule;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 

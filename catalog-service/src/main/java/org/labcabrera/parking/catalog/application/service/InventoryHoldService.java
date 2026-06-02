@@ -1,5 +1,6 @@
 package org.labcabrera.parking.catalog.application.service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -7,8 +8,8 @@ import java.util.UUID;
 import org.labcabrera.parking.catalog.domain.port.outbound.InventoryRepository;
 import org.labcabrera.parking.catalog.domain.port.outbound.ParkingFacilityRepository;
 import org.labcabrera.parking.catalog.domain.service.SlotCalculator;
-import org.labcabrera.parking.catalog.domain.valueobjects.FacilityId;
-import org.labcabrera.parking.catalog.domain.valueobjects.SlotKey;
+import org.labcabrera.parking.catalog.domain.valueobject.FacilityId;
+import org.labcabrera.parking.catalog.domain.valueobject.SlotKey;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
@@ -29,10 +30,15 @@ public class InventoryHoldService {
     private final InventoryRepository inventory;
     private final ParkingFacilityRepository facilityRepository;
 
-    public HoldResult tryHold(UUID facilityId, java.time.LocalDateTime checkIn, java.time.LocalDateTime checkOut) {
-        int capacity = facilityRepository.findById(new FacilityId(facilityId))
-            .map(f -> f.getTotalSpots())
-            .orElseThrow(() -> new IllegalArgumentException("Facility not found: " + facilityId));
+    public HoldResult tryHold(UUID facilityId, LocalDateTime checkIn, LocalDateTime checkOut) {
+        log.info("Attempting inventory hold for facility {}, checkIn {}, checkOut {}", facilityId, checkIn, checkOut);
+
+        var facilityOpt = facilityRepository.findById(new FacilityId(facilityId));
+        if (facilityOpt.isEmpty()) {
+            log.warn("tryHold: facility {} not found", facilityId);
+            return HoldResult.failure("Facility not found: " + facilityId);
+        }
+        int capacity = facilityOpt.get().getTotalSpots();
 
         List<SlotKey> slots = SlotCalculator.slotsFor(facilityId, checkIn, checkOut);
         List<SlotKey> held = new ArrayList<>(slots.size());

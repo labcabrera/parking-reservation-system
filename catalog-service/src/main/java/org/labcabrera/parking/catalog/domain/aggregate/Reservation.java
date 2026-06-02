@@ -22,7 +22,7 @@ import org.labcabrera.parking.catalog.domain.event.ReservationExpiredEvent;
 import org.labcabrera.parking.catalog.domain.event.ReservationFailedEvent;
 import org.labcabrera.parking.catalog.domain.event.ReservationHeldEvent;
 import org.labcabrera.parking.catalog.domain.event.ReservationStartedEvent;
-import org.labcabrera.parking.catalog.domain.valueobjects.ReservationStatus;
+import org.labcabrera.parking.catalog.domain.valueobject.ReservationStatus;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -33,6 +33,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * State-stored Axon aggregate persisted via JPA. The 10-minute hold lifecycle and
@@ -43,6 +44,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "reservation", schema = "catalog")
 @NoArgsConstructor
 @Getter
+@Slf4j
 public class Reservation {
 
     @Id
@@ -85,6 +87,8 @@ public class Reservation {
 
     @CommandHandler
     public Reservation(StartReservationCommand cmd, ReservationConfig config) {
+        log.debug("Starting reservation {} for facility {} from {} to {}, expires in {} minutes",
+            cmd.reservationId(), cmd.facilityId(), cmd.checkIn(), cmd.checkOut(), config.holdMinutes());
         LocalDateTime now = LocalDateTime.now();
         apply(new ReservationStartedEvent(
             cmd.reservationId(),
@@ -109,6 +113,7 @@ public class Reservation {
 
     @CommandHandler
     void handle(MarkReservationHeldCommand cmd) {
+        log.info("Marking reservation {} as HELD with estimated price {} {}", cmd.reservationId(), cmd.estimatedPrice(), cmd.currency());
         if (status != ReservationStatus.PENDING) {
             throw new IllegalStateException("Cannot mark as HELD from status " + status);
         }
@@ -124,6 +129,7 @@ public class Reservation {
 
     @CommandHandler
     void handle(MarkReservationFailedCommand cmd) {
+        log.info("Marking reservation {} as FAILED due to {}", cmd.reservationId(), cmd.reason());
         if (status.isTerminal()) {
             return;
         }
@@ -138,6 +144,7 @@ public class Reservation {
 
     @CommandHandler
     void handle(ConfirmReservationCommand cmd) {
+        log.info("Confirming reservation {}", cmd.reservationId());
         if (status != ReservationStatus.HELD) {
             throw new IllegalStateException("Only HELD reservations can be confirmed (current: " + status + ")");
         }
@@ -151,6 +158,7 @@ public class Reservation {
 
     @CommandHandler
     void handle(CancelReservationCommand cmd) {
+        log.info("Cancelling reservation {} due to {}", cmd.reservationId(), cmd.reason());
         if (status.isTerminal()) {
             return;
         }
@@ -165,6 +173,7 @@ public class Reservation {
 
     @CommandHandler
     void handle(ExpireReservationCommand cmd) {
+        log.info("Expiring reservation {}", cmd.reservationId());
         if (status == ReservationStatus.HELD || status == ReservationStatus.PENDING) {
             apply(new ReservationExpiredEvent(cmd.reservationId()));
         }

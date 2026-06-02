@@ -78,6 +78,7 @@ public class ReservationController {
     @PostMapping("/{id}/confirm")
     @Operation(summary = "Confirm a HELD reservation")
     public ResponseEntity<Void> confirm(@PathVariable UUID id) {
+        log.info("Received confirm request for reservation {}", id);
         commandGateway.sendAndWait(new ConfirmReservationCommand(id), 5, TimeUnit.SECONDS);
         return ResponseEntity.noContent().build();
     }
@@ -85,6 +86,7 @@ public class ReservationController {
     @DeleteMapping("/{id}")
     @Operation(summary = "Cancel a reservation and release inventory")
     public ResponseEntity<Void> cancel(@PathVariable UUID id) {
+        log.info("Received cancel request for reservation {}", id);
         commandGateway.sendAndWait(new CancelReservationCommand(id, "user-cancelled"), 5, TimeUnit.SECONDS);
         return ResponseEntity.noContent().build();
     }

@@ -3,7 +3,7 @@ package org.labcabrera.parking.catalog.domain.port.outbound;
 import java.util.List;
 import java.util.UUID;
 
-import org.labcabrera.parking.catalog.domain.valueobjects.SlotKey;
+import org.labcabrera.parking.catalog.domain.valueobject.SlotKey;
 
 /**
  * Outbound port for the half-hour inventory grid. Implementations must guarantee

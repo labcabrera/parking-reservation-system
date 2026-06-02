@@ -11,7 +11,6 @@ import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.modelling.saga.EndSaga;
 import org.axonframework.modelling.saga.SagaEventHandler;
-import org.axonframework.modelling.saga.SagaLifecycle;
 import org.axonframework.modelling.saga.StartSaga;
 import org.axonframework.spring.stereotype.Saga;
 import org.labcabrera.parking.catalog.application.cqrs.command.MarkReservationFailedCommand;
@@ -24,7 +23,7 @@ import org.labcabrera.parking.catalog.domain.event.ReservationConfirmedEvent;
 import org.labcabrera.parking.catalog.domain.event.ReservationExpiredEvent;
 import org.labcabrera.parking.catalog.domain.event.ReservationStartedEvent;
 import org.labcabrera.parking.catalog.domain.port.outbound.ParkingFacilityRepository;
-import org.labcabrera.parking.catalog.domain.valueobjects.FacilityId;
+import org.labcabrera.parking.catalog.domain.valueobject.FacilityId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import lombok.extern.slf4j.Slf4j;
@@ -70,7 +69,7 @@ public class ReservationSaga {
     public void on(ReservationStartedEvent ev) {
         log.info("Received ReservationStartedEvent for reservation {} on facility {} from {} to {}, expires at {}",
             ev.reservationId(), ev.facilityId(), ev.checkIn(), ev.checkOut(), ev.expiresAt());
-            
+
         this.facilityId = ev.facilityId();
         this.checkIn = ev.checkIn();
         this.checkOut = ev.checkOut();
@@ -116,8 +115,8 @@ public class ReservationSaga {
     @EndSaga
     public void on(ReservationCancelledEvent ev) {
         log.info("Reservation {} cancelled; releasing inventory", ev.reservationId());
-        cancelExpiryDeadline();
         releaseInventory();
+        cancelExpiryDeadline();
     }
 
     @SagaEventHandler(associationProperty = "reservationId")
@@ -137,12 +136,10 @@ public class ReservationSaga {
         if (expiryDeadlineId != null) {
             try {
                 deadlineManager.cancelSchedule(EXPIRY_DEADLINE, expiryDeadlineId);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 log.debug("Could not cancel expiry deadline {}: {}", expiryDeadlineId, e.getMessage());
             }
         }
-        SagaLifecycle.end();
     }
 
     /**

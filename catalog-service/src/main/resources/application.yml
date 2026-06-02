@@ -95,5 +95,5 @@ catalog:
     max-page-size: 100
     low-availability-threshold: 5
   reservation:
-    hold-minutes: 1
+    hold-minutes: 5
     slot-size-minutes: 30

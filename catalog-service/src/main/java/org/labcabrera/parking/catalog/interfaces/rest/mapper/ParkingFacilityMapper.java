@@ -1,7 +1,7 @@
 package org.labcabrera.parking.catalog.interfaces.rest.mapper;
 
 import org.labcabrera.parking.catalog.domain.aggregate.ParkingFacility;
-import org.labcabrera.parking.catalog.domain.valueobjects.FacilityId;
+import org.labcabrera.parking.catalog.domain.valueobject.FacilityId;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.ParkingFacilityDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
