@@ -35,7 +35,7 @@ public class InventoryHoldService {
 
         var facilityOpt = facilityRepository.findById(new FacilityId(facilityId));
         if (facilityOpt.isEmpty()) {
-            log.warn("tryHold: facility {} not found", facilityId);
+            log.warn("Facility {} not found", facilityId);
             return HoldResult.failure("Facility not found: " + facilityId);
         }
         int capacity = facilityOpt.get().getTotalSpots();
@@ -59,7 +59,8 @@ public class InventoryHoldService {
         return HoldResult.success(held);
     }
 
-    public void release(UUID facilityId, java.time.LocalDateTime checkIn, java.time.LocalDateTime checkOut) {
+    public void release(UUID facilityId, LocalDateTime checkIn, LocalDateTime checkOut) {
+        log.info("Releasing inventory hold for facility {}, checkIn {}, checkOut {}", facilityId, checkIn, checkOut);
         List<SlotKey> slots = SlotCalculator.slotsFor(facilityId, checkIn, checkOut);
         inventory.release(slots, facilityId);
     }

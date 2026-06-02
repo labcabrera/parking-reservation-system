@@ -2,6 +2,8 @@ package org.labcabrera.parking.catalog.infrastructure.config;
 
 import java.util.UUID;
 
+import javax.annotation.Nonnull;
+
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.config.ConfigurationScopeAwareProvider;
 import org.axonframework.deadline.DeadlineManager;
@@ -29,7 +31,7 @@ public class ReservationAxonConfig {
     public Repository<Reservation> reservationRepository(
             EntityManagerProvider entityManagerProvider,
             EventBus eventBus,
-            ParameterResolverFactory parameterResolverFactory) {
+            @Nonnull ParameterResolverFactory parameterResolverFactory) {
         return GenericJpaRepository.builder(Reservation.class)
             .entityManagerProvider(entityManagerProvider)
             .identifierConverter(UUID::fromString)

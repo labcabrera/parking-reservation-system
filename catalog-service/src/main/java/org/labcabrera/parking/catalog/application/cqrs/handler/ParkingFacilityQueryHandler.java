@@ -23,7 +23,6 @@ public class ParkingFacilityQueryHandler {
     public ParkingFacility handle(GetParkingFacilityByIdQuery query) {
         log.info("Handling GetParkingFacilityByIdQuery {}", query);
         return repository.findById(query.facilityId())
-            //TODO create custom exception and handle it in the controller advice
             .orElseThrow(() -> new EntityNotFoundException("Parking facility not found with id: " + query.facilityId()));
     }
 

@@ -66,6 +66,7 @@ public class ReservationSaga {
 
     @StartSaga
     @SagaEventHandler(associationProperty = "reservationId")
+    @SuppressWarnings("null")
     public void on(ReservationStartedEvent ev) {
         log.info("Received ReservationStartedEvent for reservation {} on facility {} from {} to {}, expires at {}",
             ev.reservationId(), ev.facilityId(), ev.checkIn(), ev.checkOut(), ev.expiresAt());

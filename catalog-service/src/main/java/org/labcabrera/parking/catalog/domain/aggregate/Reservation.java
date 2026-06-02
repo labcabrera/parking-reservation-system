@@ -160,6 +160,7 @@ public class Reservation {
     void handle(CancelReservationCommand cmd) {
         log.info("Cancelling reservation {} due to {}", cmd.reservationId(), cmd.reason());
         if (status.isTerminal()) {
+            log.info("Reservation {} is already in terminal status {}; ignoring cancel", cmd.reservationId(), status);
             return;
         }
         apply(new ReservationCancelledEvent(cmd.reservationId(), cmd.reason()));

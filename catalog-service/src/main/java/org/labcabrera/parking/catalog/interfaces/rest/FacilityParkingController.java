@@ -64,6 +64,7 @@ public class FacilityParkingController {
     }
 
     @GetMapping
+    @SuppressWarnings("unchecked")
     @Operation(operationId = "searchParkingFacilities", summary = "Search parking facilities", description = "Search parking facilities using RSQL and pagination", responses = {
         @ApiResponse(responseCode = "200", description = "Paged list of parking facilities", content = {
             @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = ParkingFacilityDto.class))) }),
