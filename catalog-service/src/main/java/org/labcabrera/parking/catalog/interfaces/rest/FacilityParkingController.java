@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.UUID;
 
@@ -18,7 +19,7 @@ import org.axonframework.queryhandling.QueryGateway;
 import org.labcabrera.parking.catalog.application.cqrs.command.CreateParkingFacilityCommand;
 import org.labcabrera.parking.catalog.application.cqrs.query.GetParkingFacilitiesQuery;
 import org.labcabrera.parking.catalog.application.cqrs.query.GetParkingFacilityByIdQuery;
-import org.labcabrera.parking.catalog.domain.model.ParkingFacility;
+import org.labcabrera.parking.catalog.domain.aggregate.ParkingFacility;
 import org.labcabrera.parking.catalog.domain.valueobjects.FacilityId;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.ApiError;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.CreateParkingFacilityRequest;
@@ -38,6 +39,7 @@ import org.springframework.data.domain.Pageable;
 @RequestMapping("/api/v1/parking-facilities")
 @Tag(name = "Parking Facilities", description = "Parking facility CRUD operations")
 @AllArgsConstructor
+@Slf4j
 public class FacilityParkingController {
 
     private final CommandGateway commandGateway;
@@ -82,6 +84,7 @@ public class FacilityParkingController {
         @ApiResponse(responseCode = "400", description = "Invalid request", content = {
             @Content(mediaType = "application/json", schema = @Schema(implementation = ApiError.class)) }) })
     public ResponseEntity<ParkingFacilityDto> create(@RequestBody CreateParkingFacilityRequest request) {
+        log.debug("Creating parking facility with name: {}", request.name());
         var command = new CreateParkingFacilityCommand(
             request.name(),
             request.city(),

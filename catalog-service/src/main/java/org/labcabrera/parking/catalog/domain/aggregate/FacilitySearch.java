@@ -1,4 +1,4 @@
-package org.labcabrera.parking.catalog.domain.model;
+package org.labcabrera.parking.catalog.domain.aggregate;
 
 import java.time.LocalDateTime;
 import java.util.Set;

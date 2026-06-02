@@ -1,14 +1,19 @@
 package org.labcabrera.parking.catalog.infrastructure.jpa;
 
+import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.labcabrera.parking.catalog.domain.model.ParkingFacility;
+import org.labcabrera.parking.catalog.domain.aggregate.ParkingFacility;
+import org.labcabrera.parking.catalog.domain.valueobjects.CancellationPolicy;
+import org.labcabrera.parking.catalog.domain.valueobjects.Coordinates;
+import org.labcabrera.parking.catalog.domain.valueobjects.EntityMetadata;
 import org.labcabrera.parking.catalog.domain.valueobjects.FacilityId;
 import org.labcabrera.parking.catalog.domain.valueobjects.FacilityTag;
-
+import org.labcabrera.parking.catalog.domain.valueobjects.ParkingPricingRule;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -19,22 +24,19 @@ public interface FacilityJpaMapper {
         if (entity == null) {
             return null;
         }
-        java.util.Set<FacilityTag> tags = entity.getTags() != null
-            ? java.util.Arrays.stream(entity.getTags())
+        Set<FacilityTag> tags = entity.getTags() != null
+            ? Arrays.stream(entity.getTags())
                 .map(FacilityJpaMapper::safeTagValueOf)
                 .filter(t -> t != null)
-                .collect(java.util.stream.Collectors.toCollection(() -> java.util.EnumSet.noneOf(FacilityTag.class)))
-            : java.util.EnumSet.noneOf(FacilityTag.class);
-
-        org.labcabrera.parking.catalog.domain.valueobjects.Coordinates coords = new org.labcabrera.parking.catalog.domain.valueobjects.Coordinates(
-            entity.getLatitude(), entity.getLongitude());
-
-        org.labcabrera.parking.catalog.domain.valueobjects.CancellationPolicy cancellationPolicy = new org.labcabrera.parking.catalog.domain.valueobjects.CancellationPolicy(
-            entity.getFreeCancelHours(), entity.getPenaltyCancelMinutes());
-
-        org.labcabrera.parking.catalog.domain.valueobjects.ParkingPricingRule pricingRule = new org.labcabrera.parking.catalog.domain.valueobjects.ParkingPricingRule(
-            null, entity.getDailyRate());
-
+                .collect(Collectors.toCollection(() -> EnumSet.noneOf(FacilityTag.class)))
+            : EnumSet.noneOf(FacilityTag.class);
+        Coordinates coords = new Coordinates(entity.getLatitude(), entity.getLongitude());
+        CancellationPolicy cancellationPolicy = new CancellationPolicy(entity.getFreeCancelHours(), entity.getPenaltyCancelMinutes());
+        ParkingPricingRule pricingRule = new ParkingPricingRule(entity.getExternalPricingId(), entity.getEstimatedDailyPrice());
+        EntityMetadata metadata = new EntityMetadata(
+            entity.getCreatedAt(),
+            Optional.ofNullable(entity.getUpdatedAt()),
+            "system");
         return new ParkingFacility(
             FacilityId.of(entity.getId()),
             entity.getName(),
@@ -43,24 +45,35 @@ public interface FacilityJpaMapper {
             coords,
             entity.getTotalSpots(),
             tags,
-            org.labcabrera.parking.catalog.domain.valueobjects.FacilityStatus.valueOf(entity.getStatus()),
+            entity.getStatus(),
             cancellationPolicy,
             pricingRule,
+            metadata,
             entity.getVersion());
     }
 
-    default FacilityId map(UUID id) {
-        return id == null ? null : FacilityId.of(id);
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "latitude", source = "location.latitude")
+    @Mapping(target = "longitude", source = "location.longitude")
+    @Mapping(target = "tags", source = "tags")
+    @Mapping(target = "status", source = "status")
+    @Mapping(target = "freeCancelHours", source = "cancellationPolicy.freeCancelHours")
+    @Mapping(target = "penaltyCancelMinutes", source = "cancellationPolicy.penaltyCancelMinutes")
+    @Mapping(target = "externalPricingId", source = "pricingRule.externalPricingId")
+    @Mapping(target = "estimatedDailyPrice", source = "pricingRule.estimatedDailyPrice")
+    @Mapping(target = "createdAt", source = "metadata.createdAt")
+    @Mapping(target = "updatedAt", expression = "java(domain.getMetadata() != null ? domain.getMetadata().updatedAt().orElse(null) : null)")
+    ParkingFacilityJpaEntity toEntity(ParkingFacility domain);
+
+    default UUID map(FacilityId id) {
+        return id == null ? null : id.value();
     }
 
-    default Set<FacilityTag> map(String[] tags) {
+    default String[] map(Set<FacilityTag> tags) {
         if (tags == null) {
-            return java.util.EnumSet.noneOf(FacilityTag.class);
+            return null;
         }
-        return java.util.Arrays.stream(tags)
-            .map(FacilityJpaMapper::safeTagValueOf)
-            .filter(t -> t != null)
-            .collect(Collectors.toCollection(() -> EnumSet.noneOf(FacilityTag.class)));
+        return tags.stream().map(Enum::name).toArray(String[]::new);
     }
 
     static FacilityTag safeTagValueOf(String tag) {
@@ -70,34 +83,5 @@ public interface FacilityJpaMapper {
         catch (IllegalArgumentException e) {
             return null;
         }
-    }
-
-    @Mapping(target = "id", source = "id")
-    @Mapping(target = "name", source = "name")
-    @Mapping(target = "city", source = "city")
-    @Mapping(target = "address", source = "address")
-    @Mapping(target = "latitude", expression = "java(domain.getLocation() != null ? domain.getLocation().latitude() : 0.0)")
-    @Mapping(target = "longitude", expression = "java(domain.getLocation() != null ? domain.getLocation().longitude() : 0.0)")
-    @Mapping(target = "totalSpots", source = "totalSpots")
-    @Mapping(target = "tags", source = "tags")
-    @Mapping(target = "status", expression = "java(domain.getStatus() != null ? domain.getStatus().name() : null)")
-    @Mapping(target = "freeCancelHours", expression = "java(domain.getCancellationPolicy() != null ? domain.getCancellationPolicy().freeCancelHours() : 0)")
-    @Mapping(target = "penaltyCancelMinutes", expression = "java(domain.getCancellationPolicy() != null ? domain.getCancellationPolicy().penaltyCancelMinutes() : 0)")
-    @Mapping(target = "dailyRate", expression = "java(domain.getPricingRule() != null ? domain.getPricingRule().estimatedDailyPrice() : null)")
-    @Mapping(target = "currency", expression = "java(\"EUR\")")
-    @Mapping(target = "version", source = "version")
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    ParkingFacilityJpaEntity toEntity(ParkingFacility domain);
-
-    default java.util.UUID map(FacilityId id) {
-        return id == null ? null : id.value();
-    }
-
-    default String[] map(java.util.Set<FacilityTag> tags) {
-        if (tags == null) {
-            return null;
-        }
-        return tags.stream().map(Enum::name).toArray(String[]::new);
     }
 }

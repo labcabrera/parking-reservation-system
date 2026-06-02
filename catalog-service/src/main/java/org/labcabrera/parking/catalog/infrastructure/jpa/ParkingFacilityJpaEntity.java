@@ -2,14 +2,19 @@ package org.labcabrera.parking.catalog.infrastructure.jpa;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.UUID;
+
+import org.labcabrera.parking.catalog.domain.aggregate.ParkingFacility;
+import org.labcabrera.parking.catalog.domain.valueobjects.FacilityStatus;
 
 @Entity
 @Table(name = "parking_facility", schema = "catalog")
@@ -40,8 +45,9 @@ public class ParkingFacilityJpaEntity {
     @Column(columnDefinition = "text[]")
     private String[] tags;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private String status;
+    private FacilityStatus status;
 
     @Column(name = "free_cancel_hours", nullable = false)
     private int freeCancelHours;
@@ -49,22 +55,22 @@ public class ParkingFacilityJpaEntity {
     @Column(name = "penalty_cancel_minutes", nullable = false)
     private int penaltyCancelMinutes;
 
-    @Column(name = "daily_rate", nullable = false, precision = 10, scale = 2)
-    private BigDecimal dailyRate;
+    @Column(nullable = false, length = 20)
+    private String externalPricingId;
 
-    @Column(nullable = false, length = 3)
-    private String currency;
+    @Column(name = "estimated_daily_price", nullable = false, precision = 10, scale = 2)
+    private BigDecimal estimatedDailyPrice;
 
-    @Column(name = "created_at")
-    private OffsetDateTime createdAt;
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
-    private OffsetDateTime updatedAt;
+    @Column(name = "updated_at", nullable = true)
+    private LocalDateTime updatedAt;
 
     @Version
     private Long version;
 
-    public void updateFrom(org.labcabrera.parking.catalog.domain.model.ParkingFacility domain) {
+    public void updateFrom(ParkingFacility domain) {
         if (domain == null) {
             return;
         }
@@ -85,22 +91,24 @@ public class ParkingFacilityJpaEntity {
         else {
             this.tags = null;
         }
-        this.status = domain.getStatus() != null ? domain.getStatus().name() : null;
+        this.status = domain.getStatus() != null ? domain.getStatus() : null;
         if (domain.getCancellationPolicy() != null) {
             this.freeCancelHours = domain.getCancellationPolicy().freeCancelHours();
             this.penaltyCancelMinutes = domain.getCancellationPolicy().penaltyCancelMinutes();
         }
         if (domain.getPricingRule() != null) {
-            this.dailyRate = domain.getPricingRule().estimatedDailyPrice();
-            if (this.currency == null) {
-                this.currency = "EUR";
+            this.externalPricingId = domain.getPricingRule().externalPricingId();
+            this.estimatedDailyPrice = domain.getPricingRule().estimatedDailyPrice();
+        }
+        if (domain.getMetadata() != null) {
+            if (this.createdAt == null) {
+                this.createdAt = domain.getMetadata().createdAt();
             }
+            this.updatedAt = domain.getMetadata().updatedAt().orElse(LocalDateTime.now());
         }
-        this.version = domain.getVersion();
-        if (this.createdAt == null) {
-            this.createdAt = OffsetDateTime.now();
+        else {
+            this.updatedAt = LocalDateTime.now();
         }
-        this.updatedAt = OffsetDateTime.now();
     }
 
 }

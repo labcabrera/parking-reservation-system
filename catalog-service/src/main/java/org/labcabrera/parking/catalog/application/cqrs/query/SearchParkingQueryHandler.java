@@ -2,8 +2,8 @@ package org.labcabrera.parking.catalog.application.cqrs.query;
 
 import org.labcabrera.parking.catalog.application.dto.FacilityResult;
 import org.labcabrera.parking.catalog.application.dto.SearchResponse;
-import org.labcabrera.parking.catalog.domain.model.ParkingFacility;
 import org.labcabrera.parking.catalog.application.port.inbound.SearchParkingPort;
+import org.labcabrera.parking.catalog.domain.aggregate.ParkingFacility;
 import org.labcabrera.parking.catalog.domain.port.outbound.AvailabilityCache;
 import org.labcabrera.parking.catalog.domain.port.outbound.ParkingFacilityRepository;
 import org.labcabrera.parking.catalog.domain.service.AvailabilityDomainService;

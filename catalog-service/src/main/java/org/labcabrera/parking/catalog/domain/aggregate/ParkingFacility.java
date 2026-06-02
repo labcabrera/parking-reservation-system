@@ -1,11 +1,14 @@
-package org.labcabrera.parking.catalog.domain.model;
+package org.labcabrera.parking.catalog.domain.aggregate;
 
+import java.time.LocalDateTime;
 import java.util.EnumSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
 import org.labcabrera.parking.catalog.domain.valueobjects.CancellationPolicy;
 import org.labcabrera.parking.catalog.domain.valueobjects.Coordinates;
+import org.labcabrera.parking.catalog.domain.valueobjects.EntityMetadata;
 import org.labcabrera.parking.catalog.domain.valueobjects.FacilityId;
 import org.labcabrera.parking.catalog.domain.valueobjects.FacilityStatus;
 import org.labcabrera.parking.catalog.domain.valueobjects.FacilityTag;
@@ -24,10 +27,11 @@ public class ParkingFacility {
     private String address;
     private Coordinates location;
     private int totalSpots;
-    private final Set<FacilityTag> tags;
+    private Set<FacilityTag> tags;
     private FacilityStatus status;
     private CancellationPolicy cancellationPolicy;
     private ParkingPricingRule pricingRule;
+    private EntityMetadata metadata;
     private Long version;
 
     public ParkingFacility(
@@ -36,7 +40,7 @@ public class ParkingFacility {
         String address,
         Coordinates location,
         int totalSpots,
-        final Set<FacilityTag> tags,
+        Set<FacilityTag> tags,
         FacilityStatus status,
         CancellationPolicy cancellationPolicy,
         ParkingPricingRule pricingRule) {
@@ -53,7 +57,9 @@ public class ParkingFacility {
         this.tags = tags != null ? EnumSet.copyOf(tags) : EnumSet.noneOf(FacilityTag.class);
         this.status = status;
         this.cancellationPolicy = cancellationPolicy;
-        this.version = 0L;
+        this.pricingRule = pricingRule;
+        this.metadata = new EntityMetadata(LocalDateTime.now(), Optional.empty(), "system");
+        this.version = null;
     }
 
     public boolean isSearchable() {

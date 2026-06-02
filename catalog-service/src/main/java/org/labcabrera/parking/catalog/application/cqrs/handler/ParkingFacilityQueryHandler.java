@@ -3,9 +3,8 @@ package org.labcabrera.parking.catalog.application.cqrs.handler;
 import org.axonframework.queryhandling.QueryHandler;
 import org.labcabrera.parking.catalog.application.cqrs.query.GetParkingFacilitiesQuery;
 import org.labcabrera.parking.catalog.application.cqrs.query.GetParkingFacilityByIdQuery;
-import org.labcabrera.parking.catalog.domain.model.ParkingFacility;
+import org.labcabrera.parking.catalog.domain.aggregate.ParkingFacility;
 import org.labcabrera.parking.catalog.domain.port.outbound.ParkingFacilityRepository;
-import org.labcabrera.parking.catalog.domain.valueobjects.FacilityId;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
@@ -28,6 +27,7 @@ public class ParkingFacilityQueryHandler {
     }
 
     //NOTE: Axon cant handle properly generic types, so we need to cast the response type in the controller
+    @SuppressWarnings("rawtypes")
     @QueryHandler
     public Page handle(GetParkingFacilitiesQuery query) {
         log.info("Handling GetParkingFacilitiesQuery {}", query);

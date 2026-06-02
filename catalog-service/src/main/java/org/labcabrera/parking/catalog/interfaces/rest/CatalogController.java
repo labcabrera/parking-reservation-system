@@ -7,11 +7,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.labcabrera.parking.catalog.application.cqrs.command.CreateFacilitySearchCommand;
+import org.labcabrera.parking.catalog.application.cqrs.command.StartReservationCommand;
 import org.labcabrera.parking.catalog.application.cqrs.query.SearchParkingQuery;
 import org.labcabrera.parking.catalog.application.dto.SearchResponse;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.CatalogSearchRequest;
+import org.labcabrera.parking.catalog.interfaces.rest.dto.SearchReservationDto;
 import org.labcabrera.parking.catalog.application.port.inbound.SearchParkingPort;
+import org.labcabrera.parking.catalog.domain.aggregate.SearchReservation;
 import org.slf4j.MDC;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,7 +32,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @RestController
-@RequestMapping("/api/v1/catalog")
+@RequestMapping("/api/v1/registration")
 @Tag(name = "Catalog", description = "Parking facility search and availability")
 @AllArgsConstructor
 public class CatalogController {
@@ -80,16 +83,21 @@ public class CatalogController {
 
     @PostMapping("/search")
     @Operation(summary = "Initiate parking search with command", description = "Initiates a parking search using a command, returning a search session ID for tracking")
-    @ApiResponse(responseCode = "200", description = "Search command accepted with session ID")
+    @ApiResponse(responseCode = "201", description = "Search command accepted with session ID")
     @ApiResponse(responseCode = "400", description = "Invalid request parameters")
-    public ResponseEntity<String> initiateSearch(CatalogSearchRequest request) {
-        String searchSessionId = UUID.randomUUID().toString();
-        var command = new CreateFacilitySearchCommand(
+    public ResponseEntity<SearchReservationDto> initiateSearch(CatalogSearchRequest request) {
+        var command = new StartReservationCommand(
+            null,
             request.query(),
             request.checkIn(),
-            request.checkOut(),
-            request.features());
-        var response = commandGateway.sendAndWait(command, 5, TimeUnit.SECONDS);
-        return ResponseEntity.ok(searchSessionId);
+            request.checkOut());
+        SearchReservation response = commandGateway.sendAndWait(command, 5, TimeUnit.SECONDS);
+        String id = response.getId().toString();
+        SearchReservationDto dto = new SearchReservationDto(id);
+        var location = ServletUriComponentsBuilder.fromCurrentRequest()
+            .path("/{id}")
+            .buildAndExpand(id)
+            .toUri();
+        return ResponseEntity.created(location).body(dto);
     }
 }
