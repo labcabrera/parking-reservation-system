@@ -21,8 +21,7 @@ spring:
         default_schema: catalog
 
   flyway:
-    enabled: true
-    locations: classpath:db/migration
+    enabled: false
 
   data:
     redis:
@@ -95,3 +94,6 @@ catalog:
   search:
     max-page-size: 100
     low-availability-threshold: 5
+  reservation:
+    hold-minutes: 1
+    slot-size-minutes: 30
