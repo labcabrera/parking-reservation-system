@@ -22,6 +22,7 @@ import org.labcabrera.parking.catalog.domain.event.ReservationExpiredEvent;
 import org.labcabrera.parking.catalog.domain.event.ReservationFailedEvent;
 import org.labcabrera.parking.catalog.domain.event.ReservationHeldEvent;
 import org.labcabrera.parking.catalog.domain.event.ReservationStartedEvent;
+import org.labcabrera.parking.catalog.domain.exception.InvalidReservationStateException;
 import org.labcabrera.parking.catalog.domain.valueobject.ReservationStatus;
 
 import jakarta.persistence.Column;
@@ -115,7 +116,7 @@ public class Reservation {
     void handle(MarkReservationHeldCommand cmd) {
         log.info("Marking reservation {} as HELD with estimated price {} {}", cmd.reservationId(), cmd.estimatedPrice(), cmd.currency());
         if (status != ReservationStatus.PENDING) {
-            throw new IllegalStateException("Cannot mark as HELD from status " + status);
+            throw new InvalidReservationStateException("Cannot mark as HELD from status " + status);
         }
         apply(new ReservationHeldEvent(cmd.reservationId(), cmd.estimatedPrice(), cmd.currency()));
     }
@@ -146,7 +147,7 @@ public class Reservation {
     void handle(ConfirmReservationCommand cmd) {
         log.info("Confirming reservation {}", cmd.reservationId());
         if (status != ReservationStatus.HELD) {
-            throw new IllegalStateException("Only HELD reservations can be confirmed (current: " + status + ")");
+            throw new InvalidReservationStateException("Only HELD reservations can be confirmed (current: " + status + ")");
         }
         apply(new ReservationConfirmedEvent(cmd.reservationId()));
     }

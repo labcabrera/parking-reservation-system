@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -58,6 +59,14 @@ public class RestExceptionHandler {
         log.warn("Illegal argument exception. {}", ex.getMessage());
         ApiError error = new ApiError("ILLEGAL_ARGUMENT", ex.getMessage(), LocalDateTime.now(),
             new ArrayList<>());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiError> handleMissingServletRequestParameterException(MissingServletRequestParameterException ex) {
+        // In this cases avoid stack trace pollution
+        log.warn("Missing servlet request parameter exception. {}", ex.getMessage());
+        ApiError error = new ApiError("MISSING_PARAMETER", ex.getMessage(), LocalDateTime.now(), new ArrayList<>());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 

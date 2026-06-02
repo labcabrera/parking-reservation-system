@@ -19,13 +19,19 @@ import org.axonframework.queryhandling.QueryGateway;
 import org.labcabrera.parking.catalog.application.cqrs.command.CreateParkingFacilityCommand;
 import org.labcabrera.parking.catalog.application.cqrs.query.GetParkingFacilitiesQuery;
 import org.labcabrera.parking.catalog.application.cqrs.query.GetParkingFacilityByIdQuery;
+import org.labcabrera.parking.catalog.application.service.FacilityAvailabilitySearchService;
 import org.labcabrera.parking.catalog.domain.aggregate.ParkingFacility;
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityId;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.ApiError;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.CreateParkingFacilityRequest;
+import org.labcabrera.parking.catalog.interfaces.rest.dto.FacilityAvailabilityDto;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.ParkingFacilityDto;
 import org.labcabrera.parking.catalog.interfaces.rest.mapper.ParkingFacilityMapper;
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.format.annotation.DateTimeFormat;
+
+import java.time.LocalDateTime;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -45,6 +51,7 @@ public class FacilityParkingController {
     private final CommandGateway commandGateway;
     private final QueryGateway queryGateway;
     private final ParkingFacilityMapper mapper;
+    private final FacilityAvailabilitySearchService availabilitySearchService;
 
     @GetMapping("/{parkingFacilityId}")
     @Operation(operationId = "getParkingFacilityById", summary = "Get parking facility by id", description = "Get country by id", responses = {
@@ -98,6 +105,20 @@ public class FacilityParkingController {
             request.pricingRule());
         ParkingFacility parkingFacility = commandGateway.sendAndWait(command);
         return ResponseEntity.ok(mapper.toDto(parkingFacility));
+    }
+
+    @GetMapping("/availability")
+    @Operation(operationId = "searchAvailability", summary = "Search available parking facilities by free text and date range", description = "Returns up to `limit` active facilities matching the text against name, city or address with at least one free spot for the whole [checkIn, checkOut) range. Each result includes a low-availability flag and an estimated price.", responses = {
+        @ApiResponse(responseCode = "200", description = "Available facilities", content = {
+            @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = FacilityAvailabilityDto.class))) }),
+        @ApiResponse(responseCode = "400", description = "Invalid request", content = {
+            @Content(mediaType = "application/json", schema = @Schema(implementation = ApiError.class)) }) })
+    public ResponseEntity<List<FacilityAvailabilityDto>> searchAvailability(
+            @RequestParam(name = "q", required = true) String text,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkIn,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkOut,
+            @RequestParam(required = false) Integer limit) {
+        return ResponseEntity.ok(availabilitySearchService.search(text, checkIn, checkOut, limit));
     }
 
 }

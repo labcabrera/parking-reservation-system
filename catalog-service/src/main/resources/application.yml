@@ -93,6 +93,7 @@ springdoc:
 catalog:
   search:
     max-page-size: 100
+    default-limit: 20
     low-availability-threshold: 5
   reservation:
     hold-minutes: 5

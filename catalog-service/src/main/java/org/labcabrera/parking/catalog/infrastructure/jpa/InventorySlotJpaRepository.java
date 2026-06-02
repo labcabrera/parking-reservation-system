@@ -1,6 +1,8 @@
 package org.labcabrera.parking.catalog.infrastructure.jpa;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -38,4 +40,24 @@ public interface InventorySlotJpaRepository extends JpaRepository<InventorySlotJ
            AND s.reserved > 0
         """)
     int release(@Param("id") UUID id);
+
+    /**
+     * Returns the peak occupancy per facility within [start, end) — used by the
+     * availability search to compute the minimum free spots across the requested
+     * range in a single round-trip. Facilities absent from the result have no
+     * recorded slots in range and are fully available.
+     * Each row: {@code [UUID facilityId, Integer maxReserved]}.
+     */
+    @Query("""
+        SELECT s.facilityId, MAX(s.reserved)
+          FROM InventorySlotJpaEntity s
+         WHERE s.facilityId IN :facilityIds
+           AND s.slotStart >= :start
+           AND s.slotStart <  :end
+         GROUP BY s.facilityId
+        """)
+    List<Object[]> findMaxReservedByFacility(
+        @Param("facilityIds") Collection<UUID> facilityIds,
+        @Param("start") LocalDateTime start,
+        @Param("end") LocalDateTime end);
 }
