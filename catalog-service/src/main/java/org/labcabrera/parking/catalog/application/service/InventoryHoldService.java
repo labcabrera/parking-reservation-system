@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.labcabrera.parking.catalog.domain.port.outbound.InventoryRepository;
-import org.labcabrera.parking.catalog.domain.port.outbound.ParkingFacilityRepository;
+import org.labcabrera.parking.catalog.domain.port.InventoryRepository;
+import org.labcabrera.parking.catalog.domain.port.ParkingFacilityRepository;
 import org.labcabrera.parking.catalog.domain.service.SlotCalculator;
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityId;
 import org.labcabrera.parking.catalog.domain.valueobject.SlotKey;

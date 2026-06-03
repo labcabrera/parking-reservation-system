@@ -5,7 +5,7 @@ import org.labcabrera.parking.catalog.application.cqrs.query.GetParkingFacilitie
 import org.labcabrera.parking.catalog.application.cqrs.query.GetParkingFacilityByIdQuery;
 import org.labcabrera.parking.catalog.domain.aggregate.ParkingFacility;
 import org.labcabrera.parking.catalog.domain.exception.EntityNotFoundException;
-import org.labcabrera.parking.catalog.domain.port.outbound.ParkingFacilityRepository;
+import org.labcabrera.parking.catalog.domain.port.ParkingFacilityRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 

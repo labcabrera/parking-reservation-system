@@ -1,4 +1,4 @@
-package org.labcabrera.parking.catalog.domain.port.outbound;
+package org.labcabrera.parking.catalog.domain.port;
 
 import org.labcabrera.parking.catalog.domain.aggregate.ParkingFacility;
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityId;

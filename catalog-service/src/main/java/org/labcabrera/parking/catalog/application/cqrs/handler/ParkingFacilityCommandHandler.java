@@ -8,7 +8,7 @@ import org.labcabrera.parking.catalog.application.cqrs.command.CreateParkingFaci
 import org.labcabrera.parking.catalog.application.cqrs.command.DeleteParkingFacilityCommand;
 import org.labcabrera.parking.catalog.domain.aggregate.ParkingFacility;
 import org.labcabrera.parking.catalog.domain.event.ParkingFacilityCreatedEvent;
-import org.labcabrera.parking.catalog.domain.port.outbound.ParkingFacilityRepository;
+import org.labcabrera.parking.catalog.domain.port.ParkingFacilityRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;

@@ -1,4 +1,4 @@
-package org.labcabrera.parking.catalog.domain.port.outbound;
+package org.labcabrera.parking.catalog.domain.port;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

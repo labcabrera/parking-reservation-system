@@ -22,7 +22,7 @@ import org.labcabrera.parking.catalog.domain.event.ReservationCancelledEvent;
 import org.labcabrera.parking.catalog.domain.event.ReservationConfirmedEvent;
 import org.labcabrera.parking.catalog.domain.event.ReservationExpiredEvent;
 import org.labcabrera.parking.catalog.domain.event.ReservationStartedEvent;
-import org.labcabrera.parking.catalog.domain.port.outbound.ParkingFacilityRepository;
+import org.labcabrera.parking.catalog.domain.port.ParkingFacilityRepository;
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityId;
 import org.springframework.beans.factory.annotation.Autowired;
 

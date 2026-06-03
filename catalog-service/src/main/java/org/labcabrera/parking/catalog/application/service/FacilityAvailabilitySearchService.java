@@ -7,8 +7,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.labcabrera.parking.catalog.domain.port.outbound.FacilityAvailabilityReadModel;
-import org.labcabrera.parking.catalog.domain.port.outbound.FacilityAvailabilityReadModel.FacilityAvailabilityRow;
+import org.labcabrera.parking.catalog.domain.port.FacilityAvailabilityReadModel;
+import org.labcabrera.parking.catalog.domain.port.FacilityAvailabilityReadModel.FacilityAvailabilityRow;
 import org.labcabrera.parking.catalog.domain.service.SlotCalculator;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.FacilityAvailabilityDto;
 import org.springframework.beans.factory.annotation.Value;

@@ -3,7 +3,7 @@ package org.labcabrera.parking.catalog.infrastructure.jpa;
 import java.util.List;
 import java.util.UUID;
 
-import org.labcabrera.parking.catalog.domain.port.outbound.InventoryRepository;
+import org.labcabrera.parking.catalog.domain.port.InventoryRepository;
 import org.labcabrera.parking.catalog.domain.valueobject.SlotKey;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;

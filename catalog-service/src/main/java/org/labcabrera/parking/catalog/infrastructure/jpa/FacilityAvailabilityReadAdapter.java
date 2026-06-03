@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.labcabrera.parking.catalog.domain.port.outbound.FacilityAvailabilityReadModel;
+import org.labcabrera.parking.catalog.domain.port.FacilityAvailabilityReadModel;
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityStatus;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
