@@ -21,10 +21,13 @@ public class FacilityRepositoryAdapter implements ParkingFacilityRepository {
 
     private final FacilityJpaRepository jpaRepository;
     private final FacilityJpaMapper mapper;
+    private final ParkingFacilityCacheService cacheService;
 
-    public FacilityRepositoryAdapter(FacilityJpaRepository jpaRepository, FacilityJpaMapper mapper) {
+    public FacilityRepositoryAdapter(FacilityJpaRepository jpaRepository, FacilityJpaMapper mapper,
+            ParkingFacilityCacheService cacheService) {
         this.jpaRepository = jpaRepository;
         this.mapper = mapper;
+        this.cacheService = cacheService;
     }
 
     @Override
@@ -36,7 +39,7 @@ public class FacilityRepositoryAdapter implements ParkingFacilityRepository {
 
     @Override
     public Optional<ParkingFacility> findById(FacilityId id) {
-        return jpaRepository.findById(id.value()).map(mapper::toDomain);
+        return Optional.ofNullable(cacheService.findById(id.value()));
     }
 
     @Override
@@ -46,6 +49,9 @@ public class FacilityRepositoryAdapter implements ParkingFacilityRepository {
             return;
         }
         UUID id = parkingFacility.getId() != null ? parkingFacility.getId().value() : null;
+        if (id != null) {
+            cacheService.evict(id);
+        }
         if (id != null && jpaRepository.existsById(id)) {
             log.info("Updating parking facility with id: {}", id);
             ParkingFacilityJpaEntity entity = jpaRepository.findById(id).orElseGet(() -> mapper.toEntity(parkingFacility));

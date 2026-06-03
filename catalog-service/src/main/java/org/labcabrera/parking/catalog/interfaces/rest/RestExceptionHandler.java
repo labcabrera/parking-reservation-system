@@ -5,6 +5,7 @@ import java.util.ArrayList;
 
 import org.labcabrera.parking.catalog.domain.exception.DomainException;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.ApiError;
+import org.springframework.data.redis.serializer.SerializationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -78,6 +79,15 @@ public class RestExceptionHandler {
         String typeName = requiredType != null ? requiredType.getSimpleName() : "unknown";
         String message = String.format("Parameter '%s' should be of type %s", ex.getName(), typeName);
         ApiError error = new ApiError("msg.err.method-argument-type-mismatch", message,
+            LocalDateTime.now(), new ArrayList<>());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(SerializationException.class)
+    public ResponseEntity<ApiError> handleSeralizationException(
+        SerializationException ex) {
+        log.error("Serialization exception", ex);
+        ApiError error = new ApiError("serialization-error", ex.getMessage(),
             LocalDateTime.now(), new ArrayList<>());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }

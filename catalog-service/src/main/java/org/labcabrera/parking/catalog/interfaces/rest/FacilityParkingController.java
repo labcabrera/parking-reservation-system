@@ -25,6 +25,8 @@ import org.labcabrera.parking.catalog.domain.valueobject.FacilityId;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.ApiError;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.CreateParkingFacilityRequest;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.FacilityAvailabilityDto;
+import org.labcabrera.parking.catalog.interfaces.rest.dto.PageResponse;
+import org.labcabrera.parking.catalog.interfaces.rest.dto.Pagination;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.ParkingFacilityDto;
 import org.labcabrera.parking.catalog.interfaces.rest.mapper.ParkingFacilityMapper;
 import org.springdoc.core.annotations.ParameterObject;
@@ -33,6 +35,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -77,12 +80,16 @@ public class FacilityParkingController {
             @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = ParkingFacilityDto.class))) }),
         @ApiResponse(responseCode = "400", description = "Invalid query", content = {
             @Content(mediaType = "application/json", schema = @Schema(implementation = ApiError.class)) }) })
-    public ResponseEntity<Page<ParkingFacilityDto>> search(@RequestParam(required = false) String rsql,
+    public ResponseEntity<PageResponse<ParkingFacilityDto>> search(@RequestParam(required = false) String rsql,
         @ParameterObject Pageable pageable) {
         var query = new GetParkingFacilitiesQuery(rsql, pageable);
         Page<ParkingFacility> page = queryGateway.query(query, Page.class).join();
         Page<ParkingFacilityDto> dtoPage = page.map(mapper::toDto);
-        return ResponseEntity.ok(dtoPage);
+        PageResponse<ParkingFacilityDto> response = new PageResponse<>(
+            dtoPage.getContent(),
+            new Pagination(dtoPage.getNumber(), dtoPage.getSize(), dtoPage.getTotalElements(), dtoPage.getTotalPages())
+        );
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping
@@ -104,7 +111,8 @@ public class FacilityParkingController {
             request.cancellationPolicy(),
             request.pricingRule());
         ParkingFacility parkingFacility = commandGateway.sendAndWait(command);
-        return ResponseEntity.ok(mapper.toDto(parkingFacility));
+        var dto = mapper.toDto(parkingFacility);
+        return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
     @GetMapping("/availability")
