@@ -1,4 +1,4 @@
-package org.labcabrera.parking.catalog.infrastructure.jpa;
+package org.labcabrera.parking.catalog.infrastructure.jpa.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

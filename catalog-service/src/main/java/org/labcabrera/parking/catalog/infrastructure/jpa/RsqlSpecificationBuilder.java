@@ -1,5 +1,6 @@
 package org.labcabrera.parking.catalog.infrastructure.jpa;
 
+import org.labcabrera.parking.catalog.infrastructure.jpa.entities.ParkingFacilityJpaEntity;
 import org.springframework.data.jpa.domain.Specification;
 
 import jakarta.persistence.criteria.CriteriaBuilder;

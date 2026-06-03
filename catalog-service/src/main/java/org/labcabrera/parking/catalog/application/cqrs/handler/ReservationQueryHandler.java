@@ -1,5 +1,7 @@
 package org.labcabrera.parking.catalog.application.cqrs.handler;
 
+import java.util.Optional;
+
 import org.axonframework.queryhandling.QueryHandler;
 import org.labcabrera.parking.catalog.application.cqrs.query.FindReservationsQuery;
 import org.labcabrera.parking.catalog.infrastructure.jpa.ReservationQueryRepository;
@@ -16,8 +18,10 @@ public class ReservationQueryHandler {
 
     private final ReservationQueryRepository reservationRepository;
 
+    // Axon cant handle properly generic types, so we need to cast the response type in the controller
+    @SuppressWarnings("rawtypes")
     @QueryHandler
-    public Page<Reservation> handle(FindReservationsQuery q) {
+    public Page handle(FindReservationsQuery q) {
         if (q.facilityId() != null) {
             return reservationRepository.findByFacilityOverlapping(q.facilityId(), q.start(), q.end(), q.pageable());
         }
@@ -25,8 +29,8 @@ public class ReservationQueryHandler {
     }
 
     @QueryHandler
-    public Reservation handle(GetReservationByIdQuery q) {
-        return reservationRepository.findById(q.id()).orElse(null);
+    public Optional<Reservation> handle(GetReservationByIdQuery q) {
+        return reservationRepository.findById(q.id());
     }
 
 }

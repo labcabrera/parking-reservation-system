@@ -14,6 +14,7 @@ import org.labcabrera.parking.catalog.domain.valueobject.EntityMetadata;
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityId;
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityTag;
 import org.labcabrera.parking.catalog.domain.valueobject.ParkingPricingRule;
+import org.labcabrera.parking.catalog.infrastructure.jpa.entities.ParkingFacilityJpaEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

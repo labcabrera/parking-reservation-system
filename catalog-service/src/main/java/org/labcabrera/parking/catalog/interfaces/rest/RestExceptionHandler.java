@@ -2,6 +2,7 @@ package org.labcabrera.parking.catalog.interfaces.rest;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.concurrent.CompletionException;
 
 import org.labcabrera.parking.catalog.domain.exception.DomainException;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.ApiError;
@@ -29,9 +30,27 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(DomainException.class)
     public ResponseEntity<ApiError> handleDomainException(DomainException ex) {
-        log.error("Caugth Domain exception: code={}, message={}", ex.getMessage(), ex);
+        if(ex.getStatus() >= 400 && ex.getStatus() < 500) {
+            // Dont pollute log with client errors
+            log.warn("Caugth Domain exception: code={}, message={}", ex.getMessage());
+        } else {
+            log.error("Caugth Domain exception: code={}, message={}", ex);
+        }
         var apiError = fromDomainException(ex);
         return ResponseEntity.status(HttpStatus.valueOf(ex.getStatus())).body(apiError);
+    }
+
+    // Axon wraps exceptions thrown in command handlers in a CompletionException, so we need to unwrap them to handle them properly
+    @ExceptionHandler(CompletionException.class)
+    public ResponseEntity<ApiError> handleCompletionException(CompletionException ex) {
+        Throwable cause = ex.getCause();
+        if (cause != null && DomainException.class.isAssignableFrom(cause.getClass())) {
+            return handleDomainException((DomainException)cause);
+        } else {
+            log.error("Unexpected exception", ex);
+            ApiError error = new ApiError("COMPLETION_ERROR", "An unexpected error occurred", LocalDateTime.now(), new ArrayList<>());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }   
     }
 
     @ExceptionHandler(SecurityException.class)
@@ -43,7 +62,7 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        log.error("Validation exception", ex.getMessage());
+        log.warn("Validation exception", ex.getMessage());
         var details = new ArrayList<String>();
         ex.getBindingResult().getAllErrors().forEach(error -> {
             String fieldName = ((FieldError) error).getField();
@@ -75,26 +94,26 @@ public class RestExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiError> handleTypeMismatchException(
         MethodArgumentTypeMismatchException ex) {
-        log.error("Type mismatch exception", ex);
+        log.warn("Type mismatch exception", ex.getCause());
         Class<?> requiredType = ex.getRequiredType();
         String typeName = requiredType != null ? requiredType.getSimpleName() : "unknown";
         String message = String.format("Parameter '%s' should be of type %s", ex.getName(), typeName);
-        ApiError error = new ApiError("msg.err.method-argument-type-mismatch", message,
+        ApiError error = new ApiError("BAD_REQUEST", message,
             LocalDateTime.now(), new ArrayList<>());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
     @ExceptionHandler(SerializationException.class)
     public ResponseEntity<ApiError> handleSeralizationException(SerializationException ex) {
-        log.error("Serialization exception", ex.getMessage());
-        ApiError error = new ApiError("serialization-error", ex.getMessage(),
+        log.warn("Serialization exception", ex.getMessage());
+        ApiError error = new ApiError("SERIALIZATION_ERROR", ex.getMessage(),
             LocalDateTime.now(), new ArrayList<>());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiError> handleConstraintViolationException(ConstraintViolationException ex) {
-        log.error("Serialization exception", ex.getMessage());
+        log.warn("Serialization exception", ex.getMessage());
         ApiError error = new ApiError("BAD_REQUEST", ex.getMessage(),
             LocalDateTime.now(), new ArrayList<>());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
@@ -102,15 +121,15 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiError> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
-        log.error("HTTP message not readable exception", ex);
-        ApiError error = new ApiError("msg.err.http-message-not-readable",
+        log.warn("HTTP message not readable exception", ex);
+        ApiError error = new ApiError("BAD_REQUEST",
             "msg.err.http-message-not-readable", LocalDateTime.now(), new ArrayList<>());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiError> handleNoResourceFoundException(NoResourceFoundException ex) {
-        log.error("No resource found exception", ex);
+        log.warn("No resource found exception", ex);
         ApiError error = new ApiError("RESOURCE_NOT_FOUND", "msg.err.no-resource-found",
             LocalDateTime.now(), new ArrayList<>());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
@@ -118,7 +137,7 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(NoHandlerFoundException.class)
     public ResponseEntity<ApiError> handleNoHandlerFoundException(NoHandlerFoundException ex) {
-        log.error("No handler found exception", ex);
+        log.warn("No handler found exception", ex);
         ApiError error = new ApiError("HANDLER_NOT_FOUND", "msg.err.no-handler-found",
             LocalDateTime.now(), new ArrayList<>());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
@@ -137,7 +156,7 @@ public class RestExceptionHandler {
         list.add("Exception status: %s".formatted(ex.getStatus()));
         list.add("Exception message: %s".formatted(ex.getMessage()));
         list.add("Exception class: %s".formatted(ex.getClass().getName()));
-       return new ApiError(ex.getMessage(), ex.getMessage(),LocalDateTime.now(), list);
+       return new ApiError(ex.getCode(), ex.getMessage(),LocalDateTime.now(), list);
     }
 
 }

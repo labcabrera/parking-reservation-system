@@ -18,8 +18,10 @@ public record CreateParkingFacilityCommand(
     @NotBlank
     String name,
     
+    @NotBlank
     String city,
     
+    @NotBlank
     String address,
     
     @NotNull
@@ -30,8 +32,10 @@ public record CreateParkingFacilityCommand(
     
     Set<FacilityTag> tags,
     
+    @NotNull
     FacilityStatus status,
     
+    @Valid
     CancellationPolicy cancellationPolicy,
     
     @Valid

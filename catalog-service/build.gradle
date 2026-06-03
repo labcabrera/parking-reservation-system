@@ -19,8 +19,6 @@ dependencies {
     // Cache
     implementation 'org.springframework.boot:spring-boot-starter-cache'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-    implementation 'com.fasterxml.jackson.module:jackson-module-parameter-names'
-    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8'
 
     // API Documentation
     // implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9'

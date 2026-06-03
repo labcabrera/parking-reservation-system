@@ -1,10 +1,13 @@
 package org.labcabrera.parking.catalog.infrastructure.jpa;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
 import org.labcabrera.parking.catalog.domain.port.InventoryRepository;
+import org.labcabrera.parking.catalog.domain.valueobject.InventorySlot;
 import org.labcabrera.parking.catalog.domain.valueobject.SlotKey;
+import org.labcabrera.parking.catalog.infrastructure.jpa.entities.InventorySlotJpaEntity;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -39,10 +42,10 @@ public class InventoryRepositoryAdapter implements InventoryRepository {
     }
 
     @Override
-    public List<org.labcabrera.parking.catalog.domain.valueobject.InventorySlot> findSlots(UUID facilityId, java.time.LocalDateTime start, java.time.LocalDateTime end) {
-        return repository.findByFacilityIdAndSlotStartBetweenOrderBySlotStart(facilityId, start, end)
+    public List<InventorySlot> findSlots(UUID facilityId, LocalDateTime start, LocalDateTime end) {
+        return repository.findSlotsByFacilityAndRange(facilityId, start, end)
             .stream()
-            .map(e -> new org.labcabrera.parking.catalog.domain.valueobject.InventorySlot(e.getSlotStart(), e.getCapacity(), e.getReserved()))
+            .map(e -> new InventorySlot(e.getSlotStart(), e.getCapacity(), e.getReserved()))
             .toList();
     }
 

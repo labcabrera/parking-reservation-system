@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import org.labcabrera.parking.catalog.domain.port.FacilityAvailabilityReadModel;
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityStatus;
+import org.labcabrera.parking.catalog.infrastructure.jpa.entities.ParkingFacilityJpaEntity;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;

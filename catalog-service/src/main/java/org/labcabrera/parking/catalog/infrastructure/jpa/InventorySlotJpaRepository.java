@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.labcabrera.parking.catalog.infrastructure.jpa.entities.InventorySlotJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -61,5 +62,14 @@ public interface InventorySlotJpaRepository extends JpaRepository<InventorySlotJ
         @Param("start") LocalDateTime start,
         @Param("end") LocalDateTime end);
 
-    List<InventorySlotJpaEntity> findByFacilityIdAndSlotStartBetweenOrderBySlotStart(UUID facilityId, LocalDateTime start, LocalDateTime end);
+    @Query("""
+        SELECT s FROM InventorySlotJpaEntity s
+         WHERE s.facilityId = :facilityId
+           AND s.slotStart BETWEEN :start AND :end
+         ORDER BY s.slotStart
+        """)
+    List<InventorySlotJpaEntity> findSlotsByFacilityAndRange(
+        @Param("facilityId") UUID facilityId,
+        @Param("start") LocalDateTime start,
+        @Param("end") LocalDateTime end);
 }

@@ -1,6 +1,7 @@
 package org.labcabrera.parking.catalog.infrastructure.jpa;
 
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityStatus;
+import org.labcabrera.parking.catalog.infrastructure.jpa.entities.ParkingFacilityJpaEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

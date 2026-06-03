@@ -21,7 +21,9 @@ import org.labcabrera.parking.catalog.application.cqrs.command.CreateParkingFaci
 import org.labcabrera.parking.catalog.application.cqrs.query.GetParkingFacilitiesQuery;
 import org.labcabrera.parking.catalog.application.cqrs.query.GetParkingFacilityByIdQuery;
 import org.labcabrera.parking.catalog.domain.aggregate.ParkingFacility;
+import org.labcabrera.parking.catalog.domain.exception.EntityNotFoundException;
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityId;
+import org.labcabrera.parking.catalog.domain.valueobject.InventorySlot;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.ApiError;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.CreateParkingFacilityRequest;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.FacilityAvailabilityDto;
@@ -30,12 +32,16 @@ import org.labcabrera.parking.catalog.interfaces.rest.dto.PageResponse;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.Pagination;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.ParkingFacilityDto;
 import org.labcabrera.parking.catalog.interfaces.rest.mapper.CreateParkingFacilityMapper;
+import org.labcabrera.parking.catalog.interfaces.rest.mapper.InventorySlotMapper;
 import org.labcabrera.parking.catalog.interfaces.rest.mapper.ParkingFacilityMapper;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
+
+import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.labcabrera.parking.catalog.application.cqrs.query.GetAvailableFacilitiesQuery;
 import org.labcabrera.parking.catalog.application.cqrs.query.GetFacilityInventoryQuery;
@@ -60,6 +66,7 @@ public class FacilityParkingController {
     private final QueryGateway queryGateway;
     private final ParkingFacilityMapper parkingFacilityMapper;
     private final CreateParkingFacilityMapper createFacilityMapper;
+    private final InventorySlotMapper inventorySlotMapper;
 
     @GetMapping("/{parkingFacilityId}")
     @Operation(operationId = "getParkingFacilityById", summary = "Get parking facility by id", description = "Get country by id", responses = {
@@ -74,7 +81,9 @@ public class FacilityParkingController {
     public ResponseEntity<ParkingFacilityDto> getById(@PathVariable String parkingFacilityId) {
         var id = FacilityId.of(UUID.fromString(parkingFacilityId));
         var query = new GetParkingFacilityByIdQuery(id);
-        ParkingFacility parkingFacility = queryGateway.query(query, ParkingFacility.class).join();
+        ResponseType<Optional<ParkingFacility>> responseType = ResponseTypes.optionalInstanceOf(ParkingFacility.class);
+        ParkingFacility parkingFacility = queryGateway.query(query, responseType).join()
+            .orElseThrow(() -> new EntityNotFoundException("Parking facility %s not found".formatted(parkingFacilityId)));
         return ResponseEntity.ok(parkingFacilityMapper.toDto(parkingFacility));
     }
 
@@ -88,14 +97,13 @@ public class FacilityParkingController {
     public ResponseEntity<PageResponse<ParkingFacilityDto>> search(
         @RequestParam(required = false) String rsql,
         @ParameterObject Pageable pageable) {
-        
+
         var query = new GetParkingFacilitiesQuery(rsql, pageable);
         Page<ParkingFacility> page = queryGateway.query(query, Page.class).join();
         Page<ParkingFacilityDto> dtoPage = page.map(parkingFacilityMapper::toDto);
         PageResponse<ParkingFacilityDto> response = new PageResponse<>(
             dtoPage.getContent(),
-            new Pagination(dtoPage.getNumber(), dtoPage.getSize(), dtoPage.getTotalElements(), dtoPage.getTotalPages())
-        );
+            new Pagination(dtoPage.getNumber(), dtoPage.getSize(), dtoPage.getTotalElements(), dtoPage.getTotalPages()));
         return ResponseEntity.ok(response);
     }
 
@@ -106,7 +114,7 @@ public class FacilityParkingController {
         @ApiResponse(responseCode = "400", description = "Invalid request", content = {
             @Content(mediaType = "application/json", schema = @Schema(implementation = ApiError.class)) }) })
     public ResponseEntity<ParkingFacilityDto> create(@Valid @RequestBody CreateParkingFacilityRequest request) {
-        
+
         log.debug("Creating parking facility with name: {}", request.name());
         CreateParkingFacilityCommand command = createFacilityMapper.toCommand(request);
         ParkingFacility parkingFacility = commandGateway.sendAndWait(command);
@@ -121,13 +129,14 @@ public class FacilityParkingController {
         @ApiResponse(responseCode = "400", description = "Invalid request", content = {
             @Content(mediaType = "application/json", schema = @Schema(implementation = ApiError.class)) }) })
     public ResponseEntity<List<FacilityAvailabilityDto>> searchAvailability(
-            @RequestParam(name = "q", required = true) String text,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkIn,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkOut,
-            @RequestParam(required = false) Integer limit) {
+        @RequestParam(name = "q", required = true) String text,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkIn,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkOut,
+        @RequestParam(required = false) Integer limit) {
 
         if (!checkOut.isAfter(checkIn)) {
-            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "checkOut must be after checkIn");
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST,
+                "checkOut must be after checkIn");
         }
         var query = new GetAvailableFacilitiesQuery(text, checkIn, checkOut, limit);
         List<FacilityAvailabilityDto> result = queryGateway
@@ -143,15 +152,13 @@ public class FacilityParkingController {
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
 
-        if (!end.isAfter(start)) {
-            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "end must be after start");
-        }
+        log.debug("Getting inventory for facility {} from {} to {}", parkingFacilityId, start, end);
         UUID facilityId = UUID.fromString(parkingFacilityId);
         var query = new GetFacilityInventoryQuery(facilityId, start, end);
-        List<InventorySlotDto> slots = queryGateway
-            .query(query, ResponseTypes.multipleInstancesOf(InventorySlotDto.class))
+        List<InventorySlot> slots = queryGateway
+            .query(query, ResponseTypes.multipleInstancesOf(InventorySlot.class))
             .join();
-        return ResponseEntity.ok(slots);
+        return ResponseEntity.ok(slots.stream().map(inventorySlotMapper::toDto).toList());
     }
 
 }
