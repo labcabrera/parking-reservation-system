@@ -130,4 +130,18 @@ public class FacilityParkingController {
         return ResponseEntity.ok(availabilitySearchService.search(text, checkIn, checkOut, limit));
     }
 
+    @GetMapping("/{parkingFacilityId}/inventory")
+    @Operation(operationId = "getFacilityInventory", summary = "Get inventory slots for a facility", description = "Returns inventory slots for the facility within [start, end)")
+    public ResponseEntity<List<org.labcabrera.parking.catalog.interfaces.rest.dto.InventorySlotDto>> getInventory(
+        @PathVariable String parkingFacilityId,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime start,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime end) {
+
+        java.util.UUID facilityId = java.util.UUID.fromString(parkingFacilityId);
+        var slots = availabilitySearchService.getInventorySlots(facilityId, start, end).stream()
+            .map(s -> new org.labcabrera.parking.catalog.interfaces.rest.dto.InventorySlotDto(s.slotStart(), s.capacity(), s.reserved(), s.free()))
+            .toList();
+        return ResponseEntity.ok(slots);
+    }
+
 }

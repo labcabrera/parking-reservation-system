@@ -39,6 +39,14 @@ public class InventoryRepositoryAdapter implements InventoryRepository {
     }
 
     @Override
+    public List<org.labcabrera.parking.catalog.domain.valueobject.InventorySlot> findSlots(UUID facilityId, java.time.LocalDateTime start, java.time.LocalDateTime end) {
+        return repository.findByFacilityIdAndSlotStartBetweenOrderBySlotStart(facilityId, start, end)
+            .stream()
+            .map(e -> new org.labcabrera.parking.catalog.domain.valueobject.InventorySlot(e.getSlotStart(), e.getCapacity(), e.getReserved()))
+            .toList();
+    }
+
+    @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void release(List<SlotKey> slots, UUID facilityId) {
         for (SlotKey slot : slots) {

@@ -50,7 +50,7 @@ public class RestExceptionHandler {
             String errorMessage = error.getDefaultMessage();
             details.add("%s, %s".formatted(fieldName, errorMessage));
         });
-        var apiError = new ApiError("ILLEGAL_ARGUMEN", "msg.err.validation-error",
+        var apiError = new ApiError("BAD_REQUEST", "msg.err.validation-error",
             LocalDateTime.now(), details);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
     }
@@ -59,7 +59,7 @@ public class RestExceptionHandler {
     public ResponseEntity<ApiError> handleIllegalArgumentException(IllegalArgumentException ex) {
         // In this cases avoid stack trace pollution
         log.warn("Illegal argument exception. {}", ex.getMessage());
-        ApiError error = new ApiError("ILLEGAL_ARGUMENT", ex.getMessage(), LocalDateTime.now(),
+        ApiError error = new ApiError("BAD_REQUEST", ex.getMessage(), LocalDateTime.now(),
             new ArrayList<>());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
@@ -68,7 +68,7 @@ public class RestExceptionHandler {
     public ResponseEntity<ApiError> handleMissingServletRequestParameterException(MissingServletRequestParameterException ex) {
         // In this cases avoid stack trace pollution
         log.warn("Missing servlet request parameter exception. {}", ex.getMessage());
-        ApiError error = new ApiError("MISSING_PARAMETER", ex.getMessage(), LocalDateTime.now(), new ArrayList<>());
+        ApiError error = new ApiError("BAD_REQUEST", ex.getMessage(), LocalDateTime.now(), new ArrayList<>());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
@@ -95,7 +95,7 @@ public class RestExceptionHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiError> handleConstraintViolationException(ConstraintViolationException ex) {
         log.error("Serialization exception", ex.getMessage());
-        ApiError error = new ApiError("serialization-error", ex.getMessage(),
+        ApiError error = new ApiError("BAD_REQUEST", ex.getMessage(),
             LocalDateTime.now(), new ArrayList<>());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
@@ -111,7 +111,7 @@ public class RestExceptionHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiError> handleNoResourceFoundException(NoResourceFoundException ex) {
         log.error("No resource found exception", ex);
-        ApiError error = new ApiError("msg.err.no-resource-found", "msg.err.no-resource-found",
+        ApiError error = new ApiError("RESOURCE_NOT_FOUND", "msg.err.no-resource-found",
             LocalDateTime.now(), new ArrayList<>());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
@@ -119,7 +119,7 @@ public class RestExceptionHandler {
     @ExceptionHandler(NoHandlerFoundException.class)
     public ResponseEntity<ApiError> handleNoHandlerFoundException(NoHandlerFoundException ex) {
         log.error("No handler found exception", ex);
-        ApiError error = new ApiError("msg.err.no-handler-found", "msg.err.no-handler-found",
+        ApiError error = new ApiError("HANDLER_NOT_FOUND", "msg.err.no-handler-found",
             LocalDateTime.now(), new ArrayList<>());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }

@@ -60,4 +60,6 @@ public interface InventorySlotJpaRepository extends JpaRepository<InventorySlotJ
         @Param("facilityIds") Collection<UUID> facilityIds,
         @Param("start") LocalDateTime start,
         @Param("end") LocalDateTime end);
+
+    List<InventorySlotJpaEntity> findByFacilityIdAndSlotStartBetweenOrderBySlotStart(UUID facilityId, LocalDateTime start, LocalDateTime end);
 }

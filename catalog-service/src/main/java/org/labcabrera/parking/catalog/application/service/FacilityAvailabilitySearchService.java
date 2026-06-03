@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.labcabrera.parking.catalog.domain.port.FacilityAvailabilityReadModel;
+import org.labcabrera.parking.catalog.domain.port.InventoryRepository;
+import org.labcabrera.parking.catalog.domain.valueobject.InventorySlot;
 import org.labcabrera.parking.catalog.domain.port.FacilityAvailabilityReadModel.FacilityAvailabilityRow;
 import org.labcabrera.parking.catalog.domain.service.SlotCalculator;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.FacilityAvailabilityDto;
@@ -29,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 public class FacilityAvailabilitySearchService {
 
     private final FacilityAvailabilityReadModel readModel;
+    private final InventoryRepository inventoryRepository;
 
     @Value("${catalog.search.default-limit:20}")
     private int defaultLimit;
@@ -76,5 +79,12 @@ public class FacilityAvailabilitySearchService {
         log.debug("Availability search text='{}' [{}, {}) -> {} candidates, {} with availability",
             text, gridStart, gridEnd, rows.size(), results.size());
         return results;
+    }
+
+    public List<InventorySlot> getInventorySlots(java.util.UUID facilityId, LocalDateTime start, LocalDateTime end) {
+        if (!end.isAfter(start)) {
+            throw new IllegalArgumentException("end must be after start");
+        }
+        return inventoryRepository.findSlots(facilityId, start, end);
     }
 }

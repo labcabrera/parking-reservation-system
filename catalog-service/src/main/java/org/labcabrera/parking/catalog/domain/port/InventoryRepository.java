@@ -22,4 +22,9 @@ public interface InventoryRepository {
      * Releases one unit on each given slot. Idempotent and best-effort.
      */
     void release(List<SlotKey> slots, UUID facilityId);
+
+    /**
+     * Returns the inventory slots for a facility within [start, end).
+     */
+    List<org.labcabrera.parking.catalog.domain.valueobject.InventorySlot> findSlots(UUID facilityId, java.time.LocalDateTime start, java.time.LocalDateTime end);
 }
