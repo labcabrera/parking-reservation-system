@@ -9,27 +9,44 @@ import org.labcabrera.parking.catalog.domain.valueobject.FacilityTag;
 import org.labcabrera.parking.catalog.domain.valueobject.ParkingPricingRule;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
-@Schema(name = "CreateParkingFacilityRequest", description = "Request payload to create a parking facility")
+@Schema(name = "CreateParkingFacilityRequest", description = "Request payload to create a parking facility. Validation: name required, totalSpots >= 1, pricingRule.estimatedDailyPrice > 0.")
 public record CreateParkingFacilityRequest(
-    @Schema(description = "Optional id (server may generate one)", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6") String id,
+    @NotBlank
+    @Schema(description = "Facility name", example = "Central Parking", requiredMode = Schema.RequiredMode.REQUIRED)
+    String name,
 
-    @Schema(description = "Facility name", example = "Central Parking") String name,
+    @Schema(description = "City where the facility is located", example = "Madrid", requiredMode = Schema.RequiredMode.REQUIRED)
+    String city,
 
-    @Schema(description = "City where the facility is located", example = "Madrid") String city,
+    @Schema(description = "Street address of the facility", example = "Calle Mayor 1", requiredMode = Schema.RequiredMode.REQUIRED)
+    String address,
 
-    @Schema(description = "Street address of the facility", example = "Calle Mayor 1") String address,
+    @NotNull
+    @Valid
+    @Schema(description = "Geographic coordinates of the facility", requiredMode = Schema.RequiredMode.REQUIRED)
+    Coordinates location,
 
-    @Schema(description = "Geographic coordinates of the facility") Coordinates location,
+    @Min(1)
+    @Schema(description = "Total number of parking spots", example = "120", minimum = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+    int totalSpots,
 
-    @Schema(description = "Total number of parking spots", example = "120") int totalSpots,
+    @Schema(description = "Tags associated with the facility (enum)", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    Set<FacilityTag> tags,
 
-    @Schema(description = "Tags associated with the facility (enum)") Set<FacilityTag> tags,
+    @Schema(description = "Initial facility status", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    FacilityStatus status,
 
-    @Schema(description = "Initial facility status") FacilityStatus status,
+    @Schema(description = "Cancellation policy for the facility", requiredMode = Schema.RequiredMode.REQUIRED)
+    CancellationPolicy cancellationPolicy,
 
-    @Schema(description = "Cancellation policy for the facility") CancellationPolicy cancellationPolicy,
-
-    @Schema(description = "Pricing rule information for the facility") ParkingPricingRule pricingRule) {
+    @NotNull
+    @Valid
+    @Schema(description = "Pricing rule information for the facility", requiredMode = Schema.RequiredMode.REQUIRED)
+    ParkingPricingRule pricingRule) {
 
 }

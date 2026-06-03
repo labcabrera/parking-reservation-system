@@ -43,4 +43,6 @@ public interface FacilityJpaRepository
                 @Param("text") String text,
                 @Param("status") FacilityStatus status,
                 Pageable pageable);
+
+        boolean existsByName(String name);
 }

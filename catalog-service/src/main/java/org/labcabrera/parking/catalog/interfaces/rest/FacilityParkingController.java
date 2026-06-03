@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -98,7 +99,7 @@ public class FacilityParkingController {
             @Content(mediaType = "application/json", schema = @Schema(implementation = ParkingFacilityDto.class)) }),
         @ApiResponse(responseCode = "400", description = "Invalid request", content = {
             @Content(mediaType = "application/json", schema = @Schema(implementation = ApiError.class)) }) })
-    public ResponseEntity<ParkingFacilityDto> create(@RequestBody CreateParkingFacilityRequest request) {
+    public ResponseEntity<ParkingFacilityDto> create(@Valid @RequestBody CreateParkingFacilityRequest request) {
         log.debug("Creating parking facility with name: {}", request.name());
         var command = new CreateParkingFacilityCommand(
             request.name(),

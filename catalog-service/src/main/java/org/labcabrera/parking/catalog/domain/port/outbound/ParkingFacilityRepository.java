@@ -16,5 +16,7 @@ public interface ParkingFacilityRepository {
 
     Optional<ParkingFacility> findById(FacilityId id);
 
+    boolean existsByName(String name);
+
     void save(ParkingFacility parkingFacility);
 }

@@ -28,6 +28,9 @@ dependencies {
     // Resilience
     // implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.3.0'
 
+    // Validation (Bean Validation / Hibernate Validator)
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
     // Testing
     // testImplementation 'org.springframework.boot:spring-boot-starter-test'
     // testImplementation 'org.springframework.kafka:spring-kafka-test'

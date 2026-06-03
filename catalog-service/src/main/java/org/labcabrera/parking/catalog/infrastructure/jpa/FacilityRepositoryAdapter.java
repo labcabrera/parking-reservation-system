@@ -73,4 +73,12 @@ public class FacilityRepositoryAdapter implements ParkingFacilityRepository {
         var spec = RsqlSpecificationBuilder.build(rsql);
         return jpaRepository.findAll(spec, pageable).map(mapper::toDomain);
     }
+
+    @Override
+    public boolean existsByName(String name) {
+        if (name == null) {
+            return false;
+        }
+        return jpaRepository.existsByName(name);
+    }
 }

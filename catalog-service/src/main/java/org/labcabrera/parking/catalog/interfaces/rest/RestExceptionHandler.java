@@ -18,6 +18,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,14 +43,14 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        log.error("Validation exception", ex);
+        log.error("Validation exception", ex.getMessage());
         var details = new ArrayList<String>();
         ex.getBindingResult().getAllErrors().forEach(error -> {
             String fieldName = ((FieldError) error).getField();
             String errorMessage = error.getDefaultMessage();
             details.add("%s, %s".formatted(fieldName, errorMessage));
         });
-        var apiError = new ApiError("msg.err.validation-error", "msg.err.validation-error",
+        var apiError = new ApiError("ILLEGAL_ARGUMEN", "msg.err.validation-error",
             LocalDateTime.now(), details);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
     }
@@ -84,9 +85,16 @@ public class RestExceptionHandler {
     }
 
     @ExceptionHandler(SerializationException.class)
-    public ResponseEntity<ApiError> handleSeralizationException(
-        SerializationException ex) {
-        log.error("Serialization exception", ex);
+    public ResponseEntity<ApiError> handleSeralizationException(SerializationException ex) {
+        log.error("Serialization exception", ex.getMessage());
+        ApiError error = new ApiError("serialization-error", ex.getMessage(),
+            LocalDateTime.now(), new ArrayList<>());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiError> handleConstraintViolationException(ConstraintViolationException ex) {
+        log.error("Serialization exception", ex.getMessage());
         ApiError error = new ApiError("serialization-error", ex.getMessage(),
             LocalDateTime.now(), new ArrayList<>());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);

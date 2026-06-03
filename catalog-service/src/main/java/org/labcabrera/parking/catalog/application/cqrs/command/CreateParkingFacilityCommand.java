@@ -8,15 +8,32 @@ import org.labcabrera.parking.catalog.domain.valueobject.FacilityStatus;
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityTag;
 import org.labcabrera.parking.catalog.domain.valueobject.ParkingPricingRule;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+
 public record CreateParkingFacilityCommand(
+    @NotBlank
     String name,
+    
     String city,
+    
     String address,
+    
+    @NotNull
     Coordinates location,
+    
+    @Min(1)
     int totalSpots,
+    
     Set<FacilityTag> tags,
+    
     FacilityStatus status,
+    
     CancellationPolicy cancellationPolicy,
+    
+    @Valid
     ParkingPricingRule pricingRule) {
 
 }

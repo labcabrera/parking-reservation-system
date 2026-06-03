@@ -11,13 +11,16 @@ import org.labcabrera.parking.catalog.domain.event.ParkingFacilityCreatedEvent;
 import org.labcabrera.parking.catalog.domain.port.outbound.ParkingFacilityRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
 @AllArgsConstructor
 @Slf4j
+@Validated
 public class ParkingFacilityCommandHandler {
 
     private final ParkingFacilityRepository repository;
@@ -25,8 +28,19 @@ public class ParkingFacilityCommandHandler {
 
     @Transactional
     @CommandHandler
-    public ParkingFacility handle(CreateParkingFacilityCommand command) {
+    public ParkingFacility handle(@Valid CreateParkingFacilityCommand command) {
         log.debug("Handling CreateParkingFacilityCommand: {}", command);
+        // Basic validations
+        if (command.name() == null || command.name().isBlank()) {
+            throw new IllegalArgumentException("name must be provided xx");
+        }
+        if (repository.existsByName(command.name())) {
+            throw new IllegalArgumentException("A parking facility with the same name already exists");
+        }
+        if (command.pricingRule() == null || command.pricingRule().estimatedDailyPrice() == null
+            || command.pricingRule().estimatedDailyPrice().doubleValue() <= 0.0) {
+            throw new IllegalArgumentException("pricingRule.estimatedDailyPrice must be greater than 0");
+        }
         ParkingFacility parkingFacility = new ParkingFacility(
             command.name(),
             command.city(),
