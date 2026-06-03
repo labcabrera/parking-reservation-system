@@ -12,24 +12,35 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(name = "ParkingFacility", description = "Parking facility details")
 public record ParkingFacilityDto(
-    @Schema(description = "Unique parking facility identifier", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6") String id,
 
-    @Schema(description = "Facility name", example = "Central Parking") String name,
+    @Schema(description = "Unique parking facility identifier", examples = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
+    String id,
 
-    @Schema(description = "City where the facility is located", example = "Madrid") String city,
+    @Schema(description = "Facility name", examples = "Central Parking")
+    String name,
 
-    @Schema(description = "Street address of the facility", example = "Calle Mayor 1") String address,
+    @Schema(description = "City where the facility is located", examples = "Madrid")
+    String city,
 
-    @Schema(description = "Geographic coordinates of the facility") Coordinates location,
+    @Schema(description = "Street address of the facility", examples = "Calle Mayor 1")
+    String address,
 
-    @Schema(description = "Total number of parking spots", example = "120") int totalSpots,
+    @Schema(description = "Geographic coordinates of the facility")
+    Coordinates location,
 
-    @Schema(description = "Tags associated with the facility (enum)") Set<FacilityTag> tags,
+    @Schema(description = "Total number of parking spots", examples = "120")
+    int totalSpots,
 
-    @Schema(description = "Current facility status") FacilityStatus status,
+    @Schema(description = "Tags associated with the facility (enum)")
+    Set<FacilityTag> tags,
 
-    @Schema(description = "Cancellation policy for the facility") CancellationPolicy cancellationPolicy,
+    @Schema(description = "Current facility status")
+    FacilityStatus status,
 
-    @Schema(description = "Pricing rule information for the facility") ParkingPricingRule pricingRule) {
+    @Schema(description = "Cancellation policy for the facility")
+    CancellationPolicy cancellationPolicy,
+
+    @Schema(description = "Pricing rule information for the facility")
+    ParkingPricingRule pricingRule) {
 
 }

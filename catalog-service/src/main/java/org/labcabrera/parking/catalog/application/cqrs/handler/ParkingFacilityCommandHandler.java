@@ -8,6 +8,7 @@ import org.labcabrera.parking.catalog.application.cqrs.command.CreateParkingFaci
 import org.labcabrera.parking.catalog.application.cqrs.command.DeleteParkingFacilityCommand;
 import org.labcabrera.parking.catalog.domain.aggregate.ParkingFacility;
 import org.labcabrera.parking.catalog.domain.event.ParkingFacilityCreatedEvent;
+import org.labcabrera.parking.catalog.domain.exception.ConflictException;
 import org.labcabrera.parking.catalog.domain.port.ParkingFacilityRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,16 +31,8 @@ public class ParkingFacilityCommandHandler {
     @CommandHandler
     public ParkingFacility handle(@Valid CreateParkingFacilityCommand command) {
         log.debug("Handling CreateParkingFacilityCommand: {}", command);
-        // Basic validations
-        if (command.name() == null || command.name().isBlank()) {
-            throw new IllegalArgumentException("name must be provided xx");
-        }
         if (repository.existsByName(command.name())) {
-            throw new IllegalArgumentException("A parking facility with the same name already exists");
-        }
-        if (command.pricingRule() == null || command.pricingRule().estimatedDailyPrice() == null
-            || command.pricingRule().estimatedDailyPrice().doubleValue() <= 0.0) {
-            throw new IllegalArgumentException("pricingRule.estimatedDailyPrice must be greater than 0");
+            throw new ConflictException("A parking facility with the same name already exists");
         }
         ParkingFacility parkingFacility = new ParkingFacility(
             command.name(),

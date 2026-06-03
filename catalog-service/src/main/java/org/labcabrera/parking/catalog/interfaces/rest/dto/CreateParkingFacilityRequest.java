@@ -16,14 +16,15 @@ import jakarta.validation.constraints.NotNull;
 
 @Schema(name = "CreateParkingFacilityRequest", description = "Request payload to create a parking facility. Validation: name required, totalSpots >= 1, pricingRule.estimatedDailyPrice > 0.")
 public record CreateParkingFacilityRequest(
+    
     @NotBlank
-    @Schema(description = "Facility name", example = "Central Parking", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "Facility name", examples = "Central Parking", requiredMode = Schema.RequiredMode.REQUIRED)
     String name,
 
-    @Schema(description = "City where the facility is located", example = "Madrid", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "City where the facility is located", examples = "Madrid", requiredMode = Schema.RequiredMode.REQUIRED)
     String city,
 
-    @Schema(description = "Street address of the facility", example = "Calle Mayor 1", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "Street address of the facility", examples = "Calle Mayor 1", requiredMode = Schema.RequiredMode.REQUIRED)
     String address,
 
     @NotNull
@@ -32,7 +33,7 @@ public record CreateParkingFacilityRequest(
     Coordinates location,
 
     @Min(1)
-    @Schema(description = "Total number of parking spots", example = "120", minimum = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "Total number of parking spots", examples = "120", minimum = "1", requiredMode = Schema.RequiredMode.REQUIRED)
     int totalSpots,
 
     @Schema(description = "Tags associated with the facility (enum)", requiredMode = Schema.RequiredMode.NOT_REQUIRED)

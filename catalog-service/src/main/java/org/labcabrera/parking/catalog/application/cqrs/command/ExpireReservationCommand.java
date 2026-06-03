@@ -4,5 +4,8 @@ import java.util.UUID;
 
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 
-public record ExpireReservationCommand(@TargetAggregateIdentifier UUID reservationId) {
+public record ExpireReservationCommand(
+
+    @TargetAggregateIdentifier
+    UUID reservationId) {
 }
