@@ -106,3 +106,4 @@ catalog:
   reservation:
     hold-minutes: 5
     slot-size-minutes: 30
+    short-duration-threshold-hours: 12

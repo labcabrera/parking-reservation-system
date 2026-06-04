@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import org.labcabrera.parking.catalog.domain.valueobject.InventoryBlockType;
 import org.labcabrera.parking.catalog.domain.valueobject.InventorySlot;
 import org.labcabrera.parking.catalog.domain.valueobject.SlotKey;
 
@@ -29,4 +30,6 @@ public interface InventoryRepository {
      * Returns the inventory slots for a facility within [start, end).
      */
     List<InventorySlot> findSlots(UUID facilityId, LocalDateTime start, LocalDateTime end);
+
+    List<InventorySlot> findSlots(UUID facilityId, LocalDateTime start, LocalDateTime end, InventoryBlockType blockType);
 }

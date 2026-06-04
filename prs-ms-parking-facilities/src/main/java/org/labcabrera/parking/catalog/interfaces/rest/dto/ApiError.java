@@ -17,6 +17,6 @@ public record ApiError(
     @Schema(description = "Timestamp of the error occurrence", examples = "2024-06-01T12:00:00.000Z", requiredMode = Schema.RequiredMode.REQUIRED)
     LocalDateTime timestamp,
     
-    @Schema(description = "Detailed error messages", examples = "[\"'name' must not be blank\", \"'totalSpots' must be greater than or equal to 1\"]",  requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @Schema(description = "Detailed error messages", examples = "[\"'name' must not be blank\", \"'capacity.total' must be greater than or equal to 1\"]",  requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     List<String> details) {
 }

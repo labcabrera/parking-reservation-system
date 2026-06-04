@@ -13,6 +13,7 @@ import org.labcabrera.parking.catalog.domain.valueobject.Coordinates;
 import org.labcabrera.parking.catalog.domain.valueobject.EntityMetadata;
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityId;
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityTag;
+import org.labcabrera.parking.catalog.domain.valueobject.ParkingCapacity;
 import org.labcabrera.parking.catalog.domain.valueobject.ParkingPricingRule;
 import org.labcabrera.parking.catalog.infrastructure.jpa.entities.ParkingFacilityJpaEntity;
 import org.mapstruct.Mapper;
@@ -34,6 +35,7 @@ public interface FacilityJpaMapper {
         Coordinates coords = new Coordinates(entity.getLatitude(), entity.getLongitude());
         CancellationPolicy cancellationPolicy = new CancellationPolicy(entity.getFreeCancelHours(), entity.getPenaltyCancelMinutes());
         ParkingPricingRule pricingRule = new ParkingPricingRule(entity.getExternalPricingId(), entity.getEstimatedDailyPrice());
+        ParkingCapacity capacity = capacityFrom(entity);
         EntityMetadata metadata = new EntityMetadata(
             entity.getCreatedAt(),
             Optional.ofNullable(entity.getUpdatedAt()),
@@ -44,7 +46,7 @@ public interface FacilityJpaMapper {
             entity.getCity(),
             entity.getAddress(),
             coords,
-            entity.getTotalSpots(),
+            capacity,
             tags,
             entity.getStatus(),
             cancellationPolicy,
@@ -56,6 +58,9 @@ public interface FacilityJpaMapper {
     @Mapping(target = "id", source = "id")
     @Mapping(target = "latitude", source = "location.latitude")
     @Mapping(target = "longitude", source = "location.longitude")
+    @Mapping(target = "totalSpots", source = "capacity.total")
+    @Mapping(target = "shortTermSpots", source = "capacity.shortTerm")
+    @Mapping(target = "longTermSpots", source = "capacity.longTerm")
     @Mapping(target = "tags", source = "tags")
     @Mapping(target = "status", source = "status")
     @Mapping(target = "freeCancelHours", source = "cancellationPolicy.freeCancelHours")
@@ -84,5 +89,16 @@ public interface FacilityJpaMapper {
         catch (IllegalArgumentException e) {
             return null;
         }
+    }
+
+    private static ParkingCapacity capacityFrom(ParkingFacilityJpaEntity entity) {
+        int total = entity.getTotalSpots();
+        int shortTerm = entity.getShortTermSpots() != null ? entity.getShortTermSpots() : total;
+        int longTerm = entity.getLongTermSpots() != null ? entity.getLongTermSpots() : Math.max(0, total - shortTerm);
+        if (shortTerm + longTerm != total) {
+            shortTerm = total;
+            longTerm = 0;
+        }
+        return new ParkingCapacity(total, shortTerm, longTerm);
     }
 }

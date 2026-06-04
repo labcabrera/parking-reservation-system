@@ -5,6 +5,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import org.labcabrera.parking.catalog.domain.valueobject.InventoryBlockType;
+import org.labcabrera.parking.catalog.domain.valueobject.ParkingCapacity;
+
 /**
  * Read-only port for the text + dates availability search. Returns a denormalized
  * view per candidate facility, joining facility metadata with the peak inventory
@@ -13,14 +16,14 @@ import java.util.UUID;
 public interface FacilityAvailabilityReadModel {
 
     List<FacilityAvailabilityRow> findCandidates(String text, LocalDateTime gridStart, LocalDateTime gridEnd,
-        int limit);
+        int limit, InventoryBlockType blockType);
 
     record FacilityAvailabilityRow(
         UUID id,
         String name,
         String city,
         String address,
-        int totalSpots,
+        ParkingCapacity capacity,
         int maxReserved,
         BigDecimal dailyPrice) {
     }

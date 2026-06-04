@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.labcabrera.parking.catalog.domain.port.InventoryRepository;
+import org.labcabrera.parking.catalog.domain.valueobject.InventoryBlockType;
 import org.labcabrera.parking.catalog.domain.valueobject.InventorySlot;
 import org.labcabrera.parking.catalog.domain.valueobject.SlotKey;
 import org.labcabrera.parking.catalog.infrastructure.jpa.entities.InventorySlotJpaEntity;
@@ -27,7 +28,7 @@ public class InventoryRepositoryAdapter implements InventoryRepository {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean tryHold(SlotKey slot, int defaultCapacity) {
         InventorySlotJpaEntity entity = repository
-            .findByFacilityIdAndSlotStart(slot.facilityId(), slot.slotStart())
+            .findByFacilityIdAndSlotStartAndBlockType(slot.facilityId(), slot.slotStart(), slot.blockType())
             .orElseGet(() -> createSlot(slot, defaultCapacity));
 
         if (entity.getReserved() >= entity.getCapacity()) {
@@ -43,9 +44,14 @@ public class InventoryRepositoryAdapter implements InventoryRepository {
 
     @Override
     public List<InventorySlot> findSlots(UUID facilityId, LocalDateTime start, LocalDateTime end) {
-        return repository.findSlotsByFacilityAndRange(facilityId, start, end)
+        return findSlots(facilityId, start, end, InventoryBlockType.SHORT_TERM);
+    }
+
+    @Override
+    public List<InventorySlot> findSlots(UUID facilityId, LocalDateTime start, LocalDateTime end, InventoryBlockType blockType) {
+        return repository.findSlotsByFacilityAndRange(facilityId, start, end, blockType)
             .stream()
-            .map(e -> new InventorySlot(e.getSlotStart(), e.getCapacity(), e.getReserved()))
+            .map(e -> new InventorySlot(e.getSlotStart(), e.getBlockType(), e.getCapacity(), e.getReserved()))
             .toList();
     }
 
@@ -53,7 +59,7 @@ public class InventoryRepositoryAdapter implements InventoryRepository {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void release(List<SlotKey> slots, UUID facilityId) {
         for (SlotKey slot : slots) {
-            repository.findByFacilityIdAndSlotStart(facilityId, slot.slotStart())
+            repository.findByFacilityIdAndSlotStartAndBlockType(facilityId, slot.slotStart(), slot.blockType())
                 .ifPresent(e -> repository.release(e.getId()));
         }
     }
@@ -61,12 +67,12 @@ public class InventoryRepositoryAdapter implements InventoryRepository {
     private InventorySlotJpaEntity createSlot(SlotKey slot, int capacity) {
         try {
             InventorySlotJpaEntity fresh = new InventorySlotJpaEntity(
-                null, slot.facilityId(), slot.slotStart(), capacity, 0, 0L);
+                null, slot.facilityId(), slot.slotStart(), slot.blockType(), capacity, 0, 0L);
             return repository.saveAndFlush(fresh);
         }
         catch (DataIntegrityViolationException e) {
             // Concurrent insert won; re-read.
-            return repository.findByFacilityIdAndSlotStart(slot.facilityId(), slot.slotStart())
+            return repository.findByFacilityIdAndSlotStartAndBlockType(slot.facilityId(), slot.slotStart(), slot.blockType())
                 .orElseThrow(() -> e);
         }
     }

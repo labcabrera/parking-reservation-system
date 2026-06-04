@@ -12,6 +12,7 @@ import org.labcabrera.parking.catalog.domain.valueobject.EntityMetadata;
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityId;
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityStatus;
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityTag;
+import org.labcabrera.parking.catalog.domain.valueobject.ParkingCapacity;
 import org.labcabrera.parking.catalog.domain.valueobject.ParkingPricingRule;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -26,7 +27,7 @@ public class ParkingFacility {
     private String city;
     private String address;
     private Coordinates location;
-    private int totalSpots;
+    private ParkingCapacity capacity;
     private Set<FacilityTag> tags;
     private FacilityStatus status;
     private CancellationPolicy cancellationPolicy;
@@ -39,21 +40,21 @@ public class ParkingFacility {
         String city,
         String address,
         Coordinates location,
-        int totalSpots,
+        ParkingCapacity capacity,
         Set<FacilityTag> tags,
         FacilityStatus status,
         CancellationPolicy cancellationPolicy,
         ParkingPricingRule pricingRule) {
 
-        if (totalSpots < 1) {
-            throw new IllegalArgumentException("totalSpots must be at least 1");
+        if (capacity == null) {
+            throw new IllegalArgumentException("capacity is required");
         }
         this.id = new FacilityId(UUID.randomUUID());
         this.name = name;
         this.city = city;
         this.address = address;
         this.location = location;
-        this.totalSpots = totalSpots;
+        this.capacity = capacity;
         this.tags = tags != null ? EnumSet.copyOf(tags) : EnumSet.noneOf(FacilityTag.class);
         this.status = status;
         this.cancellationPolicy = cancellationPolicy;
@@ -69,7 +70,7 @@ public class ParkingFacility {
         @JsonProperty("city") String city,
         @JsonProperty("address") String address,
         @JsonProperty("location") Coordinates location,
-        @JsonProperty("totalSpots") int totalSpots,
+        @JsonProperty("capacity") ParkingCapacity capacity,
         @JsonProperty("tags") Set<FacilityTag> tags,
         @JsonProperty("status") FacilityStatus status,
         @JsonProperty("cancellationPolicy") CancellationPolicy cancellationPolicy,
@@ -82,7 +83,7 @@ public class ParkingFacility {
         this.city = city;
         this.address = address;
         this.location = location;
-        this.totalSpots = totalSpots;
+        this.capacity = capacity;
         this.tags = tags != null ? EnumSet.copyOf(tags) : EnumSet.noneOf(FacilityTag.class);
         this.status = status;
         this.cancellationPolicy = cancellationPolicy;
@@ -93,6 +94,10 @@ public class ParkingFacility {
 
     public boolean isSearchable() {
         return status == FacilityStatus.ACTIVE;
+    }
+
+    public int getTotalSpots() {
+        return capacity.total();
     }
 
 }

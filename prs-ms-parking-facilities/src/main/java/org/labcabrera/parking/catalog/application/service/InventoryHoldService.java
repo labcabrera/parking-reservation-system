@@ -1,6 +1,7 @@
 package org.labcabrera.parking.catalog.application.service;
 
 import java.time.LocalDateTime;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -9,7 +10,9 @@ import org.labcabrera.parking.catalog.domain.port.InventoryRepository;
 import org.labcabrera.parking.catalog.domain.port.ParkingFacilityRepository;
 import org.labcabrera.parking.catalog.domain.service.SlotCalculator;
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityId;
+import org.labcabrera.parking.catalog.domain.valueobject.InventoryBlockPlan;
 import org.labcabrera.parking.catalog.domain.valueobject.SlotKey;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
@@ -30,6 +33,9 @@ public class InventoryHoldService {
     private final InventoryRepository inventory;
     private final ParkingFacilityRepository facilityRepository;
 
+    @Value("${catalog.reservation.short-duration-threshold-hours:12}")
+    private long shortDurationThresholdHours;
+
     public HoldResult tryHold(UUID facilityId, LocalDateTime checkIn, LocalDateTime checkOut) {
         log.info("Attempting inventory hold for facility {}, checkIn {}, checkOut {}", facilityId, checkIn, checkOut);
 
@@ -38,9 +44,17 @@ public class InventoryHoldService {
             log.warn("Facility {} not found", facilityId);
             return HoldResult.failure("Facility not found: " + facilityId);
         }
-        int capacity = facilityOpt.get().getTotalSpots();
+        InventoryBlockPlan plan = SlotCalculator.planFor(
+            facilityId,
+            checkIn,
+            checkOut,
+            Duration.ofHours(shortDurationThresholdHours));
+        int capacity = facilityOpt.get().getCapacity().capacityFor(plan.blockType());
+        if (capacity < 1) {
+            return HoldResult.failure("No capacity configured for " + plan.blockType() + " reservations");
+        }
 
-        List<SlotKey> slots = SlotCalculator.slotsFor(facilityId, checkIn, checkOut);
+        List<SlotKey> slots = plan.slots();
         List<SlotKey> held = new ArrayList<>(slots.size());
 
         for (SlotKey slot : slots) {
@@ -61,7 +75,11 @@ public class InventoryHoldService {
 
     public void release(UUID facilityId, LocalDateTime checkIn, LocalDateTime checkOut) {
         log.info("Releasing inventory hold for facility {}, checkIn {}, checkOut {}", facilityId, checkIn, checkOut);
-        List<SlotKey> slots = SlotCalculator.slotsFor(facilityId, checkIn, checkOut);
+        List<SlotKey> slots = SlotCalculator.planFor(
+            facilityId,
+            checkIn,
+            checkOut,
+            Duration.ofHours(shortDurationThresholdHours)).slots();
         inventory.release(slots, facilityId);
     }
 

@@ -39,7 +39,7 @@ public class ParkingFacilityCommandHandler {
             command.city(),
             command.address(),
             command.location(),
-            command.totalSpots(),
+            command.capacity(),
             command.tags(),
             command.status(),
             command.cancellationPolicy(),
@@ -50,7 +50,7 @@ public class ParkingFacilityCommandHandler {
             parkingFacility.getName(),
             parkingFacility.getCity(),
             parkingFacility.getAddress(),
-            parkingFacility.getTotalSpots(),
+            parkingFacility.getCapacity(),
             Instant.now()));
         return parkingFacility;
     }

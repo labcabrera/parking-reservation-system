@@ -8,6 +8,8 @@ import java.util.UUID;
 
 import org.labcabrera.parking.catalog.domain.port.FacilityAvailabilityReadModel;
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityStatus;
+import org.labcabrera.parking.catalog.domain.valueobject.InventoryBlockType;
+import org.labcabrera.parking.catalog.domain.valueobject.ParkingCapacity;
 import org.labcabrera.parking.catalog.infrastructure.jpa.entities.ParkingFacilityJpaEntity;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
@@ -25,7 +27,7 @@ class FacilityAvailabilityReadAdapter implements FacilityAvailabilityReadModel {
     @Override
     @Transactional(readOnly = true)
     public List<FacilityAvailabilityRow> findCandidates(String text, LocalDateTime gridStart, LocalDateTime gridEnd,
-            int limit) {
+            int limit, InventoryBlockType blockType) {
         var candidates = facilityRepository
             .searchCandidates(text, FacilityStatus.ACTIVE, PageRequest.of(0, limit))
             .getContent();
@@ -34,7 +36,7 @@ class FacilityAvailabilityReadAdapter implements FacilityAvailabilityReadModel {
         }
         List<UUID> ids = candidates.stream().map(ParkingFacilityJpaEntity::getId).toList();
         Map<UUID, Integer> maxReservedByFacility = new HashMap<>();
-        for (Object[] row : inventoryRepository.findMaxReservedByFacility(ids, gridStart, gridEnd)) {
+        for (Object[] row : inventoryRepository.findMaxReservedByFacility(ids, gridStart, gridEnd, blockType)) {
             maxReservedByFacility.put((UUID) row[0], ((Number) row[1]).intValue());
         }
         return candidates.stream()
@@ -43,9 +45,20 @@ class FacilityAvailabilityReadAdapter implements FacilityAvailabilityReadModel {
                 f.getName(),
                 f.getCity(),
                 f.getAddress(),
-                f.getTotalSpots(),
+                capacityFrom(f),
                 maxReservedByFacility.getOrDefault(f.getId(), 0),
                 f.getEstimatedDailyPrice()))
             .toList();
+    }
+
+    private ParkingCapacity capacityFrom(ParkingFacilityJpaEntity entity) {
+        int total = entity.getTotalSpots();
+        int shortTerm = entity.getShortTermSpots() != null ? entity.getShortTermSpots() : total;
+        int longTerm = entity.getLongTermSpots() != null ? entity.getLongTermSpots() : Math.max(0, total - shortTerm);
+        if (shortTerm + longTerm != total) {
+            shortTerm = total;
+            longTerm = 0;
+        }
+        return new ParkingCapacity(total, shortTerm, longTerm);
     }
 }

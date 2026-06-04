@@ -6,11 +6,11 @@ import org.labcabrera.parking.catalog.domain.valueobject.CancellationPolicy;
 import org.labcabrera.parking.catalog.domain.valueobject.Coordinates;
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityStatus;
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityTag;
+import org.labcabrera.parking.catalog.domain.valueobject.ParkingCapacity;
 import org.labcabrera.parking.catalog.domain.valueobject.ParkingPricingRule;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 public record CreateParkingFacilityCommand(
@@ -27,8 +27,9 @@ public record CreateParkingFacilityCommand(
     @NotNull
     Coordinates location,
     
-    @Min(1)
-    int totalSpots,
+    @NotNull
+    @Valid
+    ParkingCapacity capacity,
     
     Set<FacilityTag> tags,
     

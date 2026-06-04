@@ -42,6 +42,12 @@ public class ParkingFacilityJpaEntity {
     @Column(name = "total_spots", nullable = false)
     private int totalSpots;
 
+    @Column(name = "short_term_spots")
+    private Integer shortTermSpots;
+
+    @Column(name = "long_term_spots")
+    private Integer longTermSpots;
+
     @Column(columnDefinition = "text[]")
     private String[] tags;
 
@@ -84,7 +90,9 @@ public class ParkingFacilityJpaEntity {
             this.latitude = domain.getLocation().latitude();
             this.longitude = domain.getLocation().longitude();
         }
-        this.totalSpots = domain.getTotalSpots();
+        this.totalSpots = domain.getCapacity().total();
+        this.shortTermSpots = domain.getCapacity().shortTerm();
+        this.longTermSpots = domain.getCapacity().longTerm();
         if (domain.getTags() != null) {
             this.tags = domain.getTags().stream().map(Enum::name).toArray(String[]::new);
         }

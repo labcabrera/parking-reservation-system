@@ -4,8 +4,12 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Identifies a half-hour inventory bucket for a facility.
- * slotStart is the inclusive lower bound; slotEnd = slotStart + 30 minutes.
+ * Identifies an inventory bucket for a facility.
+ * SHORT_TERM buckets use half-hour boundaries. LONG_TERM buckets use day starts.
  */
-public record SlotKey(UUID facilityId, LocalDateTime slotStart) {
+public record SlotKey(UUID facilityId, LocalDateTime slotStart, InventoryBlockType blockType) {
+
+    public SlotKey(UUID facilityId, LocalDateTime slotStart) {
+        this(facilityId, slotStart, InventoryBlockType.SHORT_TERM);
+    }
 }

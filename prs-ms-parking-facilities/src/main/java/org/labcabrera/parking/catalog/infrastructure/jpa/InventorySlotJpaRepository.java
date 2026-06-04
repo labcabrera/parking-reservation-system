@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.labcabrera.parking.catalog.domain.valueobject.InventoryBlockType;
 import org.labcabrera.parking.catalog.infrastructure.jpa.entities.InventorySlotJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -14,7 +15,10 @@ import org.springframework.data.repository.query.Param;
 
 public interface InventorySlotJpaRepository extends JpaRepository<InventorySlotJpaEntity, UUID> {
 
-    Optional<InventorySlotJpaEntity> findByFacilityIdAndSlotStart(UUID facilityId, LocalDateTime slotStart);
+    Optional<InventorySlotJpaEntity> findByFacilityIdAndSlotStartAndBlockType(
+        UUID facilityId,
+        LocalDateTime slotStart,
+        InventoryBlockType blockType);
 
     /**
      * Optimistic atomic hold: increments {@code reserved} only when capacity remains
@@ -55,21 +59,25 @@ public interface InventorySlotJpaRepository extends JpaRepository<InventorySlotJ
          WHERE s.facilityId IN :facilityIds
            AND s.slotStart >= :start
            AND s.slotStart <  :end
+           AND s.blockType = :blockType
          GROUP BY s.facilityId
         """)
     List<Object[]> findMaxReservedByFacility(
         @Param("facilityIds") Collection<UUID> facilityIds,
         @Param("start") LocalDateTime start,
-        @Param("end") LocalDateTime end);
+        @Param("end") LocalDateTime end,
+        @Param("blockType") InventoryBlockType blockType);
 
     @Query("""
         SELECT s FROM InventorySlotJpaEntity s
          WHERE s.facilityId = :facilityId
            AND s.slotStart BETWEEN :start AND :end
+           AND s.blockType = :blockType
          ORDER BY s.slotStart
         """)
     List<InventorySlotJpaEntity> findSlotsByFacilityAndRange(
         @Param("facilityId") UUID facilityId,
         @Param("start") LocalDateTime start,
-        @Param("end") LocalDateTime end);
+        @Param("end") LocalDateTime end,
+        @Param("blockType") InventoryBlockType blockType);
 }

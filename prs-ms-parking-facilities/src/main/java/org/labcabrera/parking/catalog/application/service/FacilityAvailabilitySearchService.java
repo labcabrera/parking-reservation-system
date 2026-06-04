@@ -12,6 +12,8 @@ import org.labcabrera.parking.catalog.domain.port.InventoryRepository;
 import org.labcabrera.parking.catalog.domain.valueobject.InventorySlot;
 import org.labcabrera.parking.catalog.domain.port.FacilityAvailabilityReadModel.FacilityAvailabilityRow;
 import org.labcabrera.parking.catalog.domain.service.SlotCalculator;
+import org.labcabrera.parking.catalog.domain.valueobject.InventoryBlockPlan;
+import org.labcabrera.parking.catalog.domain.valueobject.InventoryBlockType;
 import org.labcabrera.parking.catalog.interfaces.rest.dto.FacilityAvailabilityDto;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -42,23 +44,34 @@ public class FacilityAvailabilitySearchService {
     @Value("${catalog.search.low-availability-threshold:5}")
     private int lowAvailabilityThreshold;
 
+    @Value("${catalog.reservation.short-duration-threshold-hours:12}")
+    private long shortDurationThresholdHours;
+
     public List<FacilityAvailabilityDto> search(String text, LocalDateTime checkIn, LocalDateTime checkOut,
             Integer requestedLimit) {
         if (!checkOut.isAfter(checkIn)) {
             throw new IllegalArgumentException("checkOut must be after checkIn");
         }
         int limit = Math.min(requestedLimit != null && requestedLimit > 0 ? requestedLimit : defaultLimit, maxLimit);
-        LocalDateTime gridStart = SlotCalculator.floorToSlot(checkIn);
-        LocalDateTime gridEnd = SlotCalculator.ceilToSlot(checkOut);
+        InventoryBlockPlan plan = SlotCalculator.planFor(
+            null,
+            checkIn,
+            checkOut,
+            Duration.ofHours(shortDurationThresholdHours));
+        LocalDateTime gridStart = plan.slots().get(0).slotStart();
+        LocalDateTime gridEnd = plan.blockType() == InventoryBlockType.LONG_TERM
+            ? plan.slots().get(plan.slots().size() - 1).slotStart().plusDays(1)
+            : SlotCalculator.ceilToSlot(checkOut);
 
-        List<FacilityAvailabilityRow> rows = readModel.findCandidates(text, gridStart, gridEnd, limit);
+        List<FacilityAvailabilityRow> rows = readModel.findCandidates(text, gridStart, gridEnd, limit, plan.blockType());
         long minutes = Duration.between(checkIn, checkOut).toMinutes();
         BigDecimal minutesValue = BigDecimal.valueOf(minutes);
         BigDecimal minutesPerDay = BigDecimal.valueOf(24L * 60L);
 
         List<FacilityAvailabilityDto> results = new ArrayList<>(rows.size());
         for (FacilityAvailabilityRow row : rows) {
-            int available = Math.max(0, row.totalSpots() - row.maxReserved());
+            int capacity = row.capacity().capacityFor(plan.blockType());
+            int available = Math.max(0, capacity - row.maxReserved());
             if (available <= 0) {
                 continue;
             }
@@ -70,7 +83,8 @@ public class FacilityAvailabilitySearchService {
                 row.name(),
                 row.city(),
                 row.address(),
-                row.totalSpots(),
+                row.capacity(),
+                plan.blockType(),
                 available,
                 available <= lowAvailabilityThreshold,
                 price,
@@ -85,6 +99,15 @@ public class FacilityAvailabilitySearchService {
         if (!end.isAfter(start)) {
             throw new IllegalArgumentException("end must be after start");
         }
-        return inventoryRepository.findSlots(facilityId, start, end);
+        InventoryBlockPlan plan = SlotCalculator.planFor(
+            facilityId,
+            start,
+            end,
+            Duration.ofHours(shortDurationThresholdHours));
+        LocalDateTime gridStart = plan.slots().get(0).slotStart();
+        LocalDateTime gridEnd = plan.blockType() == InventoryBlockType.LONG_TERM
+            ? plan.slots().get(plan.slots().size() - 1).slotStart().plusDays(1)
+            : SlotCalculator.ceilToSlot(end);
+        return inventoryRepository.findSlots(facilityId, gridStart, gridEnd, plan.blockType());
     }
 }

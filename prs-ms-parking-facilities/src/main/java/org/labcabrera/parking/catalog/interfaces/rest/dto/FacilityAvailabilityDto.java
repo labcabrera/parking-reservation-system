@@ -3,6 +3,9 @@ package org.labcabrera.parking.catalog.interfaces.rest.dto;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+import org.labcabrera.parking.catalog.domain.valueobject.InventoryBlockType;
+import org.labcabrera.parking.catalog.domain.valueobject.ParkingCapacity;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(name = "FacilityAvailability", description = "Availability information for a parking facility over a requested interval")
@@ -20,8 +23,11 @@ public record FacilityAvailabilityDto(
     @Schema(description = "Address", examples = "Calle Mayor 1")
     String address,
 
-    @Schema(description = "Total number of parking spots", examples = "120")
-    int totalSpots,
+    @Schema(description = "Capacity split between short- and long-duration reservations")
+    ParkingCapacity capacity,
+
+    @Schema(description = "Inventory bucket type used for the requested interval", examples = "SHORT_TERM")
+    InventoryBlockType blockType,
 
     @Schema(description = "Number of free spots in the requested interval", examples = "5")
     int availableSpots,

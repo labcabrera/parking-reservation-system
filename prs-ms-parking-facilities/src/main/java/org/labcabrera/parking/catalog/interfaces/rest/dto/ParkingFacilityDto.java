@@ -6,6 +6,7 @@ import org.labcabrera.parking.catalog.domain.valueobject.CancellationPolicy;
 import org.labcabrera.parking.catalog.domain.valueobject.Coordinates;
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityStatus;
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityTag;
+import org.labcabrera.parking.catalog.domain.valueobject.ParkingCapacity;
 import org.labcabrera.parking.catalog.domain.valueobject.ParkingPricingRule;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -28,8 +29,8 @@ public record ParkingFacilityDto(
     @Schema(description = "Geographic coordinates of the facility")
     Coordinates location,
 
-    @Schema(description = "Total number of parking spots", examples = "120")
-    int totalSpots,
+    @Schema(description = "Capacity split between short- and long-duration reservations")
+    ParkingCapacity capacity,
 
     @Schema(description = "Tags associated with the facility (enum)")
     Set<FacilityTag> tags,

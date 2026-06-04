@@ -6,15 +6,15 @@ import org.labcabrera.parking.catalog.domain.valueobject.CancellationPolicy;
 import org.labcabrera.parking.catalog.domain.valueobject.Coordinates;
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityStatus;
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityTag;
+import org.labcabrera.parking.catalog.domain.valueobject.ParkingCapacity;
 import org.labcabrera.parking.catalog.domain.valueobject.ParkingPricingRule;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-@Schema(name = "CreateParkingFacilityRequest", description = "Request payload to create a parking facility. Validation: name required, totalSpots >= 1, pricingRule.estimatedDailyPrice > 0.")
+@Schema(name = "CreateParkingFacilityRequest", description = "Request payload to create a parking facility. Validation: name required, capacity.total >= 1, pricingRule.estimatedDailyPrice > 0.")
 public record CreateParkingFacilityRequest(
     
     @NotBlank
@@ -32,9 +32,10 @@ public record CreateParkingFacilityRequest(
     @Schema(description = "Geographic coordinates of the facility", requiredMode = Schema.RequiredMode.REQUIRED)
     Coordinates location,
 
-    @Min(1)
-    @Schema(description = "Total number of parking spots", examples = "120", minimum = "1", requiredMode = Schema.RequiredMode.REQUIRED)
-    int totalSpots,
+    @NotNull
+    @Valid
+    @Schema(description = "Capacity split between short- and long-duration reservations", requiredMode = Schema.RequiredMode.REQUIRED)
+    ParkingCapacity capacity,
 
     @Schema(description = "Tags associated with the facility (enum)", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     Set<FacilityTag> tags,
