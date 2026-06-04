@@ -2,7 +2,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import BlockIcon from '@mui/icons-material/Block';
 import BoltOutlinedIcon from '@mui/icons-material/BoltOutlined';
 import SyncAltIcon from '@mui/icons-material/SyncAlt';
-import { Box, Button, Card, CardContent, Collapse, Stack, Typography } from '@mui/material';
+import { Box, Button, Card, CardContent, CircularProgress, Collapse, Stack, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import type { FacilityResult } from '../../types/catalog';
 import { formatPrice, formatReservationTime } from '../../utils/formatters';
@@ -10,14 +10,18 @@ import { formatPrice, formatReservationTime } from '../../utils/formatters';
 interface FacilityResultCardProps {
   facility: FacilityResult;
   isSelected: boolean;
+  isStartingReservation: boolean;
   onSelect: () => void;
+  onStartReservation: () => void;
   reservationTimeLeft: number;
 }
 
 export function FacilityResultCard({
   facility,
   isSelected,
+  isStartingReservation,
   onSelect,
+  onStartReservation,
   reservationTimeLeft,
 }: FacilityResultCardProps) {
   const { t } = useTranslation();
@@ -58,7 +62,12 @@ export function FacilityResultCard({
         <FacilitySummary facility={facility} isSelected={isSelected} />
         <FacilityBenefits facility={facility} />
       </CardContent>
-      <SelectionPanel isOpen={isSelected} reservationTimeLeft={reservationTimeLeft} />
+      <SelectionPanel
+        isOpen={isSelected}
+        isStartingReservation={isStartingReservation}
+        onStartReservation={onStartReservation}
+        reservationTimeLeft={reservationTimeLeft}
+      />
     </Card>
   );
 }
@@ -89,7 +98,8 @@ function FacilitySummary({ facility, isSelected }: { facility: FacilityResult; i
   const { t } = useTranslation();
   const displayAmount = facility.estimatedPrice?.amount ?? facility.dailyRate;
   const displayCurrency = facility.estimatedPrice?.currency ?? facility.currency;
-  const price = formatPrice(displayAmount);
+  const price = displayAmount == null ? undefined : formatPrice(displayAmount);
+  const dailyRate = facility.dailyRate == null ? undefined : formatPrice(facility.dailyRate);
 
   return (
     <Stack
@@ -116,11 +126,13 @@ function FacilitySummary({ facility, isSelected }: { facility: FacilityResult; i
 
       <Box sx={{ minWidth: 150, textAlign: { xs: 'left', sm: 'right' } }}>
         <Typography color="primary" sx={{ fontSize: 18, fontWeight: 900 }}>
-          {t('results.totalPrice', { price, currency: displayCurrency })}
+          {price ? t('results.totalPrice', { price, currency: displayCurrency }) : t('results.priceUnavailable')}
         </Typography>
-        <Typography color="text.secondary" sx={{ fontSize: 12 }}>
-          {t('results.dayPrice', { price: formatPrice(facility.dailyRate), currency: facility.currency })}
-        </Typography>
+        {dailyRate && (
+          <Typography color="text.secondary" sx={{ fontSize: 12 }}>
+            {t('results.dayPrice', { currency: facility.currency, price: dailyRate })}
+          </Typography>
+        )}
       </Box>
     </Stack>
   );
@@ -170,12 +182,21 @@ function Benefit({ icon, label }: { icon?: React.ReactNode; label: string }) {
 
 function SelectionPanel({
   isOpen,
+  isStartingReservation,
+  onStartReservation,
   reservationTimeLeft,
 }: {
   isOpen: boolean;
+  isStartingReservation: boolean;
+  onStartReservation: () => void;
   reservationTimeLeft: number;
 }) {
   const { t } = useTranslation();
+
+  function handleStartReservation(event: React.MouseEvent<HTMLButtonElement>) {
+    event.stopPropagation();
+    onStartReservation();
+  }
 
   return (
     <Collapse in={isOpen} timeout={180} unmountOnExit>
@@ -196,13 +217,16 @@ function SelectionPanel({
         </Typography>
         <Button
           color="secondary"
-          endIcon={<ArrowForwardIcon />}
-          onClick={(event) => event.stopPropagation()}
+          disabled={isStartingReservation}
+          endIcon={
+            isStartingReservation ? <CircularProgress color="inherit" size={18} /> : <ArrowForwardIcon />
+          }
+          onClick={handleStartReservation}
           size="large"
           sx={{ borderRadius: 999, minWidth: { sm: 250 } }}
           variant="contained"
         >
-          {t('results.choose')}
+          {isStartingReservation ? t('results.startingReservation') : t('results.choose')}
         </Button>
       </Box>
     </Collapse>

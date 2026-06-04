@@ -1,4 +1,5 @@
 import DirectionsCarFilledIcon from '@mui/icons-material/DirectionsCarFilled';
+import DashboardIcon from '@mui/icons-material/Dashboard';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import {
@@ -6,6 +7,7 @@ import {
   Box,
   Button,
   Container,
+  IconButton,
   Link,
   ToggleButton,
   ToggleButtonGroup,
@@ -95,19 +97,18 @@ export function AppHeader() {
             sx={{ display: { xs: 'none', md: 'flex' } }}
           >
             {[
-              t('header.nav.parkings'),
-              t('header.nav.bookings'),
-              t('header.nav.business'),
-              t('header.nav.support'),
+              { label: t('header.nav.parkings'), to: '/' },
+              { label: t('header.nav.admin'), to: '/admin' },
             ].map((item) => (
               <Link
-                key={item}
+                component={RouterLink}
+                key={item.to}
                 color="text.primary"
-                href="/"
+                to={item.to}
                 sx={{ fontSize: 14, fontWeight: 700 }}
                 underline="none"
               >
-                {item}
+                {item.label}
               </Link>
             ))}
           </Stack>
@@ -181,6 +182,15 @@ export function AppHeader() {
               </span>
             </Tooltip>
           )}
+          <Tooltip title={t('header.nav.admin')}>
+            <IconButton
+              component={RouterLink}
+              to="/admin"
+              sx={{ display: { xs: 'inline-flex', md: 'none' } }}
+            >
+              <DashboardIcon />
+            </IconButton>
+          </Tooltip>
         </Toolbar>
       </Container>
     </AppBar>

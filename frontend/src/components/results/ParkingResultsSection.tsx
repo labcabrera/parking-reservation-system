@@ -9,16 +9,20 @@ interface ParkingResultsSectionProps {
   facilities: FacilityResult[];
   location: string;
   onSelectFacility: (facilityId: string) => void;
+  onStartReservation: (facilityId: string) => void;
   reservationTimeLeft: number;
   selectedFacilityId: string | null;
+  startingReservationFacilityId: string | null;
 }
 
 export function ParkingResultsSection({
   facilities,
   location,
   onSelectFacility,
+  onStartReservation,
   reservationTimeLeft,
   selectedFacilityId,
+  startingReservationFacilityId,
 }: ParkingResultsSectionProps) {
   return (
     <Box sx={{ bgcolor: 'background.paper', borderRadius: 3, p: { xs: 2, md: 3 } }}>
@@ -33,8 +37,10 @@ export function ParkingResultsSection({
         <ParkingResultsList
           facilities={facilities}
           onSelectFacility={onSelectFacility}
+          onStartReservation={onStartReservation}
           reservationTimeLeft={reservationTimeLeft}
           selectedFacilityId={selectedFacilityId}
+          startingReservationFacilityId={startingReservationFacilityId}
         />
         <ParkingResultsMapPanel
           facilities={facilities}
@@ -78,8 +84,10 @@ function ParkingResultsHeader({ count, location }: { count: number; location: st
 function ParkingResultsList({
   facilities,
   onSelectFacility,
+  onStartReservation,
   reservationTimeLeft,
   selectedFacilityId,
+  startingReservationFacilityId,
 }: Omit<ParkingResultsSectionProps, 'location'>) {
   return (
     <Stack spacing={2}>
@@ -87,8 +95,10 @@ function ParkingResultsList({
         <FacilityResultCard
           facility={facility}
           isSelected={facility.facilityId === selectedFacilityId}
+          isStartingReservation={facility.facilityId === startingReservationFacilityId}
           key={facility.facilityId}
           onSelect={() => onSelectFacility(facility.facilityId)}
+          onStartReservation={() => onStartReservation(facility.facilityId)}
           reservationTimeLeft={reservationTimeLeft}
         />
       ))}

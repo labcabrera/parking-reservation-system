@@ -33,8 +33,17 @@ const parkingIcon = L.divIcon({
   popupAnchor: [0, -32],
 });
 
+type LocatedFacilityResult = FacilityResult & {
+  latitude: number;
+  longitude: number;
+};
+
+function hasCoordinates(facility: FacilityResult): facility is LocatedFacilityResult {
+  return facility.latitude != null && facility.longitude != null;
+}
+
 function getMapCenter(facilities: FacilityResult[]): [number, number] {
-  const locatedFacilities = facilities.filter((facility) => facility.latitude && facility.longitude);
+  const locatedFacilities = facilities.filter(hasCoordinates);
 
   if (locatedFacilities.length === 0) {
     return [40.4168, -3.7038];
@@ -60,7 +69,7 @@ function SelectedFacilityFocus({
   useEffect(() => {
     const selectedFacility = facilities.find((facility) => facility.facilityId === selectedFacilityId);
 
-    if (!selectedFacility?.latitude || !selectedFacility.longitude) return;
+    if (!selectedFacility || !hasCoordinates(selectedFacility)) return;
 
     map.flyTo([selectedFacility.latitude, selectedFacility.longitude], Math.max(map.getZoom(), 15), {
       duration: 0.65,
@@ -75,7 +84,7 @@ export function ParkingResultsMap({
   onSelectFacility,
   selectedFacilityId,
 }: ParkingResultsMapProps) {
-  const locatedFacilities = facilities.filter((facility) => facility.latitude && facility.longitude);
+  const locatedFacilities = facilities.filter(hasCoordinates);
   const center = getMapCenter(facilities);
   const hasSelection = Boolean(selectedFacilityId);
 

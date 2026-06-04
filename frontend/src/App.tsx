@@ -5,6 +5,7 @@ import { AuthProvider } from './auth/AuthContext'
 import { AppLayout } from './components/layout/AppLayout'
 import { theme } from './theme'
 import AuthCallbackPage from './pages/AuthCallbackPage'
+import AdminDashboardPage from './pages/AdminDashboardPage'
 import LogoutCallbackPage from './pages/LogoutCallbackPage'
 import SearchPage from './pages/SearchPage'
 
@@ -27,6 +28,7 @@ function App() {
             <AppLayout>
               <Routes>
                 <Route path="/" element={<SearchPage />} />
+                <Route path="/admin" element={<AdminDashboardPage />} />
                 <Route path="/auth/callback" element={<AuthCallbackPage />} />
                 <Route path="/auth/logout-callback" element={<LogoutCallbackPage />} />
               </Routes>

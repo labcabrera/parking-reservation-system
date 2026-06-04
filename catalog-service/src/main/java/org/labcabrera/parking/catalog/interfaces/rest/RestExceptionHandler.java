@@ -16,6 +16,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -30,10 +31,11 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(DomainException.class)
     public ResponseEntity<ApiError> handleDomainException(DomainException ex) {
-        if(ex.getStatus() >= 400 && ex.getStatus() < 500) {
+        if (ex.getStatus() >= 400 && ex.getStatus() < 500) {
             // Dont pollute log with client errors
             log.warn("Caugth Domain exception: code={}, message={}", ex.getMessage());
-        } else {
+        }
+        else {
             log.error("Caugth Domain exception: code={}, message={}", ex);
         }
         var apiError = fromDomainException(ex);
@@ -45,12 +47,13 @@ public class RestExceptionHandler {
     public ResponseEntity<ApiError> handleCompletionException(CompletionException ex) {
         Throwable cause = ex.getCause();
         if (cause != null && DomainException.class.isAssignableFrom(cause.getClass())) {
-            return handleDomainException((DomainException)cause);
-        } else {
+            return handleDomainException((DomainException) cause);
+        }
+        else {
             log.error("Unexpected exception", ex);
             ApiError error = new ApiError("COMPLETION_ERROR", "An unexpected error occurred", LocalDateTime.now(), new ArrayList<>());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-        }   
+        }
     }
 
     @ExceptionHandler(SecurityException.class)
@@ -58,6 +61,13 @@ public class RestExceptionHandler {
         log.error("Caugth security exception: code={}, message={}", ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
             .body(new ApiError("FORBIDDEN", ex.getMessage(), LocalDateTime.now(), new ArrayList<>()));
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ApiError> handleResponseStatusException(ResponseStatusException ex) {
+        log.error("Caugth response status exception: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(new ApiError("BAD_REQUEST", ex.getMessage(), LocalDateTime.now(), new ArrayList<>()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -156,7 +166,7 @@ public class RestExceptionHandler {
         list.add("Exception status: %s".formatted(ex.getStatus()));
         list.add("Exception message: %s".formatted(ex.getMessage()));
         list.add("Exception class: %s".formatted(ex.getClass().getName()));
-       return new ApiError(ex.getCode(), ex.getMessage(),LocalDateTime.now(), list);
+        return new ApiError(ex.getCode(), ex.getMessage(), LocalDateTime.now(), list);
     }
 
 }
