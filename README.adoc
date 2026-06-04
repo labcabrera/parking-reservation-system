@@ -1,0 +1,536 @@
+= Parking Reservation System
+:toc: left
+:toc-title: Contenido
+:toclevels: 2
+:icons: font
+:source-highlighter: highlight.js
+:imagesdir: docs/images
+
+image:https://img.shields.io/badge/Java-21-blue[Java 21]
+image:https://img.shields.io/badge/Spring%20Boot-4.0-green[Spring Boot 4]
+image:https://img.shields.io/badge/React-18-61DAFB[React 18]
+image:https://img.shields.io/badge/status-en%20desarrollo-yellow[Estado]
+
+== Descripción general
+
+Este proyecto es un MVP para un sistema de reserva de aparcamiento diseñado con el objetivo de soportar alta concurrencia y picos masivos de tráfico dentro de un flujo de reserva sencillo.
+
+El sistema está diseñado para como un conjunto de microservicios independientes basados patrones de diseño modernos, con una arquitectura hexagonal (Ports & Adapters) y una fuerte separación de responsabilidades. La coordinación entre servicios se realiza mediante eventos asíncronos en Kafka, y la autenticación se gestiona con Keycloak utilizando OAuth2/OIDC.
+
+// === Características principales
+
+// * Modeo de búsqueda de aparcamientos por ubicación y rangos de fechas de _check-in/check-out_.
+// * Reserva con precio bloqueado durante una ventana temporal configurable.
+// * Autenticación y gestión de usuarios con Keycloak (OAuth2/OIDC).
+// * Consistencia eventual mediante el patrón SAGA (Axon Framework).
+// * Protección contra sobreventa con Optimistic Locking y caché Redis.
+// * Circuit Breaker (Resilience4j) para resiliencia ante fallos en cascada.
+// * Observabilidad con OpenTelemetry, Prometheus y Grafana.
+
+== Diseño
+
+Al diseñar el sistema el enfoque ha sido en primer lugar la identificación de los *bounded contexts* del dominio y la definición de los microservicios correspondientes, asegurando una clara separación de responsabilidades y un acoplamiento bajo entre ellos. Dentro de esta separación de lógica los problemas identificados son:
+
+- Gestión de catálogo de aparcamientos y disponibilidad en tiempo real: modelado de un sistema que permita búsquedas ligeras junto con un sistema de bloqueo de plazas disponibles con políticas de sobreventa que tenga capacidades de tarificaciñón.
+- Gestión del ciclo de vida de una orden de compra a partir de un hold de plaza, incluyendo confirmación de precio, pago y cancelación.
+- Sistema de cálculo de tarifas configurable y dinámico en función de la disponibilidad.
+- Modelo de autenticación híbrido para permitir operaciones anónimas y operaciones autenticadas.
+- Sistema de búsqueda geográfica. Sistema para facilitar la búsqueda y que no tiene mas impacto en los otros módulos.
+
+A partir de estas premisas y dado que no existen requisitos funcionales específicos se el diseño se ha realizado tomando las siguientes decisiones:
+
+- Dentro del compromiso entre escalabilidad y consistencia en el sistema de bloqueos se ha optado por la escalabilidad. Cuando un usuario realiza una búsqueda de parking, en lugar de realizar un bloqueo agresivo de plazas disponibles para mantener un precio fijo desde la búsqueda hasta la reserva se ha optado por un sistema de cálculo aproximado de precios. Cuando un usuario realiza una búsqueda el sistema no realiza los cálculos complejos de tarificación y sólamente devuelve una estimación de precio que posteriormente será calculada en el momento de comenzar el proceso de reserva. Este sistema tiene el handicap de no ofrecer inicialmente un precio fijo al usuario pero a cambio hace que el modelo de búsqueda sea mucho más ligero e implique el bloqueo de plazas en la búsqueda. Este funcionamiento no ofrece un precio fijo y puede generar una mala experiencia, pero para picos de demanda masiva es mas esalable y se pueden diseñar políticas de estimación tan precisas como deseemos.
+
+- Autenticación híbrida. Los requisitos no establecen si un usuario sin autenticación puede realizar una reserva. En la implementación se ha optado por un modelo en el que para el comienzo del proceso de reserva no es necesaria la autenticación pero para la confirmación si que es necesario el registro.
+
+- Reservas de baja duración vs reservas de larga duración. Sin tener coche ni haber reservado nunca en un parking llego a diferenciar estas casuisticas:
+
+** Un usuario quiere reservar un parking para tomarse un café con un amigo, ir a ver un museo y luego irse a casa.
+** Un usuario se va de vacaciones y en lugar de pillar un Uber al parking lleva su coche y lo deja allí durante una semana.
+** Alguien que se mueve demasiado quiere un bono/suscripción para poder aparcar en diferentes parkings durante el mes.
+
+Este MVP se centra en los dos primeros casos de uso: reserva de corta duración (más afactada por criterios de disponibilidad) y reserva de larga duración (orientada a ventajas de reserva anticipada y mejor prevision de ocupación a largo plazo) . Para el caso de reservas de corta duración el sitema creará ventanas de disponibilidad de 30 minutos. Para el modelo de reservas de larga duración el sistema creará ventanas de disponibilidad de 24 horas (y ajustará los márgenes diaros al modelo de corta duración). Este modelo tiene la ventaja de ser más sencillo de implemntar y mejorar la escalabilidad para ajustarse a los dos problemas (me tomo un café vs me voy a Zihuatanejo) y facilita la varias gestiones como el modelo de tarificación, bloqueos de plazas y cancelaciones.
+
+Con esta idea se ha modelado el sistema en el que un parking de N plazas tiene una asignación diferente para cada ventana de disponibilidad. Esta ventana no tiene por que ser fija y el sistema podría ajustarla dinámicamente en función de la demanda. La regla sería: El aparcamiento "patata" tiene 1000 plazas y quiere separarlas en dos modelos de venta: X plazas para venta de corta duración de e Z plazas para venta de larga duración. Este sistema aisla el comportamiento del parking y permite introducir reglas de balanceo de disponibilidad cuando uno de los dos modelos de venta sea más demandado que el otro lo que encaja con la idea de que el sistema se adapte a los picos de demanda.
+
+== Módulos y responsabilidades
+
+=== Módulo prs-ms-parking-facilities
+
+Este componente es el responsable de la gestión del catálogo de aparcamientos. Tiene las responsabilidades principales de:
+
+- Mantener el catálogo de aparcamientos, plazas y su disponibilidad.
+- Exponer la API de búsqueda de aparcamientos disponibles.
+- Gestionar el sistema de bloqueo de plazas (hold) para evitar sobreventa bajo alta concurrencia.
+
+TIP: esté módulo podría descomponerse en dos microservicios independientes, uno que sólo llevase el catálogo de aparcamientos y otro que gestione el sistema de bloqueo de plazas. No obstante y para que el MVP no sea excesivamente complejo, se ha optado por mantener ambas responsabilidades en un mismo módulo.
+
+==== Que hace este módulo:
+
+- Buscar parking en función de criterios de búsqueda (ubicación, fechas, etc).
+- Bloqueo de plazas para comenzar el proceso de reserva (hold).
+- Estimar precios.
+
+==== Que no hace este módulo:
+
+- No sabe nada pagos ni tampoco de las reglas de tarificación.
+
+
+=== Módulo prs-ms-ecommerce
+
+Este módulo no sabe nada de aparcamientos, sólo sabe que un usuario quiere reservar algo a un determinado precio y pagarlo. Este módulo gestionará los procesos de pago sin saber nada de si es un parking, un café o una patata.
+
+Cuando se inicia un proceso de reserva el módulo simplemente orquestará si el cliente paga o no paga, si se cancela el intento de compra y de verificar que esta orden de compra se ha completado o no.
+
+Dentro de las consideraciones de este sistema y teniendo en cuenta que desde el sistema de bloqueo que ofrece una tarifa bloqueada durante un tiempo, de cara a la consistencia el sistema primará los tiempos de expiración de los bloqueos antes que una política de "periodo de gracia entre que el usuario paga y el bloqueo expira". Esto es peor para la experiencia de usuario pero para un MVP resulta mucho mas sencillo de implementar que un sistema de reintento que obligaría a tener una política de re-hold.
+
+"Si no has pagado en tiempo, lo sentimos, si ya has pagado se te devolverá el importe pero deberás empezar de nuevo"
+
+==== Que sabe este módulo:
+
+- Que "alguien" quiere pagar "algo".
+- Conoce los mecanismos de pago.
+- Tiene el flujo mínimo de una orden de compra: hold, pago, confirmación, cancelación.
+- Sabe gestionar procesos de devoluciñon de pagos y cancelaciones para cada sistema de pago.
+
+==== Que no sabe este módulo:
+
+- No sabe nada de aparcamientos ni bloqueos.
+- No tiene ni idea de tarificar: se le invoca con un precio fijado.
+
+=== Modulo prs-ms-pricing
+
+Este módulo debería dar libertad creativa al departamento de ventas para diseñar reglas tan rocambolascas como quieran pero sin afectar a los otros conponentes.
+
+Es el responsable de a partir de unos datos consolidados de entrada emitir una tarifa pero su implementación es ajena al resto de módulos.
+
+Dentro de un modelo de tarificación podríamos tener:
+
+- Tarifa fija por hora
+- Tarifa en por franja horaria
+- Tarifa en función de la demanda (si el parking está al 90% de ocupación, la tarifa sube un 20%)
+- Tarifa en función de la duración de la reserva (si reservas más de 3 días, tienes un 10% de descuento)
+- Descuentos por cualquier razñon (bonos, fidelización, promociones...)
+- Reglas de negocio complejas: si eres un mago de fuego, es martes, llovio anoche y tienes un calcetin de cada color entonces una cosa, si no otra
+
+Dentro del MPV y bajo la premisa de la escalabilidad este sistema no es consultado en cada búsqueda, únicamente cuando el usuario comienza una reserva. Para el MVP se simplificarán estos modelos y la asbtracción de este módulo será:
+
+- Permito diseñar reglas de negocio
+- Reacciono a ventanas de disponibilidad y proyecto una estimación de preciosç
+
+==== Que sabe este módulo:
+
+- Reglas de negocio para establecer precios en función de variables dentrada
+
+==== Que no sabe este módulo:
+
+- Este módulos no sabe nada, o casi nada. No entiende de parkings, no entiende de compras, solo entiende de sus reglas comerciales y establecer el precio de una reserva en función de las variables de entrada.
+- No se nada de reservas, ni de parkings ni de usuarios.
+
+=== Módulo prs-ms-geo
+
+Este módulo es el mas tonto de todos. Sólo sabe facilitar las busquedas de autocompletado de ciudades, aeropuertos y parkings. No tiene lógica de negocio ni nada complejo, simplemente es un sistema de búsqueda geográfica que reacciona a los cambios de _parking-facilities_ y ofrece una sistema indexado de búsqueda para el frontend.
+
+=== Módulo prs-ms-users
+
+Este mñodulo sólo sabe quien dices que eres. Tendrá una responsabilidad mínima de coordinación con los usuarios de Keycloak y será el que utilicemos para cuando necesitemos información de usuario dentro del sistema que no esté en Keycloack (matrículas, bonos promocionales, etc). No creará usuarios en el IAM de cara a separar las responsabilidades de autenticación, autorización y gestión de perfiles y guardará sólamente información general del usuario.
+
+=== Módulo prs-ms-bff
+
+Fachada del resto de módulos para la integraciñon con los diferentes frontends. Si bien este componente añade una capa adicional de complejidad, permite desacoplar comportamientos específicos como el modelo híbrido de autenticación anónima/autenticada, reglas de seguridad específicas (por ejempo manejo de sesiones anónimas de compra, cookies, bloqueos por IP, etc). De este modo hacemos que el resto de módulos no tengan que tener en cuenta esta lógica y se centren únicamente en su responsabilidad principal. De este modo también reducimos las reglas de seguridad la superficie de ataque a un único módulo. Esta es la única API expuesta al exterior mientras que el resto de componentes permanecen aislados dentro del orquestador de microservicios.
+
+=== Que sabe este módulo:
+
+- Políticas de seguridad específicas de la integración con el frontend
+- Orquetación de llamadas básica a cada mñodulo core.
+
+=== Que no sabe este módulo:
+
+- Este módulo no tiene idea de casi nada.
+
+== Arquitectura
+
+_Muchas cosas las haria con NestJS, pero como el ejercicio con Java, pues a pensar en la JVM._
+
+Para la implementaciñob basada en Java las reglas que se han seguido son:
+
+- Uso de Spring Boot (versión 4.x como early adopter que tiene problemas de integación con algunas dependencias que aún no han sido actualizadas como _resilence4j_).
+
+- Pragmatismo a la hora de la separación de capas dentro del paragigma de DDD usando Axon y Spring Boot. Si bien una separación purista de capas haría que el uso de elementos como @Aggregate o @Saga fuera mas independiente de la infraescructura, para aprovechar las ventajas de estos frameworks y evitar niveles de abstracción innencesarios se ha optado por aceptar este acoplamiento a nivel de dominio. Si bien es posible aislarlo, al hacerlo se pierden las capacidades que te da el framework (como aislar el CID de spring). Si bien hay modelos acoplados de Axon a nivel de entidad, el MVP mantiene un aislamiento entres estas capas.
+
+- Axon sólo para la gestión interna y sin event-sourcing. El motivo del uso de Axon es la capacidad de gestionar eventos internos dentro de cada módulo y usar sus capacidades internas para la coordinación de procesos independientemente de la comunicación con otros sistemas. Particularmenente para este MVP se ha descartado el modo de event-soucing de Axon y la dependencia de AxonServer. Las capacidades que nos da Axon es no tener que implementar el sistema de CQRS junto con un bus de comandos y eventos local.
+
+- Spring Cloud Stream: Axon sabe gestionar los eventos que ocurren dentro de cada sistema pero queremos que sepa como interactúa con sistemas externos. Y no es que no nos guste, pero un diseño más desacoplado la idea de usar Spring Cloud Stream ofrece un buen nivel de abstracción para la integraciñon de sistemas asíncronos: ok, los eventos iternos se gestionan con Axon pero hacia fuera hay una capa de integraciñon.
+
+
+- Axon: dentro de los diferentes sabores de Axon sólo usaremos el core para evitar implementar la logica de CQRS, gestión de eventos, definiciñon de SAGA. Dentro de las muchas formas de usar Axon el modelo elegido es el de sólamente usar el bus de comandos y eventos para no tener que implementar ese modelo. No usaremos axon-server ni event sourcing, sólo el bus de comandos local. Para la integración de eventos usaremos Spring Cloud Stream con el binder de Kafka.
+
+WARNING: Usar Axon a nivel de anotaciones en el modelo de dominio genera acoplamientos indeseables y rompe un poco la esencia de arquitectura hexagonal. No obstante, y lo mismo que cuando usamos capacidades de Spring, puede considerarse como una dependencia lógica de negocio. En un balance entre pragmatismo y pureza arquitectónica asumimos para el MVP que Axon será una dependencia lógica y porque de no usarla y tener que implementarla de forma abstracta las ganancias de usar Azon serían menores que implemantarlo. También, aunque muchos sistemas basados en Axon operan a nivel de entidades si una separacion de representación <-> persistencia), si que este MVP mantendrá esa separación de capas y nunca operará sobre la entidades JPA, solo los agregados del dominio.
+
+// El sistema sigue una *Arquitectura Hexagonal (Ports & Adapters)* en cuatro capas por cada microservicio:
+
+// [source]
+// ----
+// <servicio>/
+// ├── domain/          # Lógica de negocio pura — sin dependencias de framework
+// │   ├── model/       # Agregados, entidades, value objects
+// │   ├── port/
+// │   │   ├── inbound/   # Interfaces de caso de uso
+// │   │   └── outbound/  # Interfaces de repositorio / adaptadores salientes
+// │   └── service/     # Servicios de dominio
+// ├── application/     # Orquesta objetos de dominio; depende solo del dominio
+// │   ├── commands/    # Handlers de comandos
+// │   └── queries/     # Handlers de consultas
+// ├── infrastructure/  # Implementaciones concretas (JPA, Redis, Kafka, Keycloak...)
+// └── interfaces/      # Adaptadores entrantes (REST controllers, Kafka consumers)
+// ----
+
+// Los *sagas* y coordinación asíncrona entre servicios se implementan con *Axon Framework* sin AxonServer ni Event Sourcing.
+
+// === Diagramas
+
+// * link:docs/architecture/c4-context.md[Diagrama C4 — Contexto del sistema]
+// * link:docs/architecture/c4-containers.md[Diagrama C4 — Contenedores]
+// * link:docs/diagrams/sequence-diagram.plantuml[Diagrama de secuencia — flujo de reserva]
+// * link:docs/diagrams/c4-context.plantuml[C4 Context (PlantUML)]
+
+// === Módulos
+
+// [cols="2,2,5,1"]
+// |===
+// |Módulo |Bounded Context |Descripción |Puerto
+
+// |link:prs-ms-parking-facilities/README.md[prs-ms-parking-facilities]
+// |Catalog & Availability
+// |Gestiona el catálogo de aparcamientos y la disponibilidad en tiempo real. Expone la API de búsqueda. Caché Redis para rutas críticas.
+// |8081
+
+// |link:prs-ms-ecommerce/README.md[prs-ms-ecommerce]
+// |Reservation
+// |Gestiona el ciclo de vida de la reserva: hold, confirmación de precio, pago y cancelación. Orquesta la SAGA de reserva.
+// |8082
+
+// |link:prs-ms-bff/README.md[prs-ms-bff]
+// |BFF / Gateway
+// |Backend For Frontend. Agrega y adapta las respuestas de los microservicios para el frontend React.
+// |8083
+
+// |link:prs-ms-geo/README.md[prs-ms-geo]
+// |Geo / Search
+// |Resuelve búsquedas de texto libre a entidades geográficas (ciudad, aeropuerto, aparcamiento concreto).
+// |8084
+
+// |link:prs-ms-pricing/README.md[prs-ms-pricing]
+// |Pricing
+// |Calcula tarifas dinámicas en función de la disponibilidad. Devuelve precio bloqueado con ventana temporal.
+// |8085
+
+// |link:prs-ms-users/README.md[prs-ms-users]
+// |User Profile
+// |Gestiona los perfiles de usuario almacenados en el sistema. Se integra con Keycloak para el registro y autenticación.
+// |8086
+
+// |link:prs-frontend/[prs-frontend]
+// |Frontend SPA
+// |Aplicación React 18 + TypeScript. Búsqueda de aparcamientos, gestión de reservas y panel de administración.
+// |3000
+
+// |link:prs-mock-payment-gateway/[prs-mock-payment-gateway]
+// |Payment Gateway (mock)
+// |SPA React que simula la UI de una pasarela de pago real. Recibe la redirección del servicio de reservas.
+// |3001
+// |===
+
+// === Decisiones de arquitectura (ADR)
+
+// * link:docs/adr/001-technology-choices.md[ADR-001 — Elección de tecnologías]
+
+// ---
+
+// == Tecnologías
+
+// === Backend
+
+// [cols="2,2,4"]
+// |===
+// |Tecnología |Versión |Uso
+
+// |Java
+// |21 (LTS)
+// |Lenguaje principal. Virtual threads (Project Loom) para alta concurrencia.
+
+// |Spring Boot
+// |4.0.x
+// |Framework base de los microservicios. JPA, Security, Kafka, Actuator, OpenAPI.
+
+// |Gradle
+// |8.13 (Groovy DSL)
+// |Build tool. Multi-proyecto con BOM de dependencias.
+
+// |Axon Framework
+// |4.10
+// |Implementación de SAGA y command bus local. Sin AxonServer, sin Event Sourcing.
+
+// |PostgreSQL
+// |16
+// |Persistencia principal con ACID. Optimistic Locking con `@Version` en entidades de alta contención.
+
+// |Flyway
+// |—
+// |Migraciones de esquema versionadas en SQL.
+
+// |Redis
+// |7
+// |Caché de disponibilidad (cache-aside). TTL 60 s con invalidación explícita por eventos Kafka.
+
+// |Apache Kafka
+// |7.6 (KRaft)
+// |Bus de eventos asíncrono. Tópicos: `parking.reservations`, `parking.payments.requests`, `parking.payments.results`, `parking.availability.changes`.
+
+// |Keycloak
+// |24
+// |Identity Provider. OAuth2 / OIDC. Gestión de usuarios, roles y JWT.
+
+// |Resilience4j
+// |2.x
+// |Circuit Breaker y Rate Limiter. Protección ante degradaciones en cascada.
+
+// |SpringDoc OpenAPI
+// |2.x
+// |Documentación de APIs code-first. UI Swagger integrada.
+
+// |OpenTelemetry Java Agent
+// |—
+// |Trazas distribuidas y logs estructurados JSON con `traceId` / `spanId`.
+
+// |Testcontainers
+// |—
+// |Tests de integración con Docker efímero (PostgreSQL, Redis, Kafka).
+
+// |ArchUnit
+// |1.x
+// |Validación automática del aislamiento de capas en CI.
+// |===
+
+// === Frontend
+
+// [cols="2,2,4"]
+// |===
+// |Tecnología |Versión |Uso
+
+// |React
+// |18
+// |Framework de UI principal.
+
+// |TypeScript
+// |5
+// |Tipado estático del frontend.
+
+// |Vite
+// |5
+// |Build tool y servidor de desarrollo con HMR nativo.
+
+// |React Router
+// |6
+// |Enrutado declarativo SPA.
+
+// |TanStack Query
+// |v5
+// |Gestión de estado del servidor: caché, refresco en background y mutaciones.
+
+// |oidc-client-ts
+// |—
+// |Flujo PKCE en el navegador para autenticación con Keycloak.
+// |===
+
+// === Infraestructura
+
+// [cols="2,2,4"]
+// |===
+// |Tecnología |Versión |Uso
+
+// |Docker / Docker Compose
+// |—
+// |Entorno de desarrollo local. Parity con producción.
+
+// |Prometheus
+// |—
+// |Recogida de métricas de los microservicios.
+
+// |Grafana
+// |—
+// |Dashboards de observabilidad.
+
+// |OpenTelemetry Collector
+// |—
+// |Recepción y exportación de trazas y métricas.
+// |===
+
+// ---
+
+// == Cómo ejecutar el proyecto
+
+// === Requisitos previos
+
+// * Docker y Docker Compose instalados.
+// * Java 21 (para desarrollo local sin Docker).
+// * Node.js 20+ y npm (para desarrollo del frontend).
+
+// === Levantar la infraestructura
+
+// El primer `docker-compose` levanta únicamente los servicios de infraestructura (PostgreSQL, Redis, Kafka, Keycloak, Prometheus, Grafana):
+
+// [source,bash]
+// ----
+// docker-compose -f docker-compose-infra.yaml up -d
+// ----
+
+// Esperar a que Keycloak esté disponible en http://localhost:8080 antes de arrancar los microservicios.
+
+// === Levantar el sistema completo
+
+// [source,bash]
+// ----
+// docker-compose up -d
+// ----
+
+// Esto levanta la infraestructura más todos los microservicios y los frontends.
+
+// === Levantar microservicios individualmente (desarrollo)
+
+// Desde la raíz del proyecto, ejecutar el microservicio deseado con Gradle:
+
+// [source,bash]
+// ----
+// # Catalog Service
+// ./gradlew :prs-ms-parking-facilities:bootRun
+
+// # Reservation Service
+// ./gradlew :prs-ms-ecommerce:bootRun
+
+// # BFF
+// ./gradlew :prs-ms-bff:bootRun
+
+// # Pricing Service
+// ./gradlew :prs-ms-pricing:bootRun
+
+// # Geo Service
+// ./gradlew :prs-ms-geo:bootRun
+
+// # Users Service
+// ./gradlew :prs-ms-users:bootRun
+// ----
+
+// === Variables de entorno
+
+// Ver el archivo link:.env.example[.env.example] para la configuración necesaria.
+// Las variables requeridas son:
+
+// [source,bash]
+// ----
+// POSTGRES_PASSWORD=...
+// REDIS_PASSWORD=...
+// KEYCLOAK_ADMIN_PASSWORD=...
+// KEYCLOAK_ADMIN_CLIENT_SECRET=...
+// GRAFANA_ADMIN_PASSWORD=...
+// ----
+
+// === Ejecutar los tests
+
+// [source,bash]
+// ----
+// # Todos los módulos
+// ./gradlew test
+
+// # Un módulo concreto
+// ./gradlew :prs-ms-parking-facilities:test
+// ----
+
+// === URLs de acceso (entorno local)
+
+// [cols="3,2,4"]
+// |===
+// |Servicio |URL |Notas
+
+// |Frontend
+// |http://localhost:3000
+// |SPA principal
+
+// |Payment Gateway (mock)
+// |http://localhost:3001
+// |UI de pago simulada
+
+// |Catalog Service API
+// |http://localhost:8081/swagger-ui.html
+// |Docs OpenAPI
+
+// |Reservation Service API
+// |http://localhost:8082/swagger-ui.html
+// |Docs OpenAPI. Requiere JWT.
+
+// |BFF API
+// |http://localhost:8083/swagger-ui.html
+// |Docs OpenAPI
+
+// |Keycloak Admin
+// |http://localhost:8080/admin
+// |Credenciales en `.env`
+
+// |Grafana
+// |http://localhost:3002
+// |Dashboards de observabilidad
+
+// |Prometheus
+// |http://localhost:9090
+// |Métricas raw
+// |===
+
+// ---
+
+// == Referencias y notas
+
+// === Documentación interna
+
+// * link:docs/01-refined-instructions.md[Instrucciones refinadas del sistema]
+// * link:docs/02-shoping-session-instructions.md[Instrucciones de sesión de compra]
+// * link:docs/exercise-instructions.md[Instrucciones del ejercicio]
+// * link:docs/adr/[Directorio de ADRs]
+// * link:docs/architecture/[Diagramas de arquitectura]
+// * link:docs/ia/decisions.adoc[Decisiones de diseño]
+
+// === Especificaciones
+
+// * link:specs/001-system-modules-initial-structure/[Spec 001 — Estructura inicial de módulos]
+// * link:specs/002-parking-search-hold/[Spec 002 — Búsqueda de aparcamiento y hold]
+
+// === Patrones y decisiones clave
+
+// * *Outbox Pattern*: tabla `outbox_events` + `OutboxPoller` para entrega at-least-once a Kafka sin escrituras duales.
+// * *Optimistic Locking*: campo `@Version` en los agregados `ParkingSpot` para prevenir sobreventa bajo concurrencia.
+// * *Cache-aside con Redis*: el `CatalogService` cachea los contadores de disponibilidad con TTL de 60 s e invalida la caché al recibir eventos de reserva desde Kafka.
+// * *Rate Limiting*: Resilience4j aplicado en la creación de holds (por IP y por sesión) para proteger contra ataques de acaparamiento de plazas.
+// * *SAGA sin AxonServer*: el bus de comandos es local; la coordinación asíncrona se hace íntegramente a través de Kafka.
+
+// === Roles de usuario
+
+// [cols="1,3"]
+// |===
+// |Rol |Permisos
+
+// |`ROLE_CUSTOMER`
+// |Buscar aparcamientos, realizar y gestionar sus propias reservas.
+
+// |`ROLE_ADMIN`
+// |Gestión del catálogo de aparcamientos, monitorización del sistema.
+// |===
+
+// === Notas de seguridad
+
+// * Los tokens JWT son validados en cada microservicio como *OAuth2 Resource Server* (sin introspección remota).
+// * Los datos de usuario se consideran sensibles y se almacenan cifrados donde corresponde.
+// * Los secretos de entorno **nunca** deben commitearse. Usar `.env.example` como plantilla y `.env` en el `.gitignore`.
+// * El `KEYCLOAK_ADMIN_CLIENT_SECRET` debe rotarse antes de cualquier despliegue en entornos no locales.
+
+== TODO
+
+Como levantas todo y como funciona, pendiente de como sea el modelo
