@@ -1,6 +1,8 @@
 rootProject.name = 'parking-reservation-system'
 
-include 'catalog-service'
-include 'reservation-service'
-include 'payment-service'
-include 'pricing-service'
+include 'prs-ms-bff'
+include 'prs-ms-ecommerce'
+include 'prs-ms-geo'
+include 'prs-ms-parking-facilities'
+include 'prs-ms-pricing'
+include 'prs-ms-users'

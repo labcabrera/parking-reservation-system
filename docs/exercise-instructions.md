@@ -15,10 +15,10 @@ Para demostrar el nivel de Arquitecto, la solución propuesta debe abordar y res
 - Desacoplamiento y Escalabilidad: Diseño basado en microservicios o arquitectura modular integrable en entornos distribuidos (ej. Hexagonal Architecture o Clean Architecture en los servicios core).
 
 - Gestión de Concurrencia: Estrategia clara para evitar la sobreventa de plazas de
-aparcamiento simultáneas (Optimistic/Pessimistic Locking, Distributed Locks con
-Redis, etc.).
+  aparcamiento simultáneas (Optimistic/Pessimistic Locking, Distributed Locks con
+  Redis, etc.).
 
-- Consistencia Eventual: Uso de patrones como Saga Pattern o Outbox Pattern para la comunicación asíncrona entre el servicio de reservas y el servicio de pagos/notiﬁcaciones.
+- Consistencia Eventual: Uso de patrones como Saga Pattern o Outbox Pattern para la comunicación asíncrona entre el servicio de reservas y el servicio de pagos/notificaciones.
 
 ### B. Cloud Native e Infraestructura
 
@@ -41,12 +41,12 @@ El candidato deberá entregar un Monorepo en un repositorio Git público que con
   - Visualizar la disponibilidad de parkings en tiempo real.
   - Realizar una reserva de plaza.
   - Ver el estado de las reservas del usuario.
-- 3. Documentación (/docs): * Diagrama de arquitectura del sistema completo (C4 Model recomendado: Contexto y Contenedores).
+- 3. Documentación (/docs): \* Diagrama de arquitectura del sistema completo (C4 Model recomendado: Contexto y Contenedores).
   - Justiﬁcación de las decisiones tecnológicas (bases de datos elegidas, gestión de estado, etc.).
   - Manual de uso de Inteligencia Artiﬁcial (ver apartado 5).
 
 - 4. Despliegue Local Uniﬁcado: Un único archivo docker-compose.yml en la raíz del proyecto. Al ejecutar docker compose up, se debe levantar todo el ecosistema: Frontend, Backend, Bases de Datos, Brokers de mensajería (si aplican) y componentes de infraestructura necesarios para que la solución sea 100%
-funcional.
+     funcional.
 
 ## 4. El Reto de Negocio a Implementar (Alcance de la Demo)
 
