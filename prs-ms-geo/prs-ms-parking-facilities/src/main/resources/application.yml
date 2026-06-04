@@ -1,0 +1,108 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: catalog-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/catalog_db
+    username: ${DB_USERNAME:parking}
+    password: ${DB_PASSWORD:parking}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    show-sql: false
+    hibernate:
+      #ddl-auto: none
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: catalog
+        format_sql: true
+        highlight_sql: true
+
+  # flyway:
+  #   enabled: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      username: default
+      password: ${REDIS_PASSWORD:redis_pass}
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        enable:
+          idempotence: true
+#    consumer:
+#      group-id: catalog-service
+#      auto-offset-reset: earliest
+#      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+#      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+#    producer:
+#      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+#      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+axon:
+  axonserver:
+    enabled: false
+
+  serializer:
+    general: jackson
+    events: jackson
+    messages: jackson
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    client-id: catalog-service
+    default-topic: domain-events
+    publisher:
+      confirmation-mode: transactional
+    producer:
+      transaction-id-prefix: catalog-service-axon-
+      # los eventos se mandan a Kafka de forma síncrona, esperando la confirmación de que han sido recibidos
+      event-processor-mode: tracking
+      properties:
+        acks: all
+        enable.idempotence: true
+    consumer:
+      group-id: catalog-service
+      # los eventos de Kafka se leen en background y Axon guarda el progreso en token_entry
+      event-processor-mode: tracking
+      properties:
+        auto.offset.reset: earliest
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+catalog:
+  search:
+    max-page-size: 100
+    default-limit: 20
+    low-availability-threshold: 5
+  cache:
+    facility-ttl-seconds: 300
+  reservation:
+    hold-minutes: 5
+    slot-size-minutes: 30
