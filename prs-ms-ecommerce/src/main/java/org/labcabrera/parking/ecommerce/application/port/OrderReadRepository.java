@@ -1,11 +1,11 @@
-package org.labcabrera.parking.ecommerce.domain.port;
+package org.labcabrera.parking.ecommerce.application.port;
 
 import java.util.Optional;
 import java.util.UUID;
 
 import org.labcabrera.parking.ecommerce.domain.aggregate.Order;
 
-public interface OrderRepository {
+public interface OrderReadRepository {
 
     Optional<Order> findById(UUID orderId);
 

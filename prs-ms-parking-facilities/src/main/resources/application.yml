@@ -26,9 +26,6 @@ spring:
         format_sql: true
         highlight_sql: true
 
-  # flyway:
-  #   enabled: false
-
   data:
     redis:
       host: ${REDIS_HOST:localhost}

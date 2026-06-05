@@ -4,60 +4,53 @@ server:
 spring:
   application:
     name: prs-ms-ecommerce
+  config:
+    import:
+      - classpath:application-axon.yml
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/ecommerce
+    url: jdbc:postgresql://localhost:5432/ecommerce_db
     username: ${DB_USERNAME:parking}
     password: ${DB_PASSWORD:parking}
     driver-class-name: org.postgresql.Driver
 
   jpa:
+    show-sql: false
     hibernate:
-      ddl-auto: validate
+      #ddl-auto: none
+      ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        default_schema: ecommerce
+        #default_schema: ecommerce
+        format_sql: true
+        highlight_sql: true
 
-  flyway:
-    enabled: true
-    schemas: ecommerce
-    baseline-on-migrate: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      username: default
+      password: ${REDIS_PASSWORD:redis_pass}
 
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-    consumer:
-      group-id: ecommerce-service
-      auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
-
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/parking}
-
-axon:
-  axonserver:
-    enabled: false
-
-keycloak:
-  auth-server-url: ${KEYCLOAK_URL:http://localhost:8080}
-  realm: parking
-  admin-client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:admin-cli}
-  admin-client-secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET:}
-
-catalog-service:
-  url: ${CATALOG_SERVICE_URL:http://localhost:8081}
-
-reservation:
-  hold:
-    ttl-seconds: 600
-    pricing-timeout-seconds: 30
+#  kafka:
+#    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+#    producer:
+#      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+#      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+#      acks: all
+#      retries: 3
+#      properties:
+#        enable:
+#          idempotence: true
+#    consumer:
+#      group-id: catalog-service
+#      auto-offset-reset: earliest
+#      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+#      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+#    producer:
+#      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+#      value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 management:
   endpoints:
@@ -67,15 +60,6 @@ management:
   endpoint:
     health:
       show-details: always
-  tracing:
-    sampling:
-      probability: 1.0
-  otlp:
-    tracing:
-      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
-  observations:
-    annotations:
-      enabled: true
 
 springdoc:
   api-docs:

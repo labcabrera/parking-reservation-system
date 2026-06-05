@@ -23,55 +23,57 @@ import org.labcabrera.parking.ecommerce.domain.exception.InvalidOrderStateExcept
 import org.labcabrera.parking.ecommerce.domain.valueobject.Money;
 import org.labcabrera.parking.ecommerce.domain.valueobject.OrderStatus;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Embedded;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@Aggregate(repository = "orderRepository")
-@Entity
-@Table(name = "orders", schema = "ecommerce")
+@Aggregate
 @NoArgsConstructor
 @Getter
 @Slf4j
 public class Order {
 
-    @Id
     @AggregateIdentifier
     private UUID id;
 
-    @Column(name = "hold_id", nullable = false, unique = true)
     private UUID holdId;
 
-    @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiresAt;
 
-    @Embedded
     private Money money;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
     private OrderStatus status;
 
-    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "last_payment_attempt_id")
     private UUID lastPaymentAttemptId;
 
-    @Column(name = "failure_reason", length = 500)
     private String failureReason;
 
-    @Version
     private Long version;
 
+    public Order(
+        UUID id,
+        UUID holdId,
+        LocalDateTime expiresAt,
+        Money money,
+        OrderStatus status,
+        LocalDateTime createdAt,
+        UUID lastPaymentAttemptId,
+        String failureReason,
+        Long version) {
+        this.id = id;
+        this.holdId = holdId;
+        this.expiresAt = expiresAt;
+        this.money = money;
+        this.status = status;
+        this.createdAt = createdAt;
+        this.lastPaymentAttemptId = lastPaymentAttemptId;
+        this.failureReason = failureReason;
+        this.version = version;
+    }
+
+    
     @CommandHandler
     public Order(CreateOrderCommand command) {
         log.info("Creating order {} from hold {}", command.orderId(), command.holdId());
