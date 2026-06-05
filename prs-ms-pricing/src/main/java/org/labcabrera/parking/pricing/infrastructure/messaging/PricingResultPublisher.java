@@ -1,11 +1,12 @@
 package org.labcabrera.parking.pricing.infrastructure.messaging;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
+
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 @Component
 public class PricingResultPublisher {
@@ -26,7 +27,7 @@ public class PricingResultPublisher {
             String payload = objectMapper.writeValueAsString(result);
             kafkaTemplate.send(TOPIC, result.holdId().toString(), payload);
             log.debug("Published pricing result for hold {}", result.holdId());
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Failed to serialize pricing result for hold {}", result.holdId(), e);
         }
     }

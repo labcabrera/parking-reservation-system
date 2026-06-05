@@ -1,9 +1,25 @@
 server:
-  port: 8085
+  port: 8083
 
 spring:
   application:
-    name: pricing-service
+    name: prs-ms-pricing
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/pricing_db
+    username: ${DB_USERNAME:parking}
+    password: ${DB_PASSWORD:parking}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        highlight_sql: true
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}

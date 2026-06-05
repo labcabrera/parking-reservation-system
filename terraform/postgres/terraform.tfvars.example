@@ -4,4 +4,4 @@ pg_port               = 5432
 pg_superuser          = "parking"
 pg_superuser_password = "parking"
 
-databases = ["facilities_db", "ecommerce_db", "keycloak_db"]
+databases = ["facilities_db", "ecommerce_db", "pricing_db", "keycloak_db"]
