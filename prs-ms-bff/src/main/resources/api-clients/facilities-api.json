@@ -1,0 +1,942 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Parking Catalog API",
+    "description": "Search and availability API for parking facilities",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8081",
+      "description": "Generated server url"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Parking Facilities",
+      "description": "Parking facility CRUD operations"
+    },
+    {
+      "name": "Reservations",
+      "description": "Create and manage parking reservation holds"
+    }
+  ],
+  "paths": {
+    "/api/v1/reservations": {
+      "get": {
+        "tags": ["Reservations"],
+        "summary": "List reservations overlapping a time window",
+        "operationId": "list",
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "facilityId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Reservations"],
+        "summary": "Start a reservation hold",
+        "operationId": "start",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartReservationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Reservation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reservations/{id}/confirm": {
+      "post": {
+        "tags": ["Reservations"],
+        "summary": "Confirm a HELD reservation",
+        "operationId": "confirm",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/parking-facilities": {
+      "get": {
+        "tags": ["Parking Facilities"],
+        "summary": "Search parking facilities",
+        "description": "Search parking facilities using RSQL and pagination",
+        "operationId": "searchParkingFacilities",
+        "parameters": [
+          {
+            "name": "rsql",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Zero-based page index (0..N)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "The size of the page to be returned",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paged list of parking facilities",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ParkingFacility"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Parking Facilities"],
+        "summary": "Create a new parking facility",
+        "description": "Create a new parking facility with the provided details",
+        "operationId": "createParkingFacility",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateParkingFacilityRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Created parking facility",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParkingFacility"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reservations/{id}": {
+      "get": {
+        "tags": ["Reservations"],
+        "summary": "Get reservation status (status, estimated price, expiry)",
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Reservation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Reservations"],
+        "summary": "Cancel a reservation and release inventory",
+        "operationId": "cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/parking-facilities/{parkingFacilityId}": {
+      "get": {
+        "tags": ["Parking Facilities"],
+        "summary": "Get parking facility by id",
+        "description": "Get country by id",
+        "operationId": "getParkingFacilityById",
+        "parameters": [
+          {
+            "name": "parkingFacilityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Parking facility",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParkingFacility"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parking-facilities/{parkingFacilityId}/inventory": {
+      "get": {
+        "tags": ["Parking Facilities"],
+        "summary": "Get inventory slots for a facility",
+        "description": "Returns inventory slots for the facility within [start, end)",
+        "operationId": "getFacilityInventory",
+        "parameters": [
+          {
+            "name": "parkingFacilityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InventorySlot"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parking-facilities/availability": {
+      "get": {
+        "tags": ["Parking Facilities"],
+        "summary": "Search available parking facilities by free text and date range",
+        "description": "Returns up to `limit` active facilities matching the text against name, city or address with at least one free spot for the whole [checkIn, checkOut) range. Each result includes a low-availability flag and an estimated price.",
+        "operationId": "searchAvailability",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "checkIn",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "checkOut",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Available facilities",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FacilityAvailability"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "StartReservationRequest": {
+        "type": "object",
+        "description": "Request payload to start a reservation. Validation: facilityId, checkIn and checkOut required, checkIn must be before checkOut, checkIn and checkOut must be in the future.",
+        "properties": {
+          "facilityId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID of the parking facility to reserve",
+            "examples": ["123e4567-e89b-12d3-a456-426614174000"]
+          },
+          "checkIn": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Check-in datetime for the reservation",
+            "examples": ["2026-01-01T15:00:00.000Z"]
+          },
+          "checkOut": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Check-out datetime for the reservation",
+            "examples": ["2026-01-02T15:00:00.000Z"]
+          }
+        },
+        "required": ["checkIn", "checkOut", "facilityId"]
+      },
+      "Reservation": {
+        "type": "object",
+        "description": "Current status and summary for a reservation",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reservation id",
+            "examples": ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+          },
+          "facilityId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Facility id",
+            "examples": ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+          },
+          "userId": {
+            "type": "string",
+            "description": "User id who started the reservation"
+          },
+          "checkIn": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Check-in datetime",
+            "examples": ["2026-01-01T15:00:00.000Z"]
+          },
+          "checkOut": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Check-out datetime",
+            "examples": ["2026-01-02T15:00:00.000Z"]
+          },
+          "status": {
+            "type": "string",
+            "description": "Reservation lifecycle status",
+            "examples": ["HELD"]
+          },
+          "estimatedPrice": {
+            "type": "number",
+            "description": "Estimated price for the reservation interval"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Currency code",
+            "examples": ["EUR"]
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Hold expiry datetime",
+            "examples": ["2026-01-02T15:43:32.123Z"]
+          },
+          "failureReason": {
+            "type": "string",
+            "description": "Failure reason, when status is FAILED or similar"
+          }
+        },
+        "required": ["checkIn", "checkOut", "facilityId", "id", "userId"]
+      },
+      "CancellationPolicy": {
+        "type": "object",
+        "properties": {
+          "freeCancelHours": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "penaltyCancelMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "Coordinates": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "ParkingCapacity": {
+        "type": "object",
+        "description": "Parking capacity split by reservation duration",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Total number of parking spots",
+            "examples": [120],
+            "minimum": 1
+          },
+          "shortTerm": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Parking spots dedicated to short-duration reservations",
+            "examples": [80],
+            "minimum": 0
+          },
+          "longTerm": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Parking spots dedicated to long-duration reservations",
+            "examples": [40],
+            "minimum": 0
+          }
+        }
+      },
+      "ParkingFacility": {
+        "type": "object",
+        "description": "Parking facility details",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique parking facility identifier",
+            "examples": ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+          },
+          "name": {
+            "type": "string",
+            "description": "Facility name",
+            "examples": ["Central Parking"]
+          },
+          "city": {
+            "type": "string",
+            "description": "City where the facility is located",
+            "examples": ["Madrid"]
+          },
+          "address": {
+            "type": "string",
+            "description": "Street address of the facility",
+            "examples": ["Calle Mayor 1"]
+          },
+          "location": {
+            "$ref": "#/components/schemas/Coordinates",
+            "description": "Geographic coordinates of the facility"
+          },
+          "capacity": {
+            "$ref": "#/components/schemas/ParkingCapacity",
+            "description": "Capacity split between short- and long-duration reservations"
+          },
+          "tags": {
+            "type": "array",
+            "description": "Tags associated with the facility (enum)",
+            "items": {
+              "type": "string",
+              "enum": [
+                "EXPRESS_ENTRY",
+                "FREE_CANCELLATION",
+                "COVERED",
+                "EV_CHARGING",
+                "GUARDED",
+                "WHEELCHAIR_ACCESSIBLE",
+                "VALET"
+              ]
+            },
+            "uniqueItems": true
+          },
+          "status": {
+            "type": "string",
+            "description": "Current facility status",
+            "enum": ["ACTIVE", "MAINTENANCE", "CLOSED"]
+          },
+          "cancellationPolicy": {
+            "$ref": "#/components/schemas/CancellationPolicy",
+            "description": "Cancellation policy for the facility"
+          },
+          "pricingRule": {
+            "$ref": "#/components/schemas/ParkingPricingRule",
+            "description": "Pricing rule information for the facility"
+          }
+        }
+      },
+      "ParkingPricingRule": {
+        "type": "object",
+        "properties": {
+          "externalPricingId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "estimatedDailyPrice": {
+            "type": "number",
+            "minimum": 0.01
+          }
+        },
+        "required": ["estimatedDailyPrice", "externalPricingId"]
+      },
+      "ApiError": {
+        "type": "object",
+        "description": "Standard API error response",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Error code",
+            "examples": ["BAD_REQUEST"]
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message",
+            "examples": ["Invalid request parameters"]
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of the error occurrence",
+            "examples": ["2024-06-01T12:00:00.000Z"]
+          },
+          "details": {
+            "type": "array",
+            "description": "Detailed error messages",
+            "examples": [
+              [
+                "'name' must not be blank",
+                "'capacity.total' must be greater than or equal to 1"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["code", "message", "timestamp"]
+      },
+      "CreateParkingFacilityRequest": {
+        "type": "object",
+        "description": "Request payload to create a parking facility. Validation: name required, capacity.total >= 1, pricingRule.estimatedDailyPrice > 0.",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Facility name",
+            "examples": ["Central Parking"],
+            "minLength": 1
+          },
+          "city": {
+            "type": "string",
+            "description": "City where the facility is located",
+            "examples": ["Madrid"]
+          },
+          "address": {
+            "type": "string",
+            "description": "Street address of the facility",
+            "examples": ["Calle Mayor 1"]
+          },
+          "location": {
+            "$ref": "#/components/schemas/Coordinates",
+            "description": "Geographic coordinates of the facility"
+          },
+          "capacity": {
+            "$ref": "#/components/schemas/ParkingCapacity",
+            "description": "Capacity split between short- and long-duration reservations"
+          },
+          "tags": {
+            "type": "array",
+            "description": "Tags associated with the facility (enum)",
+            "items": {
+              "type": "string",
+              "enum": [
+                "EXPRESS_ENTRY",
+                "FREE_CANCELLATION",
+                "COVERED",
+                "EV_CHARGING",
+                "GUARDED",
+                "WHEELCHAIR_ACCESSIBLE",
+                "VALET"
+              ]
+            },
+            "uniqueItems": true
+          },
+          "status": {
+            "type": "string",
+            "description": "Initial facility status",
+            "enum": ["ACTIVE", "MAINTENANCE", "CLOSED"]
+          },
+          "cancellationPolicy": {
+            "$ref": "#/components/schemas/CancellationPolicy",
+            "description": "Cancellation policy for the facility"
+          },
+          "pricingRule": {
+            "$ref": "#/components/schemas/ParkingPricingRule",
+            "description": "Pricing rule information for the facility"
+          }
+        },
+        "required": [
+          "address",
+          "cancellationPolicy",
+          "capacity",
+          "city",
+          "location",
+          "name",
+          "pricingRule"
+        ]
+      },
+      "Pageable": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "sort": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PageResponse": {
+        "type": "object",
+        "description": "Generic paginated response wrapper",
+        "properties": {
+          "content": {
+            "type": "array",
+            "description": "List of items in the current page",
+            "items": {
+              "$ref": "#/components/schemas/Reservation"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination",
+            "description": "Pagination metadata"
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "description": "Pagination metadata for paginated responses",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Current page number (0-based index)",
+            "example": 0
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of items per page",
+            "example": 20
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Total number of items across all pages",
+            "example": 100
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Total number of pages available",
+            "example": 5
+          }
+        }
+      },
+      "InventorySlot": {
+        "type": "object",
+        "description": "Inventory slot information for a facility and time slot",
+        "properties": {
+          "slotStart": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Slot start (inclusive)"
+          },
+          "blockType": {
+            "type": "string",
+            "description": "Inventory bucket type",
+            "enum": ["SHORT_TERM", "LONG_TERM"]
+          },
+          "capacity": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Capacity of the slot"
+          },
+          "reserved": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Currently reserved units"
+          },
+          "free": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Free units (capacity - reserved)"
+          }
+        }
+      },
+      "FacilityAvailability": {
+        "type": "object",
+        "description": "Availability information for a parking facility over a requested interval",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique facility id",
+            "examples": ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+          },
+          "name": {
+            "type": "string",
+            "description": "Facility name",
+            "examples": ["Central Parking"]
+          },
+          "city": {
+            "type": "string",
+            "description": "City",
+            "examples": ["Madrid"]
+          },
+          "address": {
+            "type": "string",
+            "description": "Address",
+            "examples": ["Calle Mayor 1"]
+          },
+          "capacity": {
+            "$ref": "#/components/schemas/ParkingCapacity",
+            "description": "Capacity split between short- and long-duration reservations"
+          },
+          "blockType": {
+            "type": "string",
+            "description": "Inventory bucket type used for the requested interval",
+            "enum": ["SHORT_TERM", "LONG_TERM"],
+            "examples": ["SHORT_TERM"]
+          },
+          "availableSpots": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of free spots in the requested interval",
+            "examples": [5]
+          },
+          "lowAvailability": {
+            "type": "boolean",
+            "description": "If true, availability is considered low (near capacity)"
+          },
+          "estimatedPrice": {
+            "type": "number",
+            "description": "Estimated price for the requested interval",
+            "examples": [12.5]
+          },
+          "currency": {
+            "type": "string",
+            "description": "Currency code",
+            "examples": ["EUR"]
+          }
+        },
+        "required": ["id"]
+      }
+    }
+  }
+}

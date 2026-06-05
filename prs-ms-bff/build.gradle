@@ -2,6 +2,7 @@ plugins {
     id 'org.springframework.boot'
     id 'io.spring.dependency-management'
     id 'java'
+    id 'org.openapi.generator' version '7.21.0'
 }
 
 dependencies {
@@ -10,34 +11,66 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     // Persistence
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.flywaydb:flyway-core'
-    implementation 'org.flywaydb:flyway-database-postgresql'
-    runtimeOnly 'org.postgresql:postgresql'
+    // implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    // implementation 'org.flywaydb:flyway-core'
+    // implementation 'org.flywaydb:flyway-database-postgresql'
+    // runtimeOnly 'org.postgresql:postgresql'
 
     // Messaging
     implementation 'org.springframework.kafka:spring-kafka'
 
     // Axon
-    implementation 'org.axonframework:axon-spring-boot-starter:4.10.3'
+    // implementation 'org.axonframework:axon-spring-boot-starter:4.10.3'
 
     // API Documentation
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9'
 
     // Resilience
-    implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.3.0'
+    // implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.3.0'
 
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.kafka:spring-kafka-test'
-    testImplementation 'com.tngtech.archunit:archunit-junit5:1.4.1'
-    testImplementation 'org.testcontainers:junit-jupiter'
-    testImplementation 'org.testcontainers:postgresql'
-    testImplementation 'org.testcontainers:kafka'
+    // testImplementation 'org.springframework.kafka:spring-kafka-test'
+    // testImplementation 'com.tngtech.archunit:archunit-junit5:1.4.1'
+    // testImplementation 'org.testcontainers:junit-jupiter'
+    // testImplementation 'org.testcontainers:postgresql'
+    // testImplementation 'org.testcontainers:kafka'
 }
 
 dependencyManagement {
     imports {
         mavenBom "org.testcontainers:testcontainers-bom:1.20.6"
     }
+}
+
+tasks.register('openApiGenerateFacilitiesApi', org.openapitools.generator.gradle.plugin.tasks.GenerateTask) {
+	generatorName = 'java'
+	library = "restclient"
+	inputSpec = "$rootDir/prs-ms-bff/src/main/resources/api-clients/facilities-api.json"
+	outputDir = "$buildDir/generated/sources/openapi/geo-client"
+	apiPackage = 'org.labcabrera.sample.front.generated.client.geo.api'
+	modelPackage = 'org.labcabrera.sample.front.generated.client.geo.model'
+	invokerPackage = 'org.labcabrera.sample.front.generated.client.geo'
+	configOptions = [
+		useSpringBoot3          : 'false',
+		useSpringBoot4          : 'true',
+		interfaceOnly           : 'true',
+		useJackson3             : "true",
+		useJakartaEe            : "true",
+		useJspecify		        : "true",
+		useFeignClientUrls      : 'true',
+		useFeignClientContextId : 'true',
+		useTags                 : 'true',
+		dateLibrary             : 'java8-localdatetime',
+		openApiNullable         : 'false',
+	]
+	additionalProperties = [
+		serializableModel: 'true'
+	]
+}
+
+sourceSets.main.java.srcDir file("$buildDir/generated/sources/openapi/geo-client/src/main/java")
+
+tasks.named('compileJava') {
+	dependsOn tasks.named('openApiGenerateFacilitiesApi')
 }

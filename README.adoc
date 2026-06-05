@@ -15,7 +15,7 @@ image:https://img.shields.io/badge/status-en%20desarrollo-yellow[Estado]
 
 Este proyecto es un MVP para un sistema de reserva de aparcamiento diseñado con el objetivo de soportar alta concurrencia y picos masivos de tráfico dentro de un flujo de reserva sencillo.
 
-El sistema está diseñado para como un conjunto de microservicios independientes basados patrones de diseño modernos, con una arquitectura hexagonal (Ports & Adapters) y una fuerte separación de responsabilidades. La coordinación entre servicios se realiza mediante eventos asíncronos en Kafka, y la autenticación se gestiona con Keycloak utilizando OAuth2/OIDC.
+El sistema está diseñado para como un conjunto de microservicios independientes basados patrones de diseño modernos, con una arquitectura hexagonal (Ports & Adapters) separando las responsabilidades de cada dominio. La coordinación entre servicios se realiza mediante eventos asíncronos en Kafka, y la autenticación con el frontal gestiona con Keycloak utilizando OAuth2/OIDC.
 
 // === Características principales
 
@@ -31,27 +31,38 @@ El sistema está diseñado para como un conjunto de microservicios independiente
 
 Al diseñar el sistema el enfoque ha sido en primer lugar la identificación de los *bounded contexts* del dominio y la definición de los microservicios correspondientes, asegurando una clara separación de responsabilidades y un acoplamiento bajo entre ellos. Dentro de esta separación de lógica los problemas identificados son:
 
-- Gestión de catálogo de aparcamientos y disponibilidad en tiempo real: modelado de un sistema que permita búsquedas ligeras junto con un sistema de bloqueo de plazas disponibles con políticas de sobreventa que tenga capacidades de tarificaciñón.
-- Gestión del ciclo de vida de una orden de compra a partir de un hold de plaza, incluyendo confirmación de precio, pago y cancelación.
-- Sistema de cálculo de tarifas configurable y dinámico en función de la disponibilidad.
-- Modelo de autenticación híbrido para permitir operaciones anónimas y operaciones autenticadas.
-- Sistema de búsqueda geográfica. Sistema para facilitar la búsqueda y que no tiene mas impacto en los otros módulos.
+- *Gestión de catálogo de aparcamientos y disponibilidad en tiempo real*: modelado de un sistema que permita búsquedas ligeras junto con un sistema de bloqueo de plazas disponibles con políticas de sobreventa que tenga capacidades de tarificaciñón.
+
+- *Gestión del ciclo de vida de una orden de compra* a partir de un hold de plaza, incluyendo confirmación de precio, pago y cancelación.
+
+- *Sistema de cálculo de tarifas* configurable y dinámico en función de la disponibilidad.
+
+- *Modelo de autenticación híbrido* para permitir operaciones anónimas (búsquedas e intento de bloqueo de un slot) y operaciones autenticadas (procesado del _Order_).
+
+- *Sistema de búsqueda geográfica* que permita búsquedas indexadas por criterios de nombre, keywords establecidas en un Parking (como por ejemplo estaciones, aeropuertos cercanos, museos o cualquier otro punto de interés) y que se integre con el buscador del catálogo para permitir autocompletado en las consultas.
 
 A partir de estas premisas y dado que no existen requisitos funcionales específicos se el diseño se ha realizado tomando las siguientes decisiones:
 
-- Dentro del compromiso entre escalabilidad y consistencia en el sistema de bloqueos se ha optado por la escalabilidad. Cuando un usuario realiza una búsqueda de parking, en lugar de realizar un bloqueo agresivo de plazas disponibles para mantener un precio fijo desde la búsqueda hasta la reserva se ha optado por un sistema de cálculo aproximado de precios. Cuando un usuario realiza una búsqueda el sistema no realiza los cálculos complejos de tarificación y sólamente devuelve una estimación de precio que posteriormente será calculada en el momento de comenzar el proceso de reserva. Este sistema tiene el handicap de no ofrecer inicialmente un precio fijo al usuario pero a cambio hace que el modelo de búsqueda sea mucho más ligero e implique el bloqueo de plazas en la búsqueda. Este funcionamiento no ofrece un precio fijo y puede generar una mala experiencia, pero para picos de demanda masiva es mas esalable y se pueden diseñar políticas de estimación tan precisas como deseemos.
+- Dentro del compromiso entre escalabilidad y consistencia en el sistema de bloqueos se ha optado por la escalabilidad. Cuando un usuario realiza una búsqueda de parking, en lugar de realizar un bloqueo agresivo de todas las plazas disponibles para mantener un precio fijo desde la búsqueda hasta la reserva, se ha optado por un sistema de cálculo aproximado de precios. Cuando un usuario realiza una búsqueda el sistema no realiza los cálculos complejos de tarificación y sólamente devuelve una estimación de precio que posteriormente será calculada en el momento de comenzar el proceso de reserva.
+Este sistema tiene el handicap de no ofrecer inicialmente un precio fijo al usuario pero a cambio hace que el modelo de búsqueda sea mucho más ligero e implique el bloqueo de plazas en la búsqueda. Este funcionamiento no ofrece un precio fijo y puede generar una mala experiencia, pero para picos de demanda masiva es mas esalable y se pueden diseñar políticas de estimación tan precisas como deseemos.
 
 - Autenticación híbrida. Los requisitos no establecen si un usuario sin autenticación puede realizar una reserva. En la implementación se ha optado por un modelo en el que para el comienzo del proceso de reserva no es necesaria la autenticación pero para la confirmación si que es necesario el registro.
 
-- Reservas de baja duración vs reservas de larga duración. Sin tener coche ni haber reservado nunca en un parking llego a diferenciar estas casuisticas:
+- Reservas de baja duración vs reservas de larga duración. El sistema contemplará estos casos de uso que tendrán procesos de bloqueo de slots diferentes:
 
-** Un usuario quiere reservar un parking para tomarse un café con un amigo, ir a ver un museo y luego irse a casa.
-** Un usuario se va de vacaciones y en lugar de pillar un Uber al parking lleva su coche y lo deja allí durante una semana.
-** Alguien que se mueve demasiado quiere un bono/suscripción para poder aparcar en diferentes parkings durante el mes.
+** Bloqueos de corta duración para estacionamiento en tramos de media hora. Este sistema estará más orientado a obtener tarifas dinámicas en función de la demanda y ofrecer una experiencia de reserva rápida para usuarios que quieren aparcar durante un periodo limitado.
 
-Este MVP se centra en los dos primeros casos de uso: reserva de corta duración (más afactada por criterios de disponibilidad) y reserva de larga duración (orientada a ventajas de reserva anticipada y mejor prevision de ocupación a largo plazo) . Para el caso de reservas de corta duración el sitema creará ventanas de disponibilidad de 30 minutos. Para el modelo de reservas de larga duración el sistema creará ventanas de disponibilidad de 24 horas (y ajustará los márgenes diaros al modelo de corta duración). Este modelo tiene la ventaja de ser más sencillo de implemntar y mejorar la escalabilidad para ajustarse a los dos problemas (me tomo un café vs me voy a Zihuatanejo) y facilita la varias gestiones como el modelo de tarificación, bloqueos de plazas y cancelaciones.
+** Bloqueos de larga duración para reservas de días o semanas enteras. En este caso las operaciones de bloqueo de ventanas de media hora puede afectar a gran cantidad de registros de modo que ha optado por un modelo de bloqueo de ventanas de 24 horas para este tipo de reservas.
 
-Con esta idea se ha modelado el sistema en el que un parking de N plazas tiene una asignación diferente para cada ventana de disponibilidad. Esta ventana no tiene por que ser fija y el sistema podría ajustarla dinámicamente en función de la demanda. La regla sería: El aparcamiento "patata" tiene 1000 plazas y quiere separarlas en dos modelos de venta: X plazas para venta de corta duración de e Z plazas para venta de larga duración. Este sistema aisla el comportamiento del parking y permite introducir reglas de balanceo de disponibilidad cuando uno de los dos modelos de venta sea más demandado que el otro lo que encaja con la idea de que el sistema se adapte a los picos de demanda.
+Con esta idea se ha modelado el sistema en el que un parking de N plazas tiene una asignación diferente para cada ventana de disponibilidad. Esta ventana no tiene por que ser fija y el sistema podría ajustarla dinámicamente en función de la demanda. 
+
+De este modo por ejemplo un aparcamiento de 1000 plazas podría tener:
+
+- 600 plazas asignadas a bloqueos de corta duración.
+- 300 plazas asignadas a bloqueos de larga duración.
+- 100 plazas flexibles que se asignan dinámicamente en función de la demanda de cada modelo de venta.
+
+También, este modelo no tiene por que ser estático y el sistema pudiera actualizarlo en función de las reglas de negocio que se decidan para maximizar la ocupación del parking y se adapte mejor a los picos de demanda.
 
 == Módulos y responsabilidades
 
@@ -62,6 +73,7 @@ Este componente es el responsable de la gestión del catálogo de aparcamientos.
 - Mantener el catálogo de aparcamientos, plazas y su disponibilidad.
 - Exponer la API de búsqueda de aparcamientos disponibles.
 - Gestionar el sistema de bloqueo de plazas (hold) para evitar sobreventa bajo alta concurrencia.
+- Servir como fuente de aparcamientos para el módulo de búsquedas geolocalizadas.
 
 TIP: esté módulo podría descomponerse en dos microservicios independientes, uno que sólo llevase el catálogo de aparcamientos y otro que gestione el sistema de bloqueo de plazas. No obstante y para que el MVP no sea excesivamente complejo, se ha optado por mantener ambas responsabilidades en un mismo módulo.
 
@@ -73,18 +85,16 @@ TIP: esté módulo podría descomponerse en dos microservicios independientes, u
 
 ==== Que no hace este módulo:
 
-- No sabe nada pagos ni tampoco de las reglas de tarificación.
-
+- No sabe nada pagos ni tampoco conoce los detalles de las reglas de tarificación aunque si que puede realizar una estimación de precios a partir de los datos generados por el módulo de tarificación.
 
 === Módulo prs-ms-ecommerce
 
-Este módulo no sabe nada de aparcamientos, sólo sabe que un usuario quiere reservar algo a un determinado precio y pagarlo. Este módulo gestionará los procesos de pago sin saber nada de si es un parking, un café o una patata.
+Este módulo es el responsable de gestionar el ciclo de vida de una orden de compra.
+No conoce los detalles del aparcamiento, bloqueos ni tarifas ya que cuando llega la orden de compra esta ya tiene un precio fijado y el proceso de reserva se ha iniciado.
 
-Cuando se inicia un proceso de reserva el módulo simplemente orquestará si el cliente paga o no paga, si se cancela el intento de compra y de verificar que esta orden de compra se ha completado o no.
+Cuando se inicia un proceso de reserva el módulo simplemente orquestará el pago del cliente y se emitirán los eventos correspondientes.
 
 Dentro de las consideraciones de este sistema y teniendo en cuenta que desde el sistema de bloqueo que ofrece una tarifa bloqueada durante un tiempo, de cara a la consistencia el sistema primará los tiempos de expiración de los bloqueos antes que una política de "periodo de gracia entre que el usuario paga y el bloqueo expira". Esto es peor para la experiencia de usuario pero para un MVP resulta mucho mas sencillo de implementar que un sistema de reintento que obligaría a tener una política de re-hold.
-
-"Si no has pagado en tiempo, lo sentimos, si ya has pagado se te devolverá el importe pero deberás empezar de nuevo"
 
 ==== Que sabe este módulo:
 
@@ -100,9 +110,7 @@ Dentro de las consideraciones de este sistema y teniendo en cuenta que desde el 
 
 === Modulo prs-ms-pricing
 
-Este módulo debería dar libertad creativa al departamento de ventas para diseñar reglas tan rocambolascas como quieran pero sin afectar a los otros conponentes.
-
-Es el responsable de a partir de unos datos consolidados de entrada emitir una tarifa pero su implementación es ajena al resto de módulos.
+Este módulo es el responsable de establecer las reglas de negocio para el cálculo de tarifas de cada reserva.
 
 Dentro de un modelo de tarificación podríamos tener:
 
@@ -114,9 +122,6 @@ Dentro de un modelo de tarificación podríamos tener:
 - Reglas de negocio complejas: si eres un mago de fuego, es martes, llovio anoche y tienes un calcetin de cada color entonces una cosa, si no otra
 
 Dentro del MPV y bajo la premisa de la escalabilidad este sistema no es consultado en cada búsqueda, únicamente cuando el usuario comienza una reserva. Para el MVP se simplificarán estos modelos y la asbtracción de este módulo será:
-
-- Permito diseñar reglas de negocio
-- Reacciono a ventanas de disponibilidad y proyecto una estimación de preciosç
 
 ==== Que sabe este módulo:
 
@@ -142,19 +147,14 @@ Fachada del resto de módulos para la integraciñon con los diferentes frontends
 === Que sabe este módulo:
 
 - Políticas de seguridad específicas de la integración con el frontend
-- Orquetación de llamadas básica a cada mñodulo core.
+- Orquetación de llamadas básica a cada módulo core.
 
-=== Que no sabe este módulo:
-
-- Este módulo no tiene idea de casi nada.
 
 == Arquitectura
 
-_Muchas cosas las haria con NestJS, pero como el ejercicio con Java, pues a pensar en la JVM._
-
 Para la implementaciñob basada en Java las reglas que se han seguido son:
 
-- Uso de Spring Boot (versión 4.x como early adopter que tiene problemas de integación con algunas dependencias que aún no han sido actualizadas como _resilence4j_).
+- Uso de Spring Boot 4.x (early adopter) que tiene aún problemas de integación con algunas librerías que aún no han sido actualizadas como _resilence4j_.
 
 - Pragmatismo a la hora de la separación de capas dentro del paragigma de DDD usando Axon y Spring Boot. Si bien una separación purista de capas haría que el uso de elementos como @Aggregate o @Saga fuera mas independiente de la infraescructura, para aprovechar las ventajas de estos frameworks y evitar niveles de abstracción innencesarios se ha optado por aceptar este acoplamiento a nivel de dominio. Si bien es posible aislarlo, al hacerlo se pierden las capacidades que te da el framework (como aislar el CID de spring). Si bien hay modelos acoplados de Axon a nivel de entidad, el MVP mantiene un aislamiento entres estas capas.
 
@@ -532,5 +532,3 @@ WARNING: Usar Axon a nivel de anotaciones en el modelo de dominio genera acoplam
 // * El `KEYCLOAK_ADMIN_CLIENT_SECRET` debe rotarse antes de cualquier despliegue en entornos no locales.
 
 == TODO
-
-Como levantas todo y como funciona, pendiente de como sea el modelo
