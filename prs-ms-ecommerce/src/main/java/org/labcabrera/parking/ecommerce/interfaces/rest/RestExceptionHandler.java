@@ -38,6 +38,11 @@ public class RestExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, "Validation failed", request, details);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiError> handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest request) {
+        return error(HttpStatus.BAD_REQUEST, ex.getMessage(), request, List.of());
+    }
+
     private ResponseEntity<ApiError> error(HttpStatus status, String message, HttpServletRequest request, List<String> details) {
         return ResponseEntity.status(status)
             .body(new ApiError(
