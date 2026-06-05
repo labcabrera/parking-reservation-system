@@ -16,8 +16,8 @@
   "java.format.settings.url": ".formatter/java-style.xml",
 
   "files.associations": {
-    "application.yml": "plaintext",
-    "application.yaml": "plaintext"
+    // "application.yml": "plaintext",
+    // "application.yaml": "plaintext"
   },
   "files.exclude": {
     // "**/build/**": true,

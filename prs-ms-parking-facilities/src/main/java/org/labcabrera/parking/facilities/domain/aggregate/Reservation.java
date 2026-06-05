@@ -154,7 +154,14 @@ public class Reservation {
         if (status != ReservationStatus.HELD) {
             throw new InvalidReservationStateException("Only HELD reservations can be confirmed (current: " + status + ")");
         }
-        apply(new ReservationConfirmedEvent(cmd.reservationId()));
+        apply(new ReservationConfirmedEvent(
+            cmd.reservationId(),
+            facilityId,
+            userId,
+            checkIn,
+            checkOut,
+            estimatedPrice,
+            currency));
     }
 
     @EventSourcingHandler
