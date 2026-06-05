@@ -4,7 +4,7 @@ import java.util.Optional;
 
 import org.axonframework.queryhandling.QueryHandler;
 import org.labcabrera.parking.catalog.application.cqrs.query.FindReservationsQuery;
-import org.labcabrera.parking.catalog.infrastructure.jpa.ReservationQueryRepository;
+import org.labcabrera.parking.catalog.application.port.ReservationReadRepository;
 import org.labcabrera.parking.catalog.domain.aggregate.Reservation;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -16,7 +16,7 @@ import org.labcabrera.parking.catalog.application.cqrs.query.GetReservationByIdQ
 @RequiredArgsConstructor
 public class ReservationQueryHandler {
 
-    private final ReservationQueryRepository reservationRepository;
+    private final ReservationReadRepository reservationRepository;
 
     // Axon cant handle properly generic types, so we need to cast the response type in the controller
     @SuppressWarnings("rawtypes")

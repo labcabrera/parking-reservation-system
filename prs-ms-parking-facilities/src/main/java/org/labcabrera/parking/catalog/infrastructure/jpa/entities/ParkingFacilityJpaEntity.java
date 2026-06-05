@@ -17,7 +17,7 @@ import org.labcabrera.parking.catalog.domain.aggregate.ParkingFacility;
 import org.labcabrera.parking.catalog.domain.valueobject.FacilityStatus;
 
 @Entity
-@Table(name = "parking_facility", schema = "catalog")
+@Table(name = "parking_facility", schema = "public")
 @Data
 public class ParkingFacilityJpaEntity {
 

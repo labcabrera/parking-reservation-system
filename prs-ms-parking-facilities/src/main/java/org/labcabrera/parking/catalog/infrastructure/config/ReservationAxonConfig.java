@@ -1,19 +1,10 @@
 package org.labcabrera.parking.catalog.infrastructure.config;
 
-import java.util.UUID;
-
-import javax.annotation.Nonnull;
-
-import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.config.ConfigurationScopeAwareProvider;
+import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.SimpleDeadlineManager;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.modelling.command.GenericJpaRepository;
-import org.axonframework.modelling.command.Repository;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
-import org.labcabrera.parking.catalog.domain.aggregate.Reservation;
 import org.labcabrera.parking.catalog.domain.aggregate.ReservationConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -21,23 +12,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
 /**
- * Wires the state-stored Axon aggregate {@link Reservation} to JPA and exposes
- * runtime configuration (hold TTL) consumed by the aggregate constructor.
+ * Exposes runtime configuration consumed by the reservation aggregate and saga.
  */
 @Configuration
 public class ReservationAxonConfig {
 
-    @Bean(name = "reservationRepository")
-    public Repository<Reservation> reservationRepository(
-            EntityManagerProvider entityManagerProvider,
-            EventBus eventBus,
-            @Nonnull ParameterResolverFactory parameterResolverFactory) {
-        return GenericJpaRepository.builder(Reservation.class)
-            .entityManagerProvider(entityManagerProvider)
-            .identifierConverter(UUID::fromString)
-            .eventBus(eventBus)
-            .parameterResolverFactory(parameterResolverFactory)
-            .build();
+    public ReservationAxonConfig(EventProcessingConfigurer eventProcessingConfigurer) {
+        eventProcessingConfigurer.registerSubscribingEventProcessor("reservation-projection");
     }
 
     @Bean

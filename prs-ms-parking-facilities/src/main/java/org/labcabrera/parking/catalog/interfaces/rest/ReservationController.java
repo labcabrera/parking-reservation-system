@@ -67,8 +67,9 @@ public class ReservationController {
 
         //TODO leer del comand directamente
         var query = new GetReservationByIdQuery(reservationId);
-        var respType = ResponseTypes.instanceOf(Reservation.class);
-        Reservation readed = queryGateway.query(query, respType).join();
+        ResponseType<Optional<Reservation>> responseType = ResponseTypes.optionalInstanceOf(Reservation.class);
+        Reservation readed = queryGateway.query(query, responseType).join()
+            .orElseThrow(() -> new EntityNotFoundException("Reservation %s not found".formatted(reservationId)));
         URI uri = new URI("/api/v1/reservations/%s".formatted(reservationId));
         return ResponseEntity.created(uri).body(reservationMapper.toDto(readed));
     }

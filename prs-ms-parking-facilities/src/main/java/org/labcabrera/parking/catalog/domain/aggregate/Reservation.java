@@ -25,66 +25,71 @@ import org.labcabrera.parking.catalog.domain.event.ReservationStartedEvent;
 import org.labcabrera.parking.catalog.domain.exception.InvalidReservationStateException;
 import org.labcabrera.parking.catalog.domain.valueobject.ReservationStatus;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * State-stored Axon aggregate persisted via JPA. The 10-minute hold lifecycle and
- * inventory compensation are driven by {@code ReservationSaga}.
+ * Axon aggregate for reservation hold lifecycle. Persistence concerns live in
+ * infrastructure projections.
  */
-@Aggregate(repository = "reservationRepository")
-@Entity
-@Table(name = "reservation", schema = "catalog")
+@Aggregate
 @NoArgsConstructor
 @Getter
 @Slf4j
 public class Reservation {
 
-    @Id
     @AggregateIdentifier
     private UUID id;
 
-    @Column(name = "facility_id", nullable = false)
     private UUID facilityId;
 
-    @Column(name = "user_id", nullable = false, length = 100)
     private String userId;
 
-    @Column(name = "check_in", nullable = false)
     private LocalDateTime checkIn;
 
-    @Column(name = "check_out", nullable = false)
     private LocalDateTime checkOut;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
     private ReservationStatus status;
 
-    @Column(name = "estimated_price", precision = 10, scale = 2)
     private BigDecimal estimatedPrice;
 
-    @Column(length = 3)
     private String currency;
 
-    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiresAt;
 
-    @Column(name = "failure_reason", length = 500)
     private String failureReason;
 
-    @Version
     private Long version;
+
+    public Reservation(
+            UUID id,
+            UUID facilityId,
+            String userId,
+            LocalDateTime checkIn,
+            LocalDateTime checkOut,
+            ReservationStatus status,
+            BigDecimal estimatedPrice,
+            String currency,
+            LocalDateTime createdAt,
+            LocalDateTime expiresAt,
+            String failureReason,
+            Long version) {
+        this.id = id;
+        this.facilityId = facilityId;
+        this.userId = userId;
+        this.checkIn = checkIn;
+        this.checkOut = checkOut;
+        this.status = status;
+        this.estimatedPrice = estimatedPrice;
+        this.currency = currency;
+        this.createdAt = createdAt;
+        this.expiresAt = expiresAt;
+        this.failureReason = failureReason;
+        this.version = version;
+    }
 
     @CommandHandler
     public Reservation(StartReservationCommand cmd, ReservationConfig config) {
@@ -186,4 +191,3 @@ public class Reservation {
         this.status = ReservationStatus.EXPIRED;
     }
 }
-

@@ -22,11 +22,9 @@ import lombok.Setter;
 import org.labcabrera.parking.catalog.domain.valueobject.InventoryBlockType;
 
 @Entity
-@Table(
-    name = "inventory_slot",
-    schema = "catalog",
-    uniqueConstraints = @UniqueConstraint(name = "uk_inventory_slot", columnNames = {"facility_id", "slot_start", "block_type"}),
-    indexes = @Index(name = "ix_inventory_slot_facility_start", columnList = "facility_id, slot_start, block_type"))
+@Table(name = "inventory_slot", schema = "public", uniqueConstraints = @UniqueConstraint(name = "uk_inventory_slot", columnNames = {
+    "facility_id", "slot_start",
+    "block_type" }), indexes = @Index(name = "ix_inventory_slot_facility_start", columnList = "facility_id, slot_start, block_type"))
 @Getter
 @Setter
 @NoArgsConstructor

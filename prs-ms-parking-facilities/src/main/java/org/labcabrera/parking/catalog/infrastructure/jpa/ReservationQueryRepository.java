@@ -5,21 +5,19 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import org.labcabrera.parking.catalog.domain.aggregate.Reservation;
+import org.labcabrera.parking.catalog.infrastructure.jpa.entities.ReservationJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 /**
- * Read-side handle on the {@link Reservation} aggregate table. The write side is
- * owned by Axon via {@code reservationRepository}; this repository is only used by
- * query handlers and REST controllers to project state.
+ * Read-side handle on the reservation projection table.
  */
-public interface ReservationQueryRepository extends JpaRepository<Reservation, UUID> {
+public interface ReservationQueryRepository extends JpaRepository<ReservationJpaEntity, UUID> {
 
-	@Query("SELECT r FROM Reservation r WHERE r.checkIn < :end AND r.checkOut > :start")
-	Page<Reservation> findOverlapping(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end, Pageable pageable);
+	@Query("SELECT r FROM ReservationJpaEntity r WHERE r.checkIn < :end AND r.checkOut > :start")
+	Page<ReservationJpaEntity> findOverlapping(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end, Pageable pageable);
 
-	@Query("SELECT r FROM Reservation r WHERE r.facilityId = :facilityId AND r.checkIn < :end AND r.checkOut > :start")
-	Page<Reservation> findByFacilityOverlapping(@Param("facilityId") UUID facilityId, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end, Pageable pageable);
+	@Query("SELECT r FROM ReservationJpaEntity r WHERE r.facilityId = :facilityId AND r.checkIn < :end AND r.checkOut > :start")
+	Page<ReservationJpaEntity> findByFacilityOverlapping(@Param("facilityId") UUID facilityId, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end, Pageable pageable);
 }
