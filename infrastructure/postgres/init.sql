@@ -5,3 +5,4 @@
 
 CREATE DATABASE reservation_db OWNER parking;
 CREATE DATABASE payment_db OWNER parking;
+CREATE DATABASE ecommerce OWNER parking;

@@ -531,4 +531,20 @@ WARNING: Usar Axon a nivel de anotaciones en el modelo de dominio genera acoplam
 // * Los secretos de entorno **nunca** deben commitearse. Usar `.env.example` como plantilla y `.env` en el `.gitignore`.
 // * El `KEYCLOAK_ADMIN_CLIENT_SECRET` debe rotarse antes de cualquier despliegue en entornos no locales.
 
-== TODO
+== Ejecución local
+
+=== Docker compose
+
+Dentro del docker compose tendremos dos perfiles, uno para la infraestructura y otro para las aplicaciones. De este modo podemos levantar únicamente la infraestructura si queremos trabajar con los microservicios de forma local sin docker.
+
+----
+docker compose --profile infrastructure --profile apps up -d
+
+docker compose --profile infrastructure up -d
+----
+
+Eliminar todo:
+
+----
+docker compose --profile infrastructure down -v
+----

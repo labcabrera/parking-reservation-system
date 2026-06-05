@@ -31,13 +31,13 @@ parking_client_front_web_origins = [
 ]
 
 # Users
-primary_user_username   = "Luis Cabrera"
+primary_user_username   = "luiscabrera"
 primary_user_email      = "lab.cabrera@gmail.com"
 primary_user_first_name = "Luis"
 primary_user_last_name  = "Cabrera"
 primary_user_password   = "changeit"
 
-guest_user_username   = "Usuario sin permisos"
+guest_user_username   = "genericuser"
 guest_user_email      = "generic-user@example.com"
 guest_user_first_name = "John"
 guest_user_last_name  = "Doe"

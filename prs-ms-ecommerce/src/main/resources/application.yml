@@ -3,10 +3,10 @@ server:
 
 spring:
   application:
-    name: reservation-service
+    name: prs-ms-ecommerce
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/reservation_db
+    url: jdbc:postgresql://localhost:5432/ecommerce
     username: ${DB_USERNAME:parking}
     password: ${DB_PASSWORD:parking}
     driver-class-name: org.postgresql.Driver

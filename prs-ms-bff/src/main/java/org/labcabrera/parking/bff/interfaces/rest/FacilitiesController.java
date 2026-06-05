@@ -30,30 +30,30 @@ public class FacilitiesController {
 
     @GetMapping("/availability")
     public ResponseEntity<List<FacilityAvailability>> searchAvailability(
-            @RequestParam String q,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkIn,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkOut,
-            @RequestParam(required = false) Integer limit) {
+        @RequestParam String q,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkIn,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkOut,
+        @RequestParam(required = false) Integer limit) {
         return parkingFacilitiesApi.searchAvailabilityWithHttpInfo(q, checkIn, checkOut, limit);
     }
 
     @GetMapping("/{parkingFacilityId}")
     public ResponseEntity<ParkingFacility> getParkingFacilityById(
-            @PathVariable String parkingFacilityId) {
+        @PathVariable String parkingFacilityId) {
         return parkingFacilitiesApi.getParkingFacilityByIdWithHttpInfo(parkingFacilityId);
     }
 
     @GetMapping("/{parkingFacilityId}/inventory")
     public ResponseEntity<List<InventorySlot>> getFacilityInventory(
-            @PathVariable String parkingFacilityId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
+        @PathVariable String parkingFacilityId,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
         return parkingFacilitiesApi.getFacilityInventoryWithHttpInfo(parkingFacilityId, start, end);
     }
 
     @PostMapping
     public ResponseEntity<ParkingFacility> createParkingFacility(
-            @RequestBody CreateParkingFacilityRequest request) {
+        @RequestBody CreateParkingFacilityRequest request) {
         return parkingFacilitiesApi.createParkingFacilityWithHttpInfo(request);
     }
 }

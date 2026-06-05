@@ -1,4 +1,3 @@
-
 # ---------------------------------------------------------------------------
 # Parking Reservation System — Full Local Stack
 # Run: docker compose up --build
@@ -9,24 +8,23 @@ x-service-common: &service-common
   restart: unless-stopped
 
 services:
-
   # -----------------------------------------------------------------------
   # Infrastructure: PostgreSQL (one instance, three databases)
   # -----------------------------------------------------------------------
   postgres:
     <<: *service-common
-    image: postgres:16-alpine
+    profiles: [infrastructure]
+    image: postgres:17
     environment:
       POSTGRES_USER: parking
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-parking}
-      POSTGRES_DB: catalog_db
+      POSTGRES_DB: prs_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U parking -d catalog_db"]
+      test: ["CMD-SHELL", "pg_isready -U parking -d parking"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -37,6 +35,7 @@ services:
   # -----------------------------------------------------------------------
   redis:
     <<: *service-common
+    profiles: [infrastructure]
     image: redis:7-alpine
     command: redis-server --requirepass ${REDIS_PASSWORD:-redis_pass}
     ports:
@@ -53,6 +52,7 @@ services:
   # -----------------------------------------------------------------------
   kafka:
     <<: *service-common
+    profiles: [infrastructure]
     image: confluentinc/cp-kafka:7.6.1
     environment:
       KAFKA_NODE_ID: 1
@@ -73,13 +73,20 @@ services:
       - kafka_data:/var/lib/kafka/data
       - ./infrastructure/kafka/init-topics.sh:/docker-entrypoint-init.d/init-topics.sh:ro
     healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      test:
+        [
+          "CMD",
+          "kafka-broker-api-versions",
+          "--bootstrap-server",
+          "localhost:9092",
+        ]
       interval: 15s
       timeout: 10s
       retries: 10
       start_period: 30s
 
   kafka-init:
+    profiles: [infrastructure]
     image: confluentinc/cp-kafka:7.6.1
     depends_on:
       kafka:
@@ -94,6 +101,7 @@ services:
   # -----------------------------------------------------------------------
   kafka-ui:
     <<: *service-common
+    profiles: [infrastructure]
     image: provectuslabs/kafka-ui:latest
     environment:
       KAFKA_CLUSTERS_0_NAME: local
@@ -109,19 +117,22 @@ services:
   # -----------------------------------------------------------------------
   keycloak:
     <<: *service-common
+    profiles: [infrastructure]
     image: quay.io/keycloak/keycloak:24.0.4
-    command: start-dev --import-realm
+    command: start-dev
+    # command: start-dev --import-realm
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
       KC_HTTP_PORT: 8080
       KC_HEALTH_ENABLED: "true"
-    volumes:
-      - ./infrastructure/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    # volumes:
+    #   - ./infrastructure/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
     ports:
       - "8080:8080"
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health/ready || exit 1"]
+      test:
+        ["CMD-SHELL", "curl -sf http://localhost:8080/health/ready || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 10
@@ -132,6 +143,7 @@ services:
   # -----------------------------------------------------------------------
   catalog-service:
     <<: *service-common
+    profiles: [apps]
     build:
       context: .
       dockerfile: catalog-service/Dockerfile
@@ -158,7 +170,11 @@ services:
       keycloak:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl -sf http://localhost:8081/actuator/health || exit 1",
+        ]
       interval: 15s
       timeout: 10s
       retries: 10
@@ -169,6 +185,7 @@ services:
   # -----------------------------------------------------------------------
   reservation-service:
     <<: *service-common
+    profiles: [apps]
     build:
       context: .
       dockerfile: reservation-service/Dockerfile
@@ -194,7 +211,11 @@ services:
       keycloak:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8082/actuator/health || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl -sf http://localhost:8082/actuator/health || exit 1",
+        ]
       interval: 15s
       timeout: 10s
       retries: 10
@@ -205,6 +226,7 @@ services:
   # -----------------------------------------------------------------------
   payment-service:
     <<: *service-common
+    profiles: [apps]
     build:
       context: .
       dockerfile: payment-service/Dockerfile
@@ -224,7 +246,11 @@ services:
       kafka:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8083/actuator/health || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl -sf http://localhost:8083/actuator/health || exit 1",
+        ]
       interval: 15s
       timeout: 10s
       retries: 10
@@ -235,6 +261,7 @@ services:
   # -----------------------------------------------------------------------
   frontend:
     <<: *service-common
+    profiles: [apps]
     build:
       context: frontend
       dockerfile: Dockerfile
@@ -249,6 +276,7 @@ services:
   # -----------------------------------------------------------------------
   payment-gateway:
     <<: *service-common
+    profiles: [apps]
     build:
       context: payment-gateway
       dockerfile: Dockerfile
@@ -262,6 +290,7 @@ services:
   # -----------------------------------------------------------------------
   otel-collector:
     <<: *service-common
+    profiles: [apps]
     image: otel/opentelemetry-collector:latest
     command: ["--config=/etc/otel-collector-config.yaml"]
     volumes:
@@ -275,6 +304,7 @@ services:
   # -----------------------------------------------------------------------
   prometheus:
     <<: *service-common
+    profiles: [apps]
     image: prom/prometheus:latest
     volumes:
       - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -290,6 +320,7 @@ services:
   # -----------------------------------------------------------------------
   grafana:
     <<: *service-common
+    profiles: [apps]
     image: grafana/grafana:latest
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}

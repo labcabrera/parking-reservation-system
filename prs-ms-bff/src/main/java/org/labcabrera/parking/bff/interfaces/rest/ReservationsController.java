@@ -32,19 +32,19 @@ public class ReservationsController {
 
     @GetMapping
     public ResponseEntity<PageResponse> listReservations(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end,
-            @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(defaultValue = "20") Integer size,
-            @RequestParam(required = false) List<String> sort,
-            @RequestParam(required = false) UUID facilityId) {
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end,
+        @RequestParam(defaultValue = "0") Integer page,
+        @RequestParam(defaultValue = "20") Integer size,
+        @RequestParam(required = false) List<String> sort,
+        @RequestParam(required = false) UUID facilityId) {
         Pageable pageable = new Pageable().page(page).size(size).sort(sort);
         return reservationsApi.callListWithHttpInfo(start, end, pageable, facilityId);
     }
 
     @PostMapping
     public ResponseEntity<Reservation> startReservation(
-            @RequestBody StartReservationRequest request) {
+        @RequestBody StartReservationRequest request) {
         return reservationsApi.startWithHttpInfo(request);
     }
 

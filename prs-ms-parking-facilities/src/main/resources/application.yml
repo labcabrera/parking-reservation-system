@@ -3,10 +3,10 @@ server:
 
 spring:
   application:
-    name: catalog-service
+    name: prs-ms-parking-facilities
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/catalog_db
+    url: jdbc:postgresql://localhost:5432/facilities_db
     username: ${DB_USERNAME:parking}
     password: ${DB_PASSWORD:parking}
     driver-class-name: org.postgresql.Driver
@@ -19,7 +19,7 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        default_schema: catalog
+        #default_schema: facilities
         format_sql: true
         highlight_sql: true
 
