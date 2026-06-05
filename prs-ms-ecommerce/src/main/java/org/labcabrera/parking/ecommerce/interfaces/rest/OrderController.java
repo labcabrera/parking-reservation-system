@@ -1,0 +1,70 @@
+package org.labcabrera.parking.ecommerce.interfaces.rest;
+
+import java.net.URI;
+import java.util.UUID;
+
+import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.queryhandling.QueryGateway;
+import org.labcabrera.parking.ecommerce.application.cqrs.command.CreateOrderCommand;
+import org.labcabrera.parking.ecommerce.application.cqrs.query.GetOrderByIdQuery;
+import org.labcabrera.parking.ecommerce.domain.aggregate.Order;
+import org.labcabrera.parking.ecommerce.interfaces.rest.dto.CreateOrderRequest;
+import org.labcabrera.parking.ecommerce.interfaces.rest.dto.OrderDto;
+import org.labcabrera.parking.ecommerce.interfaces.rest.mapper.OrderMapper;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@RestController
+@RequestMapping("/api/v1/orders")
+@Tag(name = "Orders", description = "Create and manage ecommerce orders")
+@RequiredArgsConstructor
+@Validated
+@Slf4j
+public class OrderController {
+
+    private final CommandGateway commandGateway;
+    private final QueryGateway queryGateway;
+    private final OrderMapper mapper;
+
+    @PostMapping
+    @Operation(summary = "Create an order from a hold")
+    public ResponseEntity<OrderDto> create(@Valid @RequestBody CreateOrderRequest request) {
+        UUID orderId = UUID.randomUUID();
+        log.info("Received create order request {} for hold {}", orderId, request.holdId());
+        commandGateway.sendAndWait(new CreateOrderCommand(
+            orderId,
+            request.holdId(),
+            request.expiresAt(),
+            request.amount(),
+            request.currency()));
+
+        Order order = queryGateway
+            .query(new GetOrderByIdQuery(orderId), ResponseTypes.instanceOf(Order.class))
+            .join();
+        return ResponseEntity
+            .created(URI.create("/api/v1/orders/%s".formatted(orderId)))
+            .body(mapper.toDto(order));
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get order details")
+    public ResponseEntity<OrderDto> getById(@PathVariable UUID id) {
+        Order order = queryGateway
+            .query(new GetOrderByIdQuery(id), ResponseTypes.instanceOf(Order.class))
+            .join();
+        return ResponseEntity.ok(mapper.toDto(order));
+    }
+}

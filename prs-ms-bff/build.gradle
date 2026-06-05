@@ -6,35 +6,11 @@ plugins {
 }
 
 dependencies {
-    // Web
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
-
-    // Persistence
-    // implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    // implementation 'org.flywaydb:flyway-core'
-    // implementation 'org.flywaydb:flyway-database-postgresql'
-    // runtimeOnly 'org.postgresql:postgresql'
-
-    // Messaging
     implementation 'org.springframework.kafka:spring-kafka'
-
-    // Axon
-    // implementation 'org.axonframework:axon-spring-boot-starter:4.10.3'
-
-    // API Documentation
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9'
-
-    // Resilience
-    // implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.3.0'
-
-    // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    // testImplementation 'org.springframework.kafka:spring-kafka-test'
-    // testImplementation 'com.tngtech.archunit:archunit-junit5:1.4.1'
-    // testImplementation 'org.testcontainers:junit-jupiter'
-    // testImplementation 'org.testcontainers:postgresql'
-    // testImplementation 'org.testcontainers:kafka'
 }
 
 dependencyManagement {
@@ -47,10 +23,10 @@ tasks.register('openApiGenerateFacilitiesApi', org.openapitools.generator.gradle
 	generatorName = 'java'
 	library = "restclient"
 	inputSpec = "$rootDir/prs-ms-bff/src/main/resources/api-clients/facilities-api.json"
-	outputDir = "$buildDir/generated/sources/openapi/geo-client"
-	apiPackage = 'org.labcabrera.sample.front.generated.client.geo.api'
-	modelPackage = 'org.labcabrera.sample.front.generated.client.geo.model'
-	invokerPackage = 'org.labcabrera.sample.front.generated.client.geo'
+	outputDir = "$buildDir/generated/sources/openapi/facilities-client"
+	apiPackage = 'org.labcabrera.parking.bff.generated.client.facilities.api'
+	modelPackage = 'org.labcabrera.parking.bff.generated.client.facilities.model'
+	invokerPackage = 'org.labcabrera.parking.bff.generated.client.facilities'
 	configOptions = [
 		useSpringBoot3          : 'false',
 		useSpringBoot4          : 'true',
@@ -69,7 +45,7 @@ tasks.register('openApiGenerateFacilitiesApi', org.openapitools.generator.gradle
 	]
 }
 
-sourceSets.main.java.srcDir file("$buildDir/generated/sources/openapi/geo-client/src/main/java")
+sourceSets.main.java.srcDir file("$buildDir/generated/sources/openapi/facilities-client/src/main/java")
 
 tasks.named('compileJava') {
 	dependsOn tasks.named('openApiGenerateFacilitiesApi')

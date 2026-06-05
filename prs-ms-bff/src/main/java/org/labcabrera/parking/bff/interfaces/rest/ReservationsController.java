@@ -4,11 +4,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import org.labcabrera.sample.front.generated.client.geo.api.ReservationsApi;
-import org.labcabrera.sample.front.generated.client.geo.model.PageResponse;
-import org.labcabrera.sample.front.generated.client.geo.model.Pageable;
-import org.labcabrera.sample.front.generated.client.geo.model.Reservation;
-import org.labcabrera.sample.front.generated.client.geo.model.StartReservationRequest;
+import org.labcabrera.parking.bff.generated.client.facilities.api.ReservationsApi;
+import org.labcabrera.parking.bff.generated.client.facilities.model.PageResponse;
+import org.labcabrera.parking.bff.generated.client.facilities.model.Pageable;
+import org.labcabrera.parking.bff.generated.client.facilities.model.Reservation;
+import org.labcabrera.parking.bff.generated.client.facilities.model.StartReservationRequest;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;

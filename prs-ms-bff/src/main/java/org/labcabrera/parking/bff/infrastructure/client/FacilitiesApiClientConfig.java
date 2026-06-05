@@ -1,8 +1,8 @@
 package org.labcabrera.parking.bff.infrastructure.client;
 
-import org.labcabrera.sample.front.generated.client.geo.ApiClient;
-import org.labcabrera.sample.front.generated.client.geo.api.ParkingFacilitiesApi;
-import org.labcabrera.sample.front.generated.client.geo.api.ReservationsApi;
+import org.labcabrera.parking.bff.generated.client.facilities.ApiClient;
+import org.labcabrera.parking.bff.generated.client.facilities.api.ParkingFacilitiesApi;
+import org.labcabrera.parking.bff.generated.client.facilities.api.ReservationsApi;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

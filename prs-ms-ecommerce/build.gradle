@@ -23,8 +23,8 @@ dependencies {
     implementation 'org.springframework.kafka:spring-kafka'
 
     // Axon
-    implementation 'org.axonframework:axon-spring-boot-starter:5.0.0-preview'
-    testImplementation 'org.axonframework:axon-test:5.0.0-preview'
+    implementation "org.axonframework:axon-spring-boot-starter:${axonVersion}"
+    testImplementation "org.axonframework:axon-test:${axonVersion}"
 
     // API Documentation
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9'

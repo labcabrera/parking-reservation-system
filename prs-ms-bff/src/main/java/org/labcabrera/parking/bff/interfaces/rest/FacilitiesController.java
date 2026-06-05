@@ -3,11 +3,11 @@ package org.labcabrera.parking.bff.interfaces.rest;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import org.labcabrera.sample.front.generated.client.geo.api.ParkingFacilitiesApi;
-import org.labcabrera.sample.front.generated.client.geo.model.CreateParkingFacilityRequest;
-import org.labcabrera.sample.front.generated.client.geo.model.FacilityAvailability;
-import org.labcabrera.sample.front.generated.client.geo.model.InventorySlot;
-import org.labcabrera.sample.front.generated.client.geo.model.ParkingFacility;
+import org.labcabrera.parking.bff.generated.client.facilities.api.ParkingFacilitiesApi;
+import org.labcabrera.parking.bff.generated.client.facilities.model.CreateParkingFacilityRequest;
+import org.labcabrera.parking.bff.generated.client.facilities.model.FacilityAvailability;
+import org.labcabrera.parking.bff.generated.client.facilities.model.InventorySlot;
+import org.labcabrera.parking.bff.generated.client.facilities.model.ParkingFacility;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
