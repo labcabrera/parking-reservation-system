@@ -548,3 +548,12 @@ Eliminar todo:
 ----
 docker compose --profile infrastructure down -v
 ----
+
+## Enlaces
+
+* Swagger
+** *prs-ms-parking-facilities*: http://localhost:8081/swagger-ui/index.html
+** *prs-ms-ecommerce*: http://localhost:8082/swagger-ui/index.html
+
+* *^eycloak*: http://localhost:8080/
+* *Kafka UI*: http://localhost:8090/

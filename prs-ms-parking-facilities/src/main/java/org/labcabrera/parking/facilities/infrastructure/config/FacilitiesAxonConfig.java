@@ -11,13 +11,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
-/**
- * Exposes runtime configuration consumed by the reservation aggregate and saga.
- */
 @Configuration
-public class ReservationAxonConfig {
+public class FacilitiesAxonConfig {
 
-    public ReservationAxonConfig(EventProcessingConfigurer eventProcessingConfigurer) {
+    public FacilitiesAxonConfig(EventProcessingConfigurer eventProcessingConfigurer) {
         eventProcessingConfigurer.registerSubscribingEventProcessor("reservation-projection");
     }
 

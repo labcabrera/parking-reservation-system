@@ -27,7 +27,7 @@ import tools.jackson.databind.ObjectMapper;
  */
 @Configuration
 @EnableCaching
-public class CatalogCacheConfig {
+public class FacilitiesCacheConfig {
 
         public static final String CACHE_FACILITIES = "parking-facilities";
 

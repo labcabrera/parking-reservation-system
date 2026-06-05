@@ -1,6 +1,6 @@
 package org.labcabrera.parking.facilities.infrastructure.jpa;
 
-import static org.labcabrera.parking.facilities.infrastructure.config.CatalogCacheConfig.CACHE_FACILITIES;
+import static org.labcabrera.parking.facilities.infrastructure.config.FacilitiesCacheConfig.CACHE_FACILITIES;
 
 import java.util.UUID;
 

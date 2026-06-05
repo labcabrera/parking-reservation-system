@@ -9,7 +9,7 @@ import tools.jackson.databind.cfg.DateTimeFeature;
 import tools.jackson.databind.json.JsonMapper;
 
 @Configuration
-public class JacksonConfig {
+public class FacilitiesJacksonConfig {
 
     @Bean
     public ObjectMapper objectMapper() {
