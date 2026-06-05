@@ -9,7 +9,6 @@ import org.labcabrera.parking.pricing.domain.valueobject.PricingRuleStatus;
 
 public record PricingRuleDto(
     UUID id,
-    UUID facilityId,
     String name,
     BillingType billingType,
     MoneyDto baseRate,

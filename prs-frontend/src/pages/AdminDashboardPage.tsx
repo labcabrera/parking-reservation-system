@@ -106,9 +106,9 @@ export default function AdminDashboardPage() {
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: { md: 'center' } }}>
         <Box sx={{ flexGrow: 1 }}>
           <Typography component="h1" variant="h1">
-            {t('admin.title')}
+            {t('admin.facilities.adminTitle')}
           </Typography>
-          <Typography color="text.secondary">{t('admin.subtitle')}</Typography>
+          <Typography color="text.secondary">{t('admin.facilities.adminSubtitle')}</Typography>
         </Box>
         <Button
           disabled={facilitiesQuery.isFetching}

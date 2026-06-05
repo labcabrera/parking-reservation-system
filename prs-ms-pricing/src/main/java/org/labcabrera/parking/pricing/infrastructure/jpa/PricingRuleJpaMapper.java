@@ -14,7 +14,6 @@ public class PricingRuleJpaMapper {
         }
         return new PricingRule(
             entity.getId(),
-            entity.getFacilityId(),
             entity.getName(),
             entity.getBillingType(),
             new Money(entity.getBaseAmount(), entity.getBaseCurrency()),
@@ -32,7 +31,6 @@ public class PricingRuleJpaMapper {
     public PricingRuleJpaEntity toEntity(PricingRule domain) {
         PricingRuleJpaEntity entity = new PricingRuleJpaEntity();
         entity.setId(domain.getId());
-        entity.setFacilityId(domain.getFacilityId());
         entity.setName(domain.getName());
         entity.setBillingType(domain.getBillingType());
         entity.setBaseAmount(domain.getBaseRate().amount());

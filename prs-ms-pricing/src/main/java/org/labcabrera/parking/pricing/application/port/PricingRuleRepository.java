@@ -15,8 +15,6 @@ public interface PricingRuleRepository {
 
     Page<PricingRule> findAll(Pageable pageable);
 
-    Page<PricingRule> findByFacilityId(UUID facilityId, Pageable pageable);
-
     void deleteById(UUID id);
 
     boolean existsById(UUID id);

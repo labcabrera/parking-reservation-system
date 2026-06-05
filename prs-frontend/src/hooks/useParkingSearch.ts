@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { searchParking } from '../services/catalogApi';
+import { searchParking } from '../services/bffApi';
 import type { FacilityResult, SearchRequest, SearchResponse } from '../types/catalog';
 
 export interface ParkingSearchResult {

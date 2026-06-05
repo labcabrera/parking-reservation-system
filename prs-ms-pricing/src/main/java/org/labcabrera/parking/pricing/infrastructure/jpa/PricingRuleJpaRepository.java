@@ -8,6 +8,4 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PricingRuleJpaRepository extends JpaRepository<PricingRuleJpaEntity, UUID> {
-
-    Page<PricingRuleJpaEntity> findByFacilityId(UUID facilityId, Pageable pageable);
 }

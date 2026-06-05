@@ -28,9 +28,6 @@ public class PricingRuleJpaEntity {
     @Id
     private UUID id;
 
-    @Column(name = "facility_id", nullable = false)
-    private UUID facilityId;
-
     @Column(nullable = false, length = 120)
     private String name;
 

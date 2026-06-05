@@ -30,10 +30,7 @@ public class PricingRuleService {
     }
 
     @Transactional(readOnly = true)
-    public Page<PricingRule> list(UUID facilityId, Pageable pageable) {
-        if (facilityId != null) {
-            return repository.findByFacilityId(facilityId, pageable);
-        }
+    public Page<PricingRule> list(Pageable pageable) {
         return repository.findAll(pageable);
     }
 

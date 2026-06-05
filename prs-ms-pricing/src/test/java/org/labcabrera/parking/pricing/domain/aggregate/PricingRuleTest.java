@@ -46,7 +46,7 @@ class PricingRuleTest {
             PricingRuleStatus.ACTIVE,
             null,
             null))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("hourlyRate is required");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("hourlyRate is required");
     }
 }

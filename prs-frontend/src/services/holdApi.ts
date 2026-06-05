@@ -1,6 +1,7 @@
 import type { CreateHoldRequest, HoldCreatedResponse, HoldResponse } from '../types/hold';
+import { getBaseUrl } from './http';
 
-const BASE_URL = '/api/v1/reservations/holds';
+const BASE_URL = `${getBaseUrl('VITE_BFF_URL')}/api/v1/reservations/holds`;
 
 export async function createHold(request: CreateHoldRequest): Promise<HoldCreatedResponse> {
   const response = await fetch(BASE_URL, {

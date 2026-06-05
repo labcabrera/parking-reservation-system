@@ -49,14 +49,13 @@ public class PricingRuleController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<PricingRuleDto>> list(@RequestParam(required = false) UUID facilityId, Pageable pageable) {
-        return ResponseEntity.ok(service.list(facilityId, pageable).map(mapper::toDto));
+    public ResponseEntity<Page<PricingRuleDto>> list(Pageable pageable) {
+        return ResponseEntity.ok(service.list(pageable).map(mapper::toDto));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<PricingRuleDto> update(@PathVariable UUID id, @Valid @RequestBody UpdatePricingRuleRequest request) {
-        PricingRule existing = service.get(id);
-        PricingRule updated = service.update(id, mapper.toDomain(id, existing.getFacilityId(), request));
+        PricingRule updated = service.update(id, mapper.toDomain(id, request));
         return ResponseEntity.ok(mapper.toDto(updated));
     }
 

@@ -14,27 +14,17 @@ import jakarta.validation.constraints.NotNull;
 
 public record CreatePricingRuleRequest(
 
-    @NotNull
-    UUID facilityId,
+    @NotBlank String name,
 
-    @NotBlank
-    String name,
+    @NotNull BillingType billingType,
 
-    @NotNull
-    BillingType billingType,
+    @NotNull @Valid MoneyDto baseRate,
 
-    @NotNull
-    @Valid
-    MoneyDto baseRate,
+    @Valid MoneyDto hourlyRate,
 
-    @Valid
-    MoneyDto hourlyRate,
+    @Valid MoneyDto dailyRate,
 
-    @Valid
-    MoneyDto dailyRate,
-
-    @DecimalMin("0.0000")
-    BigDecimal taxRate,
+    @DecimalMin("0.0000") BigDecimal taxRate,
 
     PricingRuleStatus status,
 

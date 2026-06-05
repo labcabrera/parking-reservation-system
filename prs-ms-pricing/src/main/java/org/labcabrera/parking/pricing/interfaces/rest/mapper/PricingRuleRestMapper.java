@@ -13,7 +13,6 @@ public class PricingRuleRestMapper {
 
     public PricingRule toDomain(CreatePricingRuleRequest request) {
         return new PricingRule(
-            request.facilityId(),
             request.name(),
             request.billingType(),
             toMoney(request.baseRate()),
@@ -25,10 +24,9 @@ public class PricingRuleRestMapper {
             request.validTo());
     }
 
-    public PricingRule toDomain(java.util.UUID id, java.util.UUID facilityId, UpdatePricingRuleRequest request) {
+    public PricingRule toDomain(java.util.UUID id, UpdatePricingRuleRequest request) {
         return new PricingRule(
             id,
-            facilityId,
             request.name(),
             request.billingType(),
             toMoney(request.baseRate()),
@@ -46,7 +44,6 @@ public class PricingRuleRestMapper {
     public PricingRuleDto toDto(PricingRule rule) {
         return new PricingRuleDto(
             rule.getId(),
-            rule.getFacilityId(),
             rule.getName(),
             rule.getBillingType(),
             toDto(rule.getBaseRate()),

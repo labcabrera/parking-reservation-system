@@ -14,7 +14,6 @@ import lombok.Getter;
 public class PricingRule {
 
     private final UUID id;
-    private UUID facilityId;
     private String name;
     private BillingType billingType;
     private Money baseRate;
@@ -29,7 +28,6 @@ public class PricingRule {
     private Long version;
 
     public PricingRule(
-        UUID facilityId,
         String name,
         BillingType billingType,
         Money baseRate,
@@ -41,7 +39,6 @@ public class PricingRule {
         LocalDateTime validTo) {
         this(
             UUID.randomUUID(),
-            facilityId,
             name,
             billingType,
             baseRate,
@@ -58,7 +55,6 @@ public class PricingRule {
 
     public PricingRule(
         UUID id,
-        UUID facilityId,
         String name,
         BillingType billingType,
         Money baseRate,
@@ -71,9 +67,8 @@ public class PricingRule {
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         Long version) {
-        validate(facilityId, name, billingType, baseRate, hourlyRate, dailyRate, taxRate, validFrom, validTo);
+        validate(name, billingType, baseRate, hourlyRate, dailyRate, taxRate, validFrom, validTo);
         this.id = id != null ? id : UUID.randomUUID();
-        this.facilityId = facilityId;
         this.name = name;
         this.billingType = billingType;
         this.baseRate = baseRate;
@@ -98,7 +93,7 @@ public class PricingRule {
         PricingRuleStatus status,
         LocalDateTime validFrom,
         LocalDateTime validTo) {
-        validate(facilityId, name, billingType, baseRate, hourlyRate, dailyRate, taxRate, validFrom, validTo);
+        validate(name, billingType, baseRate, hourlyRate, dailyRate, taxRate, validFrom, validTo);
         this.name = name;
         this.billingType = billingType;
         this.baseRate = baseRate;
@@ -117,7 +112,6 @@ public class PricingRule {
     }
 
     private static void validate(
-        UUID facilityId,
         String name,
         BillingType billingType,
         Money baseRate,
@@ -126,9 +120,6 @@ public class PricingRule {
         BigDecimal taxRate,
         LocalDateTime validFrom,
         LocalDateTime validTo) {
-        if (facilityId == null) {
-            throw new IllegalArgumentException("facilityId is required");
-        }
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("name is required");
         }

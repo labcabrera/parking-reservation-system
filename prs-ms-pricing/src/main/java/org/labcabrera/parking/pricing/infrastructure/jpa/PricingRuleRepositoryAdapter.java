@@ -34,11 +34,6 @@ class PricingRuleRepositoryAdapter implements PricingRuleRepository {
     }
 
     @Override
-    public Page<PricingRule> findByFacilityId(UUID facilityId, Pageable pageable) {
-        return repository.findByFacilityId(facilityId, pageable).map(mapper::toDomain);
-    }
-
-    @Override
     public void deleteById(UUID id) {
         repository.deleteById(id);
     }
