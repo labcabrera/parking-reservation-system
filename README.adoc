@@ -155,15 +155,19 @@ Para la implementación basada en Java las reglas que se han seguido son:
 
 - Uso de *Spring Cloud Stream* para la integración de Kafka. Aunque Axon tiene capacidades de integración con Kafka, para mantener un diseño más desacoplado. De este modo también podemos usar este mecanismo para los microservicios que no usan Axon manteniendo la misma estrategia de integración.
 
+- Se ha *descartado el uso de Weblux* para este MVP ya que si bien el modelo reactivo aporta mejoras en la gestión de la concurrencia, añade una complejidad adicional al prototipo que se centrará más en la lógica de negocio. Podrían usarse Virtual Threads de Java 21 en entornos de alta concurrencia para mejorar la concurrencia sin añadir la complejidad del modelo reactivo, pero para el MVP se ha optado por el modelo tradicional de hilos. Donde podría encajar más es el módulo BFF donde permitiría mejoras en el caso de manejar SSEs.
+
 - Otras decisiones de diseño han sido:
 
--- Uso de *PostgreSQL* como base de datos principal con un modelo relacional tradicional con separación por dominios.
--- Uso de *OpenAPI* code-first para la documentación de las APIs.
--- Uso de *Redis* como caché distribuída.
+** Uso de *PostgreSQL* como base de datos principal con un modelo relacional tradicional con separación por dominios.
+** Uso de *OpenAPI* code-first para la documentación de las APIs.
+** Uso de *Redis* como caché distribuída.
+** Uso de *Spring Cloud Config* para la gestión centralizada de la configuración y reutilización de configuraciones comunes.
 
-// - Pragmatismo a la hora de la separación de capas dentro del paragigma de DDD usando Axon y Spring Boot. Si bien una separación purista de capas haría que el uso de elementos como @Aggregate o @Saga estuvieran a nivel de infraescructura, para aprovechar las ventajas de estos frameworks y evitar niveles de abstracción innencesarios se ha optado por aceptar este acoplamiento a nivel de la capa de aplicaciñon. Si bien es posible aislarlo, al hacerlo se pierden muchas de las ventajas de usar Spring y Axon.
-
-INFO: Se ha optado por una aproximación pragmática a la hora de realizar la separación de capas dentro del paragigma de DDD usando Axon y Spring Boot. Si bien una separación purista de capas haría que el uso de elementos como @Aggregate o @Saga estuvieran a nivel de infraescructura, para aprovechar las ventajas de estos frameworks y evitar niveles de abstracción innencesarios se ha optado por aceptar este acoplamiento a nivel de la capa de aplicaciñon. Si bien es posible aislarlo, al hacerlo se pierden muchas de las ventajas de usar Spring y Axon.
+[TIP]
+====
+Se ha optado por una aproximación pragmática a la hora de realizar la separación de capas dentro del paradigma de arquitectura héxagonal usando Axon. Si bien una separación purista de capas haría que el uso de elementos como @Aggregate o @Saga estuvieran a nivel de infraescructura, para aprovechar las ventajas de estos frameworks y evitar niveles de abstracción innencesarios se ha optado por aceptar este acoplamiento a nivel de la capa de aplicación. Si bien es posible aislarlo, al hacerlo se pierden muchas de las ventajas de usar Spring y se requiere de mas código manual para gestionar aspectos que el framework ya gestiona de forma automática.
+====
 
 == Ejecución local
 
@@ -231,4 +235,3 @@ terraform apply
 | *Kafka UI*                  | http://localhost:8090/
 | *Ejemplo de configuración*  | http://localhost:8888/actuator-config/default/develop
 |===
-* Swagger
