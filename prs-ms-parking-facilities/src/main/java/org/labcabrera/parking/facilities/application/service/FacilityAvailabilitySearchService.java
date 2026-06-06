@@ -57,6 +57,9 @@ public class FacilityAvailabilitySearchService {
             checkIn,
             checkOut,
             Duration.ofHours(shortDurationThresholdHours));
+
+        log.info("Using block mode {} (using {} hours threshold)", plan.blockType(), shortDurationThresholdHours);
+
         LocalDateTime gridStart = plan.slots().get(0).slotStart();
         LocalDateTime gridEnd = plan.blockType() == InventoryBlockType.LONG_TERM
             ? plan.slots().get(plan.slots().size() - 1).slotStart().plusDays(1)
