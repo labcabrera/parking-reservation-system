@@ -17,6 +17,8 @@ Este proyecto es un MVP para un sistema de reserva de aparcamiento diseñado con
 
 El sistema está diseñado para como un conjunto de microservicios independientes basados patrones de diseño modernos, con una arquitectura hexagonal (Ports & Adapters) separando las responsabilidades de cada dominio. La coordinación entre servicios se realiza mediante eventos asíncronos en Kafka, y la autenticación con el frontal gestiona con Keycloak utilizando OAuth2/OIDC.
 
+image:../diagrams/c4-context-diagram.png[width=100%]
+
 == Diseño
 
 === Descomposición en módulos
@@ -57,6 +59,8 @@ De este modo por ejemplo un aparcamiento de 1000 plazas podría tener:
 También, este modelo no tiene por que ser estático y el sistema pudiera actualizarlo en función de las reglas de negocio que se decidan para maximizar la ocupación del parking y se adapte mejor a los picos de demanda.
 
 === Módulos y responsabilidades
+
+image:../diagrams/c4-container-diagram.png[width=100%]
 
 ==== Módulo prs-ms-parking-facilities
 

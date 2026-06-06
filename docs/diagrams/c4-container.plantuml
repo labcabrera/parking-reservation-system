@@ -1,0 +1,57 @@
+@startuml c4-container-diagram
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Parking Reservation System — C4 Container Diagram
+
+' LAYOUT_TOP_DOWN()
+LAYOUT_LEFT_RIGHT()
+LAYOUT_WITH_LEGEND()
+
+Person(customer, "Authenticated Customer", "Authenticated user with a Keycloak account.")
+Person(anonymous_customer, "Anonymous Customer", "Non-authenticated user browsing the system. Limited to search for reservations.")
+Person(admin, "Admin user", "Basic management for demo features.")
+
+System_Boundary(parking, "Parking Reservation System") {
+    Container(frontend, "Frontend SPA", "React\n\nMain user interface for customers. Added Admin features for demo purposes")
+    Container(bff, "BFF Service", "Spring Boot\n\nHandles API composition and orchestration")
+    Container(parking_facilities, "Parking Facilities Service", "Spring Boot\n\nManages parking facilities and inventory holds")
+    Container(ecommerce, "Ecommerce Service", "Spring Boot\n\nOrder and payment orchestration")
+    Container(pricing, "Pricing Service", "Spring Boot\n\nDefines pricing rules and calculates reservation prices")
+    Container(geo, "Geo Service", "Spring Boot\n\nGeo-location and nearby facilities search.")
+    Container(users, "Users Service", "Spring Boot\n\nUser profile management")
+    Container(config_server, "Config Server", "Spring Boot\n\nCentralised external configuration")
+}
+
+System_Boundary(mock, "Mock context") {
+    Container(payment_gateway_spa, "Payment Gateway SPA", "React 18 / TypeScript / Vite\nSimulated card payment UI. Port 3001")
+}
+
+System_Boundary(internal_infrastructure, "Internal infrastructure") {
+    Container_Ext(kafka, "Apache Kafka 3.x", "Used for event-driven communication between microservices")
+    Container_Ext(postgres, "PostgreSQL 17.x", "Main storage for microservices")
+    Container_Ext(redis, "Redis 7.x", "Distributed cache")
+}
+
+System_Boundary(external_infrastructure, "External infrastructure") {
+    Container_Ext(keycloak, "Keycloak 24.x", "")
+}
+
+Rel(customer, frontend, "User navigation", "HTTPS")
+Rel(anonymous_customer, frontend, "User navigation", "HTTPS")
+Rel(admin, frontend, "Manages catalog, monitors metrics", "HTTPS")
+
+Rel(customer, payment_gateway_spa, "")
+
+Rel(frontend, bff, "PKCE flow", "OIDC / HTTPS")
+
+Rel(bff, parking_facilities, "Search facilities, manage reservations", "HTTP / REST")
+Rel(bff, ecommerce, "Order and payment management", "HTTP / REST")
+Rel(bff, geo, "Search", "HTTP / REST")
+
+Rel(customer, keycloak, "PKCE flow", "OIDC / HTTPS")
+
+Rel(users, keycloak, "User management", "HTTPS / Admin REST API")
+
+Rel(parking_facilities, pricing, "Obtain confirmation price", "HTTPS / OIDC")
+
+@enduml

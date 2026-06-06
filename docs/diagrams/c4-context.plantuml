@@ -1,6 +1,27 @@
-@startuml context-diagram
-title Context diagram
+@startuml c4-context-diagram
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
 
-' TODO
+title Parking Reservation System — C4 Context Diagram
+
+' LAYOUT_TOP_DOWN()
+LAYOUT_LEFT_RIGHT()
+LAYOUT_WITH_LEGEND()
+
+Person(customer, "Customer", "")
+Person(admin, "Admin user", "Basic management for demo features.")
+
+System(parking_reserve_system, "Parking Reservation System", "Allows customers to search and reserve parking spaces in nearby facilities.")
+
+System_Ext(iam, "Identity Provider", "Authentication and user management.")
+
+System_Ext(payment_provider, "Payment provider", "External payment provider for processing payments.")
+
+Rel(customer, parking_reserve_system, "Search for facilities, booking and payment", "")
+
+Rel(admin, parking_reserve_system, "Manages catalog, monitors metrics", "")
+
+Rel(parking_reserve_system, iam, "Authentication and user management", "HTTPS / OIDC")
+
+BiRel(parking_reserve_system, payment_provider, "Payment processing", "HTTPS / REST")
 
 @enduml
