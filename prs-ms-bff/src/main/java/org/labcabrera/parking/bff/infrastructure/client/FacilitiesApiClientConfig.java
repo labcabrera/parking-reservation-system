@@ -11,7 +11,7 @@ import org.springframework.web.client.RestClient;
 @Configuration
 public class FacilitiesApiClientConfig {
 
-    @Value("${clients.facilities.url}")
+    @Value("${bff.clients.facilities.url}")
     private String facilitiesServiceUrl;
 
     @Bean

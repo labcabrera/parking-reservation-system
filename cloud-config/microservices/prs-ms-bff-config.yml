@@ -29,11 +29,13 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
-clients:
-  facilities:
-    url: ${FACILITIES_SERVICE_URL:http://localhost:8081}
 
 bff:
+  clients:
+    facilities:
+      url: ${FACILITIES_SERVICE_URL:http://localhost:8081}
+    ecommerce:
+      url: ${ECOMMERCE_SERVICE_URL:http://localhost:8082}
   security:
     cors:
       allowed-origins: ${BFF_CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:3001}

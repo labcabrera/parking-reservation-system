@@ -52,8 +52,37 @@ tasks.register('openApiGenerateFacilitiesApi', org.openapitools.generator.gradle
 	]
 }
 
+
+tasks.register('openApiGenerateEcommerceApi', org.openapitools.generator.gradle.plugin.tasks.GenerateTask) {
+	generatorName = 'java'
+	library = "restclient"
+	inputSpec = "$rootDir/prs-ms-bff/src/main/resources/api-clients/ecommerce-api.json"
+	outputDir = "$buildDir/generated/sources/openapi/ecommerce-client"
+	apiPackage = 'org.labcabrera.parking.bff.generated.client.ecommerce.api'
+	modelPackage = 'org.labcabrera.parking.bff.generated.client.ecommerce.model'
+	invokerPackage = 'org.labcabrera.parking.bff.generated.client.ecommerce'
+	configOptions = [
+		useSpringBoot3          : 'false',
+		useSpringBoot4          : 'true',
+		interfaceOnly           : 'true',
+		useJackson3             : "true",
+		useJakartaEe            : "true",
+		useJspecify		        : "true",
+		useFeignClientUrls      : 'true',
+		useFeignClientContextId : 'true',
+		useTags                 : 'true',
+		dateLibrary             : 'java8-localdatetime',
+		openApiNullable         : 'false',
+	]
+	additionalProperties = [
+		serializableModel: 'true'
+	]
+}
+
 sourceSets.main.java.srcDir file("$buildDir/generated/sources/openapi/facilities-client/src/main/java")
+sourceSets.main.java.srcDir file("$buildDir/generated/sources/openapi/ecommerce-client/src/main/java")
 
 tasks.named('compileJava') {
 	dependsOn tasks.named('openApiGenerateFacilitiesApi')
+	dependsOn tasks.named('openApiGenerateEcommerceApi')
 }
