@@ -1,6 +1,7 @@
 rootProject.name = 'parking-reservation-system'
 
 include 'prs-ms-bff'
+include 'prs-ms-config-server'
 include 'prs-ms-ecommerce'
 include 'prs-ms-geo'
 include 'prs-ms-parking-facilities'

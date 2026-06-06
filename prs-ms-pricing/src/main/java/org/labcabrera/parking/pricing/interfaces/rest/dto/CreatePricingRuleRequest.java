@@ -2,7 +2,6 @@ package org.labcabrera.parking.pricing.interfaces.rest.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 import org.labcabrera.parking.pricing.domain.valueobject.BillingType;
 import org.labcabrera.parking.pricing.domain.valueobject.PricingRuleStatus;

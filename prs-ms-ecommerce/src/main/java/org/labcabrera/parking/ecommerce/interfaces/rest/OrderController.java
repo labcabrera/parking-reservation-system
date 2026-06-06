@@ -8,8 +8,10 @@ import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.QueryGateway;
 import org.labcabrera.parking.ecommerce.application.cqrs.command.CreateOrderCommand;
 import org.labcabrera.parking.ecommerce.application.cqrs.query.GetOrderByIdQuery;
+import org.labcabrera.parking.ecommerce.application.service.OrderPaymentService;
 import org.labcabrera.parking.ecommerce.domain.aggregate.Order;
 import org.labcabrera.parking.ecommerce.interfaces.rest.dto.CreateOrderRequest;
+import org.labcabrera.parking.ecommerce.interfaces.rest.dto.InitiatePaymentRequest;
 import org.labcabrera.parking.ecommerce.interfaces.rest.dto.OrderDto;
 import org.labcabrera.parking.ecommerce.interfaces.rest.mapper.OrderMapper;
 import org.springframework.http.ResponseEntity;
@@ -38,6 +40,7 @@ public class OrderController {
     private final CommandGateway commandGateway;
     private final QueryGateway queryGateway;
     private final OrderMapper mapper;
+    private final OrderPaymentService orderPaymentService;
 
     @PostMapping
     @Operation(summary = "Create an order from a hold")
@@ -66,5 +69,16 @@ public class OrderController {
             .query(new GetOrderByIdQuery(id), ResponseTypes.instanceOf(Order.class))
             .join();
         return ResponseEntity.ok(mapper.toDto(order));
+    }
+
+    @PostMapping("/{id}/pay")
+    @Operation(summary = "Initiate payment for an order", description = "Idempotent: re-submitting with the same idempotencyKey returns the "
+        + "original result without charging the customer again.")
+    public ResponseEntity<Void> pay(
+        @PathVariable UUID id,
+        @Valid @RequestBody InitiatePaymentRequest request) {
+        log.info("Initiating payment for order {} (idempotencyKey={})", id, request.idempotencyKey());
+        orderPaymentService.initiatePayment(id, request.idempotencyKey().toString(), request.paymentMethodCode());
+        return ResponseEntity.ok().build();
     }
 }

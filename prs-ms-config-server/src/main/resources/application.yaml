@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: mcm-config-server
+  main:
+    banner-mode: off
+  cloud:
+    config:
+      server:
+        git:
+          uri: ${CONFIG_GIT_URI:https://github.com/labcabrera/mcm-config.git}
+          username: ${CONFIG_GIT_USERNAME}
+          password: ${CONFIG_GIT_PASSWORD}
+          default-label: ${CONFIG_GIT_DEFAULT_LABEL:develop}
+          clone-on-start: ${CONFIG_GIT_CLONE_ON_START:true}
+          force-pull: ${CONFIG_GIT_FORCE_PULL:true}
+          search-paths: ${CONFIG_GIT_SEARCH_PATHS:cloud-config}
+
+server:
+  port: ${SERVER_PORT:8888}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
