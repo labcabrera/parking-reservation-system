@@ -1,3 +1,5 @@
+terraform-old/
+
 # Gradle
 .gradle/
 build/

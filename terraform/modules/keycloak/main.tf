@@ -40,46 +40,6 @@ resource "keycloak_group" "parking_pricing_admin" {
 }
 
 # -----------------------------------------------------------------------------
-# Client: parking-client (confidential / authentication enabled)
-# -----------------------------------------------------------------------------
-
-resource "keycloak_openid_client" "parking_client" {
-  realm_id  = keycloak_realm.parking.id
-  client_id = "parking-client"
-  name      = "Parking Client"
-  enabled   = true
-
-  access_type                  = "CONFIDENTIAL"
-  standard_flow_enabled        = true
-  implicit_flow_enabled        = false
-  direct_access_grants_enabled = true
-  service_accounts_enabled     = true
-
-  client_secret = var.parking_client_secret
-
-  valid_redirect_uris = var.parking_client_valid_redirect_uris
-  web_origins         = var.parking_client_web_origins
-}
-
-# -----------------------------------------------------------------------------
-# Mappers: parking-client dedicated scope
-# -----------------------------------------------------------------------------
-
-resource "keycloak_openid_hardcoded_claim_protocol_mapper" "parking_client_groups" {
-  realm_id  = keycloak_realm.parking.id
-  client_id = keycloak_openid_client.parking_client.id
-  name      = "hardcoded-groups"
-
-  claim_name       = "groups"
-  claim_value      = jsonencode(["parking-admin", "parking-pricing-admin"])
-  claim_value_type = "JSON"
-
-  add_to_id_token     = false
-  add_to_access_token = true
-  add_to_userinfo     = false
-}
-
-# -----------------------------------------------------------------------------
 # Client scope: groups
 # -----------------------------------------------------------------------------
 
@@ -102,6 +62,56 @@ resource "keycloak_openid_group_membership_protocol_mapper" "groups_mapper" {
 }
 
 # -----------------------------------------------------------------------------
+# Client: parking-client (confidential / authentication enabled)
+# -----------------------------------------------------------------------------
+
+resource "keycloak_openid_client" "parking_client" {
+  realm_id  = keycloak_realm.parking.id
+  client_id = "parking-client"
+  name      = "Parking Client"
+  enabled   = true
+
+  access_type                  = "CONFIDENTIAL"
+  standard_flow_enabled        = true
+  implicit_flow_enabled        = false
+  direct_access_grants_enabled = true
+  service_accounts_enabled     = true
+
+  client_secret = var.parking_client_secret
+
+  valid_redirect_uris = var.parking_client_valid_redirect_uris
+  web_origins         = var.parking_client_web_origins
+}
+
+resource "keycloak_openid_hardcoded_claim_protocol_mapper" "parking_client_groups" {
+  realm_id  = keycloak_realm.parking.id
+  client_id = keycloak_openid_client.parking_client.id
+  name      = "hardcoded-groups"
+
+  claim_name       = "groups"
+  claim_value      = jsonencode(["parking-admin", "parking-pricing-admin"])
+  claim_value_type = "JSON"
+
+  add_to_id_token     = false
+  add_to_access_token = true
+  add_to_userinfo     = false
+}
+
+resource "keycloak_openid_client_default_scopes" "parking_client_default_scopes" {
+  realm_id  = keycloak_realm.parking.id
+  client_id = keycloak_openid_client.parking_client.id
+
+  default_scopes = [
+    "basic",
+    "profile",
+    "email",
+    "roles",
+    "web-origins",
+    keycloak_openid_client_scope.groups.name,
+  ]
+}
+
+# -----------------------------------------------------------------------------
 # Service account role: assign realm-admin to parking-client
 # -----------------------------------------------------------------------------
 
@@ -121,24 +131,6 @@ resource "keycloak_openid_client_service_account_role" "parking_client_realm_adm
   service_account_user_id = keycloak_openid_client.parking_client.service_account_user_id
   client_id               = data.keycloak_openid_client.realm_management.id
   role                    = data.keycloak_role.realm_admin.name
-}
-
-# -----------------------------------------------------------------------------
-# Assign client scope to parking-client (default)
-# -----------------------------------------------------------------------------
-
-resource "keycloak_openid_client_default_scopes" "parking_client_default_scopes" {
-  realm_id  = keycloak_realm.parking.id
-  client_id = keycloak_openid_client.parking_client.id
-
-  default_scopes = [
-    "basic",
-    "profile",
-    "email",
-    "roles",
-    "web-origins",
-    keycloak_openid_client_scope.groups.name,
-  ]
 }
 
 # -----------------------------------------------------------------------------

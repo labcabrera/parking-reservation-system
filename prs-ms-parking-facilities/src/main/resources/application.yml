@@ -3,4 +3,4 @@ spring:
     import: configserver:${CLOUD_CONFIG_SERVER_URI:http://localhost:8888}
   cloud:
     config:
-      name: prs-ms-parking-facilities-config,actuator-config,redis-config,axon-config,spring-doc-config,resource-server-config
+      name: prs-ms-parking-facilities-config,actuator-config,jpa-config,redis-config,axon-config,spring-doc-config,resource-server-config

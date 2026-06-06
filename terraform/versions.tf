@@ -6,5 +6,9 @@ terraform {
       source  = "cyrilgdn/postgresql"
       version = "~> 1.25"
     }
+    keycloak = {
+      source  = "mrparkers/keycloak"
+      version = "~> 4.4"
+    }
   }
 }

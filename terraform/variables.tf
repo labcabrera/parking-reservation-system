@@ -1,3 +1,42 @@
+# ---------------------------------------------------------------------------
+# PostgreSQL
+# ---------------------------------------------------------------------------
+
+variable "pg_host" {
+  description = "PostgreSQL host."
+  type        = string
+  default     = "localhost"
+}
+
+variable "pg_port" {
+  description = "PostgreSQL port."
+  type        = number
+  default     = 5432
+}
+
+variable "pg_superuser" {
+  description = "PostgreSQL superuser username (matches POSTGRES_USER in docker-compose)."
+  type        = string
+  default     = "parking"
+}
+
+variable "pg_superuser_password" {
+  description = "PostgreSQL superuser password."
+  type        = string
+  sensitive   = true
+  default     = "parking"
+}
+
+variable "pg_databases" {
+  description = "List of databases to create."
+  type        = list(string)
+  default     = ["facilities_db", "ecommerce_db", "pricing_db"]
+}
+
+# ---------------------------------------------------------------------------
+# Keycloak
+# ---------------------------------------------------------------------------
+
 variable "keycloak_url" {
   description = "Base URL of the Keycloak instance (e.g. http://localhost:8080)."
   type        = string
@@ -48,7 +87,7 @@ variable "parking_client_web_origins" {
 variable "parking_client_front_valid_redirect_uris" {
   description = "List of valid redirect URIs for parking-client-front."
   type        = list(string)
-  default     = ["http://localhost:8080/*"]
+  default     = ["http://localhost:*/*"]
 }
 
 variable "parking_client_front_web_origins" {
