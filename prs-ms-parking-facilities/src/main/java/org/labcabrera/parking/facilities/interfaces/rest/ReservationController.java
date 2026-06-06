@@ -107,10 +107,14 @@ public class ReservationController {
 
     @PostMapping("/{id}/confirm")
     @Operation(summary = "Confirm a HELD reservation")
-    public ResponseEntity<Void> confirm(@PathVariable UUID id) {
+    public ResponseEntity<ReservationDto> confirm(@PathVariable UUID id) {
         log.info("Received confirm request for reservation {}", id);
         commandGateway.sendAndWait(new ConfirmReservationCommand(id), 5, TimeUnit.SECONDS);
-        return ResponseEntity.noContent().build();
+        var query = new GetReservationByIdQuery(id);
+        ResponseType<Optional<Reservation>> responseType = ResponseTypes.optionalInstanceOf(Reservation.class);
+        Reservation reservation = queryGateway.query(query, responseType).join()
+            .orElseThrow(() -> new EntityNotFoundException("Reservation %s not found".formatted(id)));
+        return ResponseEntity.ok(reservationMapper.toDto(reservation));
     }
 
     @DeleteMapping("/{id}")

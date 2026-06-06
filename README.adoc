@@ -17,17 +17,9 @@ Este proyecto es un MVP para un sistema de reserva de aparcamiento diseñado con
 
 El sistema está diseñado para como un conjunto de microservicios independientes basados patrones de diseño modernos, con una arquitectura hexagonal (Ports & Adapters) separando las responsabilidades de cada dominio. La coordinación entre servicios se realiza mediante eventos asíncronos en Kafka, y la autenticación con el frontal gestiona con Keycloak utilizando OAuth2/OIDC.
 
-// === Características principales
-
-// * Modeo de búsqueda de aparcamientos por ubicación y rangos de fechas de _check-in/check-out_.
-// * Reserva con precio bloqueado durante una ventana temporal configurable.
-// * Autenticación y gestión de usuarios con Keycloak (OAuth2/OIDC).
-// * Consistencia eventual mediante el patrón SAGA (Axon Framework).
-// * Protección contra sobreventa con Optimistic Locking y caché Redis.
-// * Circuit Breaker (Resilience4j) para resiliencia ante fallos en cascada.
-// * Observabilidad con OpenTelemetry, Prometheus y Grafana.
-
 == Diseño
+
+=== Descomposición en módulos
 
 Al diseñar el sistema el enfoque ha sido en primer lugar la identificación de los *bounded contexts* del dominio y la definición de los microservicios correspondientes, asegurando una clara separación de responsabilidades y un acoplamiento bajo entre ellos. Dentro de esta separación de lógica los problemas identificados son:
 
@@ -64,9 +56,9 @@ De este modo por ejemplo un aparcamiento de 1000 plazas podría tener:
 
 También, este modelo no tiene por que ser estático y el sistema pudiera actualizarlo en función de las reglas de negocio que se decidan para maximizar la ocupación del parking y se adapte mejor a los picos de demanda.
 
-== Módulos y responsabilidades
+=== Módulos y responsabilidades
 
-=== Módulo prs-ms-parking-facilities
+==== Módulo prs-ms-parking-facilities
 
 Este componente es el responsable de la gestión del catálogo de aparcamientos. Tiene las responsabilidades principales de:
 
@@ -77,17 +69,12 @@ Este componente es el responsable de la gestión del catálogo de aparcamientos.
 
 TIP: esté módulo podría descomponerse en dos microservicios independientes, uno que sólo llevase el catálogo de aparcamientos y otro que gestione el sistema de bloqueo de plazas. No obstante y para que el MVP no sea excesivamente complejo, se ha optado por mantener ambas responsabilidades en un mismo módulo.
 
-==== Que hace este módulo:
+*Responsabilidades:*
 
 - Buscar parking en función de criterios de búsqueda (ubicación, fechas, etc).
 - Bloqueo de plazas para comenzar el proceso de reserva (hold).
-- Estimar precios.
 
-==== Que no hace este módulo:
-
-- No sabe nada pagos ni tampoco conoce los detalles de las reglas de tarificación aunque si que puede realizar una estimación de precios a partir de los datos generados por el módulo de tarificación.
-
-=== Módulo prs-ms-ecommerce
+==== Módulo prs-ms-ecommerce
 
 Este módulo es el responsable de gestionar el ciclo de vida de una orden de compra.
 No conoce los detalles del aparcamiento, bloqueos ni tarifas ya que cuando llega la orden de compra esta ya tiene un precio fijado y el proceso de reserva se ha iniciado.
@@ -96,19 +83,13 @@ Cuando se inicia un proceso de reserva el módulo simplemente orquestará el pag
 
 Dentro de las consideraciones de este sistema y teniendo en cuenta que desde el sistema de bloqueo que ofrece una tarifa bloqueada durante un tiempo, de cara a la consistencia el sistema primará los tiempos de expiración de los bloqueos antes que una política de "periodo de gracia entre que el usuario paga y el bloqueo expira". Esto es peor para la experiencia de usuario pero para un MVP resulta mucho mas sencillo de implementar que un sistema de reintento que obligaría a tener una política de re-hold.
 
-==== Que sabe este módulo:
+*Responsabilidades:*
 
-- Que "alguien" quiere pagar "algo".
+- Establecer el flujo de una orden de compra: hold, pago, confirmación, cancelación.
 - Conoce los mecanismos de pago.
-- Tiene el flujo mínimo de una orden de compra: hold, pago, confirmación, cancelación.
-- Sabe gestionar procesos de devoluciñon de pagos y cancelaciones para cada sistema de pago.
+- Sabe gestionar procesos de devolución de pagos y cancelaciones para cada sistema de pago.
 
-==== Que no sabe este módulo:
-
-- No sabe nada de aparcamientos ni bloqueos.
-- No tiene ni idea de tarificar: se le invoca con un precio fijado.
-
-=== Modulo prs-ms-pricing
+==== Modulo prs-ms-pricing
 
 Este módulo es el responsable de establecer las reglas de negocio para el cálculo de tarifas de cada reserva.
 
@@ -123,49 +104,56 @@ Dentro de un modelo de tarificación podríamos tener:
 
 Dentro del MPV y bajo la premisa de la escalabilidad este sistema no es consultado en cada búsqueda, únicamente cuando el usuario comienza una reserva. Para el MVP se simplificarán estos modelos y la asbtracción de este módulo será:
 
-==== Que sabe este módulo:
+*Responsabilidades:*
 
-- Reglas de negocio para establecer precios en función de variables dentrada
+- Establecer las reglas de negocio para establecer el precio de una reserva.
 
-==== Que no sabe este módulo:
-
-- Este módulos no sabe nada, o casi nada. No entiende de parkings, no entiende de compras, solo entiende de sus reglas comerciales y establecer el precio de una reserva en función de las variables de entrada.
-- No se nada de reservas, ni de parkings ni de usuarios.
-
-=== Módulo prs-ms-geo
+==== Módulo prs-ms-geo
 
 Este módulo es el mas tonto de todos. Sólo sabe facilitar las busquedas de autocompletado de ciudades, aeropuertos y parkings. No tiene lógica de negocio ni nada complejo, simplemente es un sistema de búsqueda geográfica que reacciona a los cambios de _parking-facilities_ y ofrece una sistema indexado de búsqueda para el frontend.
 
-=== Módulo prs-ms-users
+*Responsabilidades:*
 
-Este mñodulo sólo sabe quien dices que eres. Tendrá una responsabilidad mínima de coordinación con los usuarios de Keycloak y será el que utilicemos para cuando necesitemos información de usuario dentro del sistema que no esté en Keycloack (matrículas, bonos promocionales, etc). No creará usuarios en el IAM de cara a separar las responsabilidades de autenticación, autorización y gestión de perfiles y guardará sólamente información general del usuario.
+- Ofrecer un sistema de búsqueda geográfica para el frontend.
+- Mantener un índice de ciudades, aeropuertos y parkings para facilitar las búsquedas.
+
+==== Módulo prs-ms-users
+
+Este módulo es el responsable de la gestión de usuarios a través de Keycloak.
+
+*Responsabilidades:*
+
+- Obtener perfiles de usuario
+- Creación parcial de usuarios.
 
 === Módulo prs-ms-bff
 
 Fachada del resto de módulos para la integraciñon con los diferentes frontends. Si bien este componente añade una capa adicional de complejidad, permite desacoplar comportamientos específicos como el modelo híbrido de autenticación anónima/autenticada, reglas de seguridad específicas (por ejempo manejo de sesiones anónimas de compra, cookies, bloqueos por IP, etc). De este modo hacemos que el resto de módulos no tengan que tener en cuenta esta lógica y se centren únicamente en su responsabilidad principal. De este modo también reducimos las reglas de seguridad la superficie de ataque a un único módulo. Esta es la única API expuesta al exterior mientras que el resto de componentes permanecen aislados dentro del orquestador de microservicios.
 
-=== Que sabe este módulo:
+*Responsabilidades:*
 
-- Políticas de seguridad específicas de la integración con el frontend
-- Orquetación de llamadas básica a cada módulo core.
+- Establecer políticas de seguridad específicas para el frontend (sesiones anónimas, bloqueos por IP, etc).
+- Delegación de llamadas a los módulos backend correspondientes.
 
+=== Arquitectura
 
-== Arquitectura
+Para la implementación basada en Java las reglas que se han seguido son:
 
-Para la implementaciñob basada en Java las reglas que se han seguido son:
+- Uso de *Spring Boot 4.x* (early adopter) que tiene aún problemas de integación con algunas librerías que aún no han sido actualizadas como _resilence4j_.
 
-- Uso de Spring Boot 4.x (early adopter) que tiene aún problemas de integación con algunas librerías que aún no han sido actualizadas como _resilence4j_.
+- Uso de *Axon 4.13* para la gestión de eventos internos y coordinación de procesos asíncronos. Para el MVP se ha optado por no usar ni AxonServer ni Event Sourcing, únicamente por las capacidades de CQRS y gestión de Sagas sin requerir de una implementación manual. Para la integración hacia el exterior se usará Spring Cloud Stream con el binder de Kafka.
 
-- Pragmatismo a la hora de la separación de capas dentro del paragigma de DDD usando Axon y Spring Boot. Si bien una separación purista de capas haría que el uso de elementos como @Aggregate o @Saga fuera mas independiente de la infraescructura, para aprovechar las ventajas de estos frameworks y evitar niveles de abstracción innencesarios se ha optado por aceptar este acoplamiento a nivel de dominio. Si bien es posible aislarlo, al hacerlo se pierden las capacidades que te da el framework (como aislar el CID de spring). Si bien hay modelos acoplados de Axon a nivel de entidad, el MVP mantiene un aislamiento entres estas capas.
+- Uso de *Spring Cloud Stream* para la integración de Kafka. Aunque Axon tiene capacidades de integración con Kafka, para mantener un diseño más desacoplado. De este modo también podemos usar este mecanismo para los microservicios que no usan Axon manteniendo la misma estrategia de integración.
 
-- Axon sólo para la gestión interna y sin event-sourcing. El motivo del uso de Axon es la capacidad de gestionar eventos internos dentro de cada módulo y usar sus capacidades internas para la coordinación de procesos independientemente de la comunicación con otros sistemas. Particularmenente para este MVP se ha descartado el modo de event-soucing de Axon y la dependencia de AxonServer. Las capacidades que nos da Axon es no tener que implementar el sistema de CQRS junto con un bus de comandos y eventos local.
+- Otras decisiones de diseño han sido:
 
-- Spring Cloud Stream: Axon sabe gestionar los eventos que ocurren dentro de cada sistema pero queremos que sepa como interactúa con sistemas externos. Y no es que no nos guste, pero un diseño más desacoplado la idea de usar Spring Cloud Stream ofrece un buen nivel de abstracción para la integraciñon de sistemas asíncronos: ok, los eventos iternos se gestionan con Axon pero hacia fuera hay una capa de integraciñon.
+-- Uso de *PostgreSQL* como base de datos principal con un modelo relacional tradicional con separación por dominios.
+-- Uso de *OpenAPI* code-first para la documentación de las APIs.
+-- Uso de *Redis* como caché distribuída.
 
+// - Pragmatismo a la hora de la separación de capas dentro del paragigma de DDD usando Axon y Spring Boot. Si bien una separación purista de capas haría que el uso de elementos como @Aggregate o @Saga estuvieran a nivel de infraescructura, para aprovechar las ventajas de estos frameworks y evitar niveles de abstracción innencesarios se ha optado por aceptar este acoplamiento a nivel de la capa de aplicaciñon. Si bien es posible aislarlo, al hacerlo se pierden muchas de las ventajas de usar Spring y Axon.
 
-- Axon: dentro de los diferentes sabores de Axon sólo usaremos el core para evitar implementar la logica de CQRS, gestión de eventos, definiciñon de SAGA. Dentro de las muchas formas de usar Axon el modelo elegido es el de sólamente usar el bus de comandos y eventos para no tener que implementar ese modelo. No usaremos axon-server ni event sourcing, sólo el bus de comandos local. Para la integración de eventos usaremos Spring Cloud Stream con el binder de Kafka.
-
-WARNING: Usar Axon a nivel de anotaciones en el modelo de dominio genera acoplamientos indeseables y rompe un poco la esencia de arquitectura hexagonal. No obstante, y lo mismo que cuando usamos capacidades de Spring, puede considerarse como una dependencia lógica de negocio. En un balance entre pragmatismo y pureza arquitectónica asumimos para el MVP que Axon será una dependencia lógica y porque de no usarla y tener que implementarla de forma abstracta las ganancias de usar Azon serían menores que implemantarlo. También, aunque muchos sistemas basados en Axon operan a nivel de entidades si una separacion de representación <-> persistencia), si que este MVP mantendrá esa separación de capas y nunca operará sobre la entidades JPA, solo los agregados del dominio.
+INFO: Se ha optado por una aproximación pragmática a la hora de realizar la separación de capas dentro del paragigma de DDD usando Axon y Spring Boot. Si bien una separación purista de capas haría que el uso de elementos como @Aggregate o @Saga estuvieran a nivel de infraescructura, para aprovechar las ventajas de estos frameworks y evitar niveles de abstracción innencesarios se ha optado por aceptar este acoplamiento a nivel de la capa de aplicaciñon. Si bien es posible aislarlo, al hacerlo se pierden muchas de las ventajas de usar Spring y Axon.
 
 // El sistema sigue una *Arquitectura Hexagonal (Ports & Adapters)* en cuatro capas por cada microservicio:
 
