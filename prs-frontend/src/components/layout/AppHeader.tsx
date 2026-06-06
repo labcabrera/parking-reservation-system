@@ -99,9 +99,6 @@ export function AppHeader() {
             {[
               { label: t('header.nav.parkings'), to: '/' },
               { label: t('header.nav.admin'), to: '/admin' },
-              { label: t('header.nav.facilities'), to: '/admin/facilities' },
-              { label: t('header.nav.pricing'), to: '/admin/pricing' },
-              { label: t('header.nav.operations'), to: '/admin/operations' },
             ].map((item) => (
               <Link
                 component={RouterLink}

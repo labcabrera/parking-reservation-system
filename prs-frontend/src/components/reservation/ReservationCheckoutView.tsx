@@ -9,38 +9,63 @@ import {
   Box,
   Button,
   Checkbox,
+  CircularProgress,
   Divider,
+  FormControl,
   FormControlLabel,
   Paper,
+  Radio,
+  RadioGroup,
   Stack,
   TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../auth/AuthContext';
+import { confirmCheckout, initiateCheckoutPayment, listPaymentMethods } from '../../services/checkoutApi';
 import type { FacilityResult } from '../../types/catalog';
-import type { ReservationResponse } from '../../types/reservation';
+import type { Checkout, PaymentMethod } from '../../types/checkout';
 import { formatPrice } from '../../utils/formatters';
 
 interface ReservationCheckoutViewProps {
   checkIn: string;
   checkOut: string;
+  checkout: Checkout;
   facility: FacilityResult;
-  reservation: ReservationResponse;
 }
 
 export function ReservationCheckoutView({
   checkIn,
   checkOut,
+  checkout,
   facility,
-  reservation,
 }: ReservationCheckoutViewProps) {
   const { i18n, t } = useTranslation();
   const { isAuthenticated } = useAuth();
+  const [selectedPaymentMethodCode, setSelectedPaymentMethodCode] = useState('');
   const days = getReservationDays(checkIn, checkOut);
-  const totalAmount = getReservationTotal(reservation) ?? facility.estimatedPrice?.amount ?? facility.dailyRate;
+  const totalAmount = checkout.amount ?? facility.estimatedPrice?.amount ?? facility.dailyRate;
+  const paymentMethodsQuery = useQuery({
+    queryKey: ['checkout-payment-methods'],
+    queryFn: listPaymentMethods,
+  });
+  const paymentMutation = useMutation({
+    mutationFn: async (paymentMethodCode: string) => {
+      const confirmed = await confirmCheckout(checkout.checkoutId);
+      return initiateCheckoutPayment(confirmed.checkoutId, paymentMethodCode);
+    },
+    onSuccess: (result) => {
+      if (result.redirectUrl) {
+        window.location.assign(result.redirectUrl);
+      }
+    },
+  });
+
+  const paymentMethods = paymentMethodsQuery.data ?? [];
 
   return (
     <Box sx={{ bgcolor: 'background.paper', borderRadius: 3, px: { xs: 2, md: 5 }, py: { xs: 4, md: 7 } }}>
@@ -58,14 +83,23 @@ export function ReservationCheckoutView({
           gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1.18fr) minmax(380px, 0.82fr)' },
         }}
       >
-        <CheckoutDetailsForm />
+        <CheckoutDetailsForm
+          isSubmitting={paymentMutation.isPending}
+          onPaymentMethodChange={setSelectedPaymentMethodCode}
+          onSubmit={() => paymentMutation.mutate(selectedPaymentMethodCode)}
+          paymentError={paymentMutation.error}
+          paymentMethods={paymentMethods}
+          paymentMethodsError={paymentMethodsQuery.error}
+          paymentMethodsLoading={paymentMethodsQuery.isLoading}
+          selectedPaymentMethodCode={selectedPaymentMethodCode}
+        />
         <ReservationSummary
           checkIn={checkIn}
           checkOut={checkOut}
           days={days}
           facility={facility}
           locale={i18n.language}
-          reservation={reservation}
+          checkout={checkout}
           totalAmount={totalAmount}
         />
       </Box>
@@ -97,11 +131,32 @@ function LoginPrompt() {
   );
 }
 
-function CheckoutDetailsForm() {
+interface CheckoutDetailsFormProps {
+  isSubmitting: boolean;
+  onPaymentMethodChange: (code: string) => void;
+  onSubmit: () => void;
+  paymentError: Error | null;
+  paymentMethods: PaymentMethod[];
+  paymentMethodsError: Error | null;
+  paymentMethodsLoading: boolean;
+  selectedPaymentMethodCode: string;
+}
+
+function CheckoutDetailsForm({
+  isSubmitting,
+  onPaymentMethodChange,
+  onSubmit,
+  paymentError,
+  paymentMethods,
+  paymentMethodsError,
+  paymentMethodsLoading,
+  selectedPaymentMethodCode,
+}: CheckoutDetailsFormProps) {
   const { isAuthenticated, user } = useAuth();
   const { t } = useTranslation();
   const displayName = user?.profile.name ?? user?.profile.email ?? t('auth.defaultUser');
   const email = user?.profile.email;
+  const canSubmit = selectedPaymentMethodCode.length > 0 && !isSubmitting;
 
   return (
     <Stack spacing={3.2}>
@@ -190,18 +245,89 @@ function CheckoutDetailsForm() {
         </Stack>
       </Box>
 
+      <Box>
+        <Typography component="h2" sx={{ fontSize: 28, fontWeight: 900, mb: 1 }}>
+          {t('checkout.paymentMethods.title')}
+        </Typography>
+        {paymentMethodsLoading && (
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', py: 2 }}>
+            <CircularProgress size={20} />
+            <Typography color="text.secondary">{t('checkout.paymentMethods.loading')}</Typography>
+          </Stack>
+        )}
+        {paymentMethodsError && (
+          <Alert severity="error" sx={{ mt: 1 }}>
+            {paymentMethodsError.message}
+          </Alert>
+        )}
+        {!paymentMethodsLoading && !paymentMethodsError && paymentMethods.length === 0 && (
+          <Alert severity="warning" sx={{ mt: 1 }}>
+            {t('checkout.paymentMethods.empty')}
+          </Alert>
+        )}
+        {paymentMethods.length > 0 && (
+          <FormControl component="fieldset" fullWidth>
+            <RadioGroup
+              aria-label={t('checkout.paymentMethods.title')}
+              onChange={(event) => onPaymentMethodChange(event.target.value)}
+              value={selectedPaymentMethodCode}
+            >
+              <Stack spacing={1.5}>
+                {paymentMethods.map((method) => (
+                  <Paper
+                    elevation={0}
+                    key={method.code}
+                    sx={{
+                      border: 1,
+                      borderColor: selectedPaymentMethodCode === method.code ? 'secondary.main' : 'divider',
+                      borderRadius: 1.5,
+                      px: 1.5,
+                    }}
+                  >
+                    <FormControlLabel
+                      control={<Radio color="secondary" />}
+                      label={<PaymentMethodLabel method={method} />}
+                      sx={{ alignItems: 'center', m: 0, width: '100%' }}
+                      value={method.code}
+                    />
+                  </Paper>
+                ))}
+              </Stack>
+            </RadioGroup>
+          </FormControl>
+        )}
+      </Box>
+
+      {paymentError && <Alert severity="error">{paymentError.message}</Alert>}
+
       <Button
         color="secondary"
-        endIcon={<ArrowForwardIcon />}
+        disabled={!canSubmit}
+        endIcon={isSubmitting ? <CircularProgress color="inherit" size={18} /> : <ArrowForwardIcon />}
+        onClick={onSubmit}
         size="large"
         sx={{ borderRadius: 999, fontSize: 18, justifyContent: 'space-between', mt: 1, px: 4, py: 1.8 }}
+        type="button"
         variant="contained"
       >
-        {t('checkout.payment')}
+        {isSubmitting ? t('checkout.paymentMethods.processing') : t('checkout.payment')}
       </Button>
       <Typography align="center" color="text.secondary" sx={{ fontSize: 12 }}>
         {t('checkout.paymentHint')}
       </Typography>
+    </Stack>
+  );
+}
+
+function PaymentMethodLabel({ method }: { method: PaymentMethod }) {
+  return (
+    <Stack spacing={0.25} sx={{ py: 1.25 }}>
+      <Typography sx={{ fontWeight: 900 }}>{method.displayName}</Typography>
+      {method.gatewayProvider && (
+        <Typography color="text.secondary" sx={{ fontSize: 12 }}>
+          {method.gatewayProvider}
+        </Typography>
+      )}
     </Stack>
   );
 }
@@ -212,17 +338,17 @@ interface ReservationSummaryProps {
   days: number;
   facility: FacilityResult;
   locale: string;
-  reservation: ReservationResponse;
+  checkout: Checkout;
   totalAmount?: number;
 }
 
 function ReservationSummary({
   checkIn,
   checkOut,
+  checkout,
   days,
   facility,
   locale,
-  reservation,
   totalAmount,
 }: ReservationSummaryProps) {
   const { t } = useTranslation();
@@ -294,9 +420,9 @@ function ReservationSummary({
           </Box>
         </Stack>
 
-        {reservation.status && (
+        {checkout.status && (
           <Typography color="text.secondary" sx={{ fontSize: 13 }}>
-            {t('checkout.summary.status', { status: reservation.status })}
+            {t('checkout.summary.status', { status: checkout.status })}
           </Typography>
         )}
 
@@ -349,25 +475,4 @@ function formatDateTime(value: string, locale: string) {
     month: 'long',
     weekday: 'long',
   }).format(date);
-}
-
-function getReservationTotal(reservation: ReservationResponse) {
-  const estimatedTotal = reservation.estimatedTotal;
-  const totalCharged = reservation.totalCharged;
-
-  if (isMoneyLike(estimatedTotal)) return Number(estimatedTotal.amount);
-  if (isMoneyLike(totalCharged)) return Number(totalCharged.amount);
-
-  return undefined;
-}
-
-function isMoneyLike(value: unknown): value is { amount: number | string } {
-  const candidate = value as { amount?: unknown } | null;
-
-  return Boolean(
-    candidate &&
-      typeof candidate === 'object' &&
-      (typeof candidate.amount === 'number' || typeof candidate.amount === 'string') &&
-      !Number.isNaN(Number(candidate.amount)),
-  );
 }

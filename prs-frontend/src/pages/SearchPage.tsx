@@ -8,9 +8,9 @@ import { ParkingSearchForm } from '../components/search/ParkingSearchForm';
 import { SearchHero } from '../components/search/SearchHero';
 import { useParkingSearch } from '../hooks/useParkingSearch';
 import { useParkingSelection } from '../hooks/useParkingSelection';
-import { createReservation } from '../services/reservationApi';
+import { selectCheckoutOption } from '../services/checkoutApi';
 import type { SearchRequest } from '../types/catalog';
-import type { CreateReservationRequest } from '../types/reservation';
+import type { SelectOptionRequest } from '../types/checkout';
 
 export default function SearchPage() {
   const { t } = useTranslation();
@@ -22,8 +22,8 @@ export default function SearchPage() {
   const { isLoading, isError, error, result } = useParkingSearch(submittedParams);
   const { reservationTimeLeft, selectedFacilityId, selectFacility } = useParkingSelection(result.facilities);
   const selectedFacility = result.facilities.find((facility) => facility.facilityId === selectedFacilityId) ?? null;
-  const createReservationMutation = useMutation({
-    mutationFn: (request: CreateReservationRequest) => createReservation(request),
+  const selectOptionMutation = useMutation({
+    mutationFn: (request: SelectOptionRequest) => selectCheckoutOption(request),
   });
 
   function handleSubmit(event: React.FormEvent) {
@@ -31,32 +31,39 @@ export default function SearchPage() {
 
     if (!location.trim() || !checkIn || !checkOut) return;
 
-    createReservationMutation.reset();
+    selectOptionMutation.reset();
     setSubmittedParams({ q: location.trim(), checkIn, checkOut });
   }
 
   function handleSelectFacility(facilityId: string) {
     selectFacility(facilityId);
-    createReservationMutation.reset();
+    selectOptionMutation.reset();
   }
 
-  function handleStartReservation(facilityId: string) {
+  function handleCheckInChange(value: string) {
+    setCheckIn(value);
+    if (checkOut && !isCheckOutAfterCheckIn(value, checkOut)) {
+      setCheckOut('');
+    }
+  }
+
+  function handleStartCheckout(facilityId: string) {
     if (!submittedParams) return;
 
-    createReservationMutation.mutate({
+    selectOptionMutation.mutate({
       checkIn: submittedParams.checkIn,
       checkOut: submittedParams.checkOut,
       facilityId,
     });
   }
 
-  if (createReservationMutation.isSuccess && selectedFacility && submittedParams) {
+  if (selectOptionMutation.isSuccess && selectedFacility && submittedParams) {
     return (
       <ReservationCheckoutView
         checkIn={submittedParams.checkIn}
         checkOut={submittedParams.checkOut}
+        checkout={selectOptionMutation.data}
         facility={selectedFacility}
-        reservation={createReservationMutation.data}
       />
     );
   }
@@ -69,7 +76,7 @@ export default function SearchPage() {
           checkOut={checkOut}
           isLoading={isLoading}
           location={location}
-          onCheckInChange={setCheckIn}
+          onCheckInChange={handleCheckInChange}
           onCheckOutChange={setCheckOut}
           onLocationChange={setLocation}
           onSubmit={handleSubmit}
@@ -84,10 +91,10 @@ export default function SearchPage() {
         <Alert severity="info">{t('search.empty')}</Alert>
       )}
 
-      {createReservationMutation.isError && (
+      {selectOptionMutation.isError && (
         <Alert severity="error">
-          {createReservationMutation.error instanceof Error
-            ? createReservationMutation.error.message
+          {selectOptionMutation.error instanceof Error
+            ? selectOptionMutation.error.message
             : t('reservation.createError')}
         </Alert>
       )}
@@ -97,14 +104,18 @@ export default function SearchPage() {
           facilities={result.facilities}
           location={submittedParams?.q ?? location}
           onSelectFacility={handleSelectFacility}
-          onStartReservation={handleStartReservation}
+          onStartReservation={handleStartCheckout}
           reservationTimeLeft={reservationTimeLeft}
           selectedFacilityId={selectedFacilityId}
           startingReservationFacilityId={
-            createReservationMutation.isPending ? createReservationMutation.variables?.facilityId ?? null : null
+            selectOptionMutation.isPending ? selectOptionMutation.variables?.facilityId ?? null : null
           }
         />
       )}
     </Stack>
   );
+}
+
+function isCheckOutAfterCheckIn(checkIn: string, checkOut: string) {
+  return new Date(checkOut).getTime() > new Date(checkIn).getTime();
 }

@@ -113,6 +113,7 @@ export interface ParkingFacilityListParams {
 
 export interface InventorySlot {
   slotStart: string;
+  blockType?: 'SHORT_TERM' | 'LONG_TERM';
   capacity: number;
   reserved: number;
   free: number;

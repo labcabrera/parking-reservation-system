@@ -15,7 +15,7 @@ const resources = {
         login: 'Entrar',
         logout: 'Salir',
         loginTooltip: 'Iniciar sesion',
-        missingConfig: 'Configura VITE_OIDC_AUTHORITY y VITE_OIDC_CLIENT_ID',
+        missingConfig: 'Configura VITE_KEYCLOAK_URL, VITE_KEYCLOAK_REALM y VITE_KEYCLOAK_CLIENT_ID',
         defaultUser: 'Usuario',
         callback: {
           login: 'Completando inicio de sesion...',
@@ -38,6 +38,13 @@ const resources = {
           pricingDescription: 'Reglas de precio, tarifas base y configuracion comercial.',
           operations: 'Ordenes y reservas',
           operationsDescription: 'Consola de visualizacion para reservas y ordenes ecommerce.',
+          status: {
+            facilities: '{{count}} facilities',
+            pricing: '{{count}} reglas',
+            reservations: '{{count}} reservas',
+            operations: '{{reservations}} reservas · {{orders}} ordenes',
+            unavailable: 'Sin conexion',
+          },
         },
         metrics: {
           facilities: 'Instalaciones',
@@ -81,6 +88,11 @@ const resources = {
           start: 'Inicio',
           end: 'Fin',
           rangeError: 'El rango debe ser mayor que 0 y no superar {{days}} dias.',
+          window: 'Ventana de 2 semanas',
+          previousWeek: 'Semana anterior',
+          nextWeek: 'Semana siguiente',
+          shortTerm: 'Reservas de corta duracion',
+          longTerm: 'Reservas de larga duracion',
           reserved: '{{count}} reservadas',
           free: '{{count}} libres',
           percent: '{{count}}% ocupado',
@@ -194,6 +206,12 @@ const resources = {
         requiredFields: '(*) CAMPOS OBLIGATORIOS',
         payment: 'Elige el metodo de pago',
         paymentHint: 'Solo queda un paso para confirmar tu reserva',
+        paymentMethods: {
+          title: '4. Metodo de pago',
+          loading: 'Cargando metodos de pago...',
+          empty: 'No hay metodos de pago disponibles.',
+          processing: 'Conectando con la pasarela...',
+        },
         customer: {
           title: '1. Tus datos',
           fullName: 'Nombre completo',
@@ -264,6 +282,7 @@ const resources = {
       dateTime: {
         nextMonth: 'Mes siguiente',
         previousMonth: 'Mes anterior',
+        reservedDates: 'Fechas reservadas',
         save: 'Guardar',
         selectDate: 'Seleccionar {{date}}',
         tariffNote: 'La tarifa siempre se calcula por periodos completos.',
@@ -278,7 +297,7 @@ const resources = {
         login: 'Sign in',
         logout: 'Sign out',
         loginTooltip: 'Sign in',
-        missingConfig: 'Configure VITE_OIDC_AUTHORITY and VITE_OIDC_CLIENT_ID',
+        missingConfig: 'Configure VITE_KEYCLOAK_URL, VITE_KEYCLOAK_REALM and VITE_KEYCLOAK_CLIENT_ID',
         defaultUser: 'User',
         callback: {
           login: 'Completing sign in...',
@@ -301,6 +320,13 @@ const resources = {
           pricingDescription: 'Price rules, base rates and commercial configuration.',
           operations: 'Orders and reservations',
           operationsDescription: 'Operations console for reservations and ecommerce orders.',
+          status: {
+            facilities: '{{count}} facilities',
+            pricing: '{{count}} rules',
+            reservations: '{{count}} reservations',
+            operations: '{{reservations}} reservations · {{orders}} orders',
+            unavailable: 'Unavailable',
+          },
         },
         metrics: {
           facilities: 'Facilities',
@@ -344,6 +370,11 @@ const resources = {
           start: 'Start',
           end: 'End',
           rangeError: 'The range must be greater than 0 and no longer than {{days}} days.',
+          window: '2-week window',
+          previousWeek: 'Previous week',
+          nextWeek: 'Next week',
+          shortTerm: 'Short-term reservations',
+          longTerm: 'Long-term reservations',
           reserved: '{{count}} reserved',
           free: '{{count}} free',
           percent: '{{count}}% occupied',
@@ -457,6 +488,12 @@ const resources = {
         requiredFields: '(*) REQUIRED FIELDS',
         payment: 'Choose payment method',
         paymentHint: 'Only one step left to confirm your booking',
+        paymentMethods: {
+          title: '4. Payment method',
+          loading: 'Loading payment methods...',
+          empty: 'No payment methods are available.',
+          processing: 'Connecting to payment gateway...',
+        },
         customer: {
           title: '1. Your details',
           fullName: 'Full name',
@@ -527,6 +564,7 @@ const resources = {
       dateTime: {
         nextMonth: 'Next month',
         previousMonth: 'Previous month',
+        reservedDates: 'Reserved dates',
         save: 'Save',
         selectDate: 'Select {{date}}',
         tariffNote: 'The rate is always calculated in complete periods.',

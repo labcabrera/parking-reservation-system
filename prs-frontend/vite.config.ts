@@ -6,8 +6,8 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/api/v1/parking-facilities': 'http://localhost:8085',
-      '/api/v1/reservations': 'http://localhost:8085',
+      '/api/v1/checkout': 'http://localhost:8085',
+      '/api/v1/payment-methods': 'http://localhost:8085',
       '/admin-api/api/v1/parking-facilities': {
         target: 'http://localhost:8081',
         rewrite: (path) => path.replace(/^\/admin-api/, ''),

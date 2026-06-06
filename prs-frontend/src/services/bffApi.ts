@@ -1,24 +1,22 @@
 import type { FacilityResult, PageResponse, SearchRequest, SearchResponse } from '../types/catalog';
-import type { CreateReservationRequest, ReservationResponse } from '../types/reservation';
-import { getBaseUrl, parseJsonResponse, parseOptionalJsonResponse } from './http';
+import { getBaseUrl, parseJsonResponse } from './http';
 
 const BFF_URL = getBaseUrl('VITE_BFF_URL');
-const FACILITIES_URL = `${BFF_URL}/api/v1/parking-facilities`;
-const RESERVATIONS_URL = `${BFF_URL}/api/v1/reservations`;
+const CHECKOUT_URL = `${BFF_URL}/api/v1/checkout`;
 
-interface FacilityAvailabilityDto {
-  id: string;
+interface ParkingOptionDto {
+  facilityId: string;
   name: string;
   city: string;
   address: string;
-  totalSpots: number;
+  totalSpots?: number;
   availableSpots: number;
   lowAvailability: boolean;
   estimatedPrice: number;
   currency: string;
 }
 
-function toFacilityResult(dto: FacilityAvailabilityDto): FacilityResult {
+function toFacilityResult(dto: ParkingOptionDto): FacilityResult {
   return {
     address: dto.address,
     availableSpots: dto.availableSpots,
@@ -28,7 +26,7 @@ function toFacilityResult(dto: FacilityAvailabilityDto): FacilityResult {
       amount: dto.estimatedPrice,
       currency: dto.currency,
     },
-    facilityId: dto.id,
+    facilityId: dto.facilityId,
     lowAvailability: dto.lowAvailability,
     name: dto.name,
     tags: [],
@@ -43,8 +41,8 @@ export async function searchParking(params: SearchRequest): Promise<SearchRespon
   searchParams.set('checkOut', params.checkOut);
   if (params.size != null) searchParams.set('limit', String(params.size));
 
-  const response = await fetch(`${FACILITIES_URL}/availability?${searchParams.toString()}`);
-  const payload = await parseJsonResponse<FacilityAvailabilityDto[] | PageResponse<FacilityAvailabilityDto>>(
+  const response = await fetch(`${CHECKOUT_URL}/search?${searchParams.toString()}`);
+  const payload = await parseJsonResponse<ParkingOptionDto[] | PageResponse<ParkingOptionDto>>(
     response,
     'Search failed',
   );
@@ -69,16 +67,4 @@ export async function searchParking(params: SearchRequest): Promise<SearchRespon
     totalElements: page.pagination.totalElements,
     totalPages: page.pagination.totalPages,
   };
-}
-
-export async function createReservation(request: CreateReservationRequest): Promise<ReservationResponse> {
-  const response = await fetch(RESERVATIONS_URL, {
-    body: JSON.stringify(request),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    method: 'POST',
-  });
-
-  return parseOptionalJsonResponse<ReservationResponse>(response, 'Reservation could not be created');
 }

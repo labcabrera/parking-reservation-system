@@ -22,14 +22,28 @@ interface ParsedDateTime {
 interface DateTimePickerFieldProps {
   helperText: string;
   label: string;
+  minDate?: Date | string;
   onChange: (value: string) => void;
+  reservedDates?: Array<Date | string>;
   value: string;
 }
 
-export function DateTimePickerField({ helperText, label, onChange, value }: DateTimePickerFieldProps) {
+export function DateTimePickerField({
+  helperText,
+  label,
+  minDate,
+  onChange,
+  reservedDates = [],
+  value,
+}: DateTimePickerFieldProps) {
   const { i18n, t } = useTranslation();
   const parsedValue = parseDateTimeValue(value);
-  const initialDate = parsedValue?.date ?? new Date();
+  const minimumDate = minDate ? startOfDay(toDate(minDate)) : null;
+  const initialDate = getSelectableDate(parsedValue?.date ?? new Date(), minimumDate);
+  const reservedDateKeys = useMemo(
+    () => new Set(reservedDates.map((date) => toDateKey(toDate(date)))),
+    [reservedDates],
+  );
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [displayMonth, setDisplayMonth] = useState(new Date(initialDate.getFullYear(), initialDate.getMonth(), 1));
   const [selectedDate, setSelectedDate] = useState<Date | null>(parsedValue?.date ?? null);
@@ -39,7 +53,7 @@ export function DateTimePickerField({ helperText, label, onChange, value }: Date
 
   function handleOpen(event: React.MouseEvent<HTMLElement>) {
     const nextParsedValue = parseDateTimeValue(value);
-    const nextDate = nextParsedValue?.date ?? new Date();
+    const nextDate = getSelectableDate(nextParsedValue?.date ?? new Date(), minimumDate);
 
     setSelectedDate(nextDate);
     setSelectedTime(nextParsedValue?.time ?? '10:00');
@@ -48,7 +62,7 @@ export function DateTimePickerField({ helperText, label, onChange, value }: Date
   }
 
   function handleSave() {
-    onChange(buildDateTimeValue(selectedDate ?? new Date(), selectedTime));
+    onChange(buildDateTimeValue(getSelectableDate(selectedDate ?? new Date(), minimumDate), selectedTime));
     setAnchorEl(null);
   }
 
@@ -61,8 +75,27 @@ export function DateTimePickerField({ helperText, label, onChange, value }: Date
         onOpen={handleOpen}
       />
       <DateTimePopover anchorEl={anchorEl} isOpen={isOpen} onClose={() => setAnchorEl(null)}>
-        <MonthNavigation displayMonth={displayMonth} onDisplayMonthChange={setDisplayMonth} />
-        <CalendarGrid days={monthDays} locale={i18n.language} onSelectDate={setSelectedDate} selectedDate={selectedDate} />
+        <MonthNavigation
+          displayMonth={displayMonth}
+          minDate={minimumDate}
+          onDisplayMonthChange={setDisplayMonth}
+        />
+        <CalendarGrid
+          days={monthDays}
+          locale={i18n.language}
+          minDate={minimumDate}
+          onSelectDate={setSelectedDate}
+          reservedDateKeys={reservedDateKeys}
+          selectedDate={selectedDate}
+        />
+        {reservedDateKeys.size > 0 && (
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', px: 0.5 }}>
+            <Box sx={{ bgcolor: 'secondary.light', borderRadius: '50%', height: 8, width: 8 }} />
+            <Typography color="text.secondary" variant="caption">
+              {t('dateTime.reservedDates')}
+            </Typography>
+          </Stack>
+        )}
         <Divider />
         <TimeSlotList onSelectTime={setSelectedTime} selectedTime={selectedTime} />
         <Button fullWidth onClick={handleSave} size="large" variant="contained">
@@ -168,12 +201,19 @@ function DateTimePopover({
 
 function MonthNavigation({
   displayMonth,
+  minDate,
   onDisplayMonthChange,
 }: {
   displayMonth: Date;
+  minDate: Date | null;
   onDisplayMonthChange: (date: Date) => void;
 }) {
   const { i18n, t } = useTranslation();
+  const isPreviousDisabled = Boolean(
+    minDate &&
+      new Date(displayMonth.getFullYear(), displayMonth.getMonth() - 1, 1) <
+        new Date(minDate.getFullYear(), minDate.getMonth(), 1),
+  );
 
   function changeMonth(offset: number) {
     onDisplayMonthChange(new Date(displayMonth.getFullYear(), displayMonth.getMonth() + offset, 1));
@@ -181,7 +221,12 @@ function MonthNavigation({
 
   return (
     <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-      <IconButton aria-label={t('dateTime.previousMonth')} onClick={() => changeMonth(-1)} size="small">
+      <IconButton
+        aria-label={t('dateTime.previousMonth')}
+        disabled={isPreviousDisabled}
+        onClick={() => changeMonth(-1)}
+        size="small"
+      >
         <ChevronLeftIcon />
       </IconButton>
       <Typography sx={{ fontWeight: 700, textTransform: 'capitalize' }}>
@@ -197,12 +242,16 @@ function MonthNavigation({
 function CalendarGrid({
   days,
   locale,
+  minDate,
   onSelectDate,
+  reservedDateKeys,
   selectedDate,
 }: {
   days: Array<Date | null>;
   locale: string;
+  minDate: Date | null;
   onSelectDate: (date: Date) => void;
+  reservedDateKeys: Set<string>;
   selectedDate: Date | null;
 }) {
   const { t } = useTranslation();
@@ -234,6 +283,8 @@ function CalendarGrid({
         day ? (
           <CalendarDay
             day={day}
+            isDisabled={isBeforeMinimumDate(day, minDate)}
+            isReserved={reservedDateKeys.has(toDateKey(day))}
             isSelected={isSameDay(day, selectedDate)}
             key={day.toISOString()}
             locale={locale}
@@ -249,11 +300,15 @@ function CalendarGrid({
 
 function CalendarDay({
   day,
+  isDisabled,
+  isReserved,
   isSelected,
   locale,
   onSelect,
 }: {
   day: Date;
+  isDisabled: boolean;
+  isReserved: boolean;
   isSelected: boolean;
   locale: string;
   onSelect: (date: Date) => void;
@@ -263,14 +318,25 @@ function CalendarDay({
   return (
     <ButtonBase
       aria-label={t('dateTime.selectDate', { date: day.toLocaleDateString(locale) })}
+      disabled={isDisabled}
       onClick={() => onSelect(day)}
       sx={{
+        border: isReserved && !isSelected ? 1 : 0,
+        borderColor: 'secondary.light',
         borderRadius: '50%',
-        color: isSelected ? 'secondary.contrastText' : 'text.primary',
+        color: isSelected ? 'secondary.contrastText' : isDisabled ? 'text.disabled' : 'text.primary',
         height: 38,
         justifySelf: 'center',
+        opacity: isDisabled ? 0.42 : 1,
+        position: 'relative',
         transition: 'background-color 120ms ease',
         width: 38,
+        ...(isReserved &&
+          !isSelected &&
+          !isDisabled && {
+            bgcolor: 'rgba(255, 121, 0, 0.12)',
+            fontWeight: 800,
+          }),
         ...(isSelected && {
           bgcolor: 'secondary.main',
           fontWeight: 800,
@@ -281,6 +347,20 @@ function CalendarDay({
       }}
     >
       {day.getDate()}
+      {isReserved && !isSelected && !isDisabled && (
+        <Box
+          sx={{
+            bgcolor: 'secondary.main',
+            borderRadius: '50%',
+            bottom: 5,
+            height: 4,
+            left: '50%',
+            position: 'absolute',
+            transform: 'translateX(-50%)',
+            width: 4,
+          }}
+        />
+      )}
     </ButtonBase>
   );
 }
@@ -380,6 +460,36 @@ function parseDateTimeValue(value: string): ParsedDateTime | null {
     date: new Date(year, month - 1, day),
     time: timePart.slice(0, 5),
   };
+}
+
+function toDate(value: Date | string) {
+  if (value instanceof Date) {
+    return value;
+  }
+
+  const parsedDateTime = parseDateTimeValue(value);
+
+  return parsedDateTime?.date ?? new Date(value);
+}
+
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function getSelectableDate(date: Date, minDate: Date | null) {
+  if (minDate && startOfDay(date) < minDate) {
+    return minDate;
+  }
+
+  return date;
+}
+
+function isBeforeMinimumDate(day: Date, minDate: Date | null) {
+  return Boolean(minDate && startOfDay(day) < minDate);
+}
+
+function toDateKey(date: Date) {
+  return toDateInputValue(date);
 }
 
 function getMonthDays(displayMonth: Date) {

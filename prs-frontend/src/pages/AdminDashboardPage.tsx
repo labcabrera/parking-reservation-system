@@ -1,3 +1,5 @@
+import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
@@ -17,7 +19,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -34,11 +35,21 @@ import {
 import type { CreateParkingFacilityRequest, InventorySlot, ParkingFacility } from '../types/catalog';
 import { formatPrice } from '../utils/formatters';
 
-const MAX_RANGE_DAYS = 40;
+const INVENTORY_WINDOW_DAYS = 14;
 
 function toDateTimeInputValue(date: Date) {
   const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
   return offsetDate.toISOString().slice(0, 16);
+}
+
+function getCurrentWeekStart() {
+  const today = new Date();
+  const day = today.getDay() === 0 ? 7 : today.getDay();
+  const weekStart = new Date(today);
+  weekStart.setDate(today.getDate() - day + 1);
+  weekStart.setHours(0, 0, 0, 0);
+
+  return weekStart;
 }
 
 function addDays(date: Date, days: number) {
@@ -47,8 +58,26 @@ function addDays(date: Date, days: number) {
   return next;
 }
 
-function getRangeDays(start: string, end: string) {
-  return (new Date(end).getTime() - new Date(start).getTime()) / 86_400_000;
+function getInventoryWindow(weekOffset: number) {
+  const start = addDays(getCurrentWeekStart(), weekOffset * 7);
+  const end = addDays(start, INVENTORY_WINDOW_DAYS);
+
+  return {
+    end,
+    endValue: toDateTimeInputValue(end),
+    start,
+    startValue: toDateTimeInputValue(start),
+  };
+}
+
+function formatWindowLabel(start: Date, end: Date) {
+  const formatter = new Intl.DateTimeFormat(undefined, {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+
+  return `${formatter.format(start)} - ${formatter.format(end)}`;
 }
 
 function getOccupancySummary(slots: InventorySlot[]) {
@@ -60,13 +89,19 @@ function getOccupancySummary(slots: InventorySlot[]) {
   return { capacity, free, occupancy, reserved };
 }
 
+function splitInventorySlots(slots: InventorySlot[]) {
+  return {
+    longTerm: slots.filter((slot) => slot.blockType === 'LONG_TERM'),
+    shortTerm: slots.filter((slot) => slot.blockType === 'SHORT_TERM' || slot.blockType == null),
+  };
+}
+
 export default function AdminDashboardPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const now = useMemo(() => new Date(), []);
   const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null);
-  const [start, setStart] = useState(toDateTimeInputValue(addDays(now, -10)));
-  const [end, setEnd] = useState(toDateTimeInputValue(addDays(now, 30)));
+  const [weekOffset, setWeekOffset] = useState(0);
+  const inventoryWindow = useMemo(() => getInventoryWindow(weekOffset), [weekOffset]);
 
   const facilitiesQuery = useQuery({
     queryFn: () => listParkingFacilities({ page: 0, size: 50 }),
@@ -74,13 +109,11 @@ export default function AdminDashboardPage() {
   });
   const facilities = facilitiesQuery.data?.content ?? [];
   const selectedFacility = facilities.find((facility) => facility.id === selectedFacilityId) ?? null;
-  const rangeDays = getRangeDays(start, end);
-  const isInvalidRange = rangeDays <= 0 || rangeDays > MAX_RANGE_DAYS;
 
   const inventoryQuery = useQuery({
-    enabled: selectedFacilityId !== null && !isInvalidRange,
-    queryFn: () => getFacilityInventory(selectedFacilityId!, start, end),
-    queryKey: ['parking-facility-inventory', selectedFacilityId, start, end],
+    enabled: selectedFacilityId !== null,
+    queryFn: () => getFacilityInventory(selectedFacilityId!, inventoryWindow.startValue, inventoryWindow.endValue),
+    queryKey: ['parking-facility-inventory', selectedFacilityId, inventoryWindow.startValue, inventoryWindow.endValue],
   });
 
   const createFacilityMutation = useMutation({
@@ -146,15 +179,13 @@ export default function AdminDashboardPage() {
             selectedFacilityId={selectedFacilityId}
           />
           <OccupancyPanel
-            end={end}
-            isInvalidRange={isInvalidRange}
             isLoading={inventoryQuery.isFetching}
             occupancySummary={occupancySummary}
-            onEndChange={setEnd}
-            onStartChange={setStart}
+            onNextWeek={() => setWeekOffset((current) => current + 1)}
+            onPreviousWeek={() => setWeekOffset((current) => current - 1)}
             selectedFacility={selectedFacility}
             slots={inventoryQuery.data ?? []}
-            start={start}
+            windowLabel={formatWindowLabel(inventoryWindow.start, inventoryWindow.end)}
           />
         </Stack>
 
@@ -259,27 +290,24 @@ function FacilitiesTable({
 }
 
 function OccupancyPanel({
-  end,
-  isInvalidRange,
   isLoading,
   occupancySummary,
-  onEndChange,
-  onStartChange,
+  onNextWeek,
+  onPreviousWeek,
   selectedFacility,
   slots,
-  start,
+  windowLabel,
 }: {
-  end: string;
-  isInvalidRange: boolean;
   isLoading: boolean;
   occupancySummary: ReturnType<typeof getOccupancySummary>;
-  onEndChange: (value: string) => void;
-  onStartChange: (value: string) => void;
+  onNextWeek: () => void;
+  onPreviousWeek: () => void;
   selectedFacility: ParkingFacility | null;
   slots: InventorySlot[];
-  start: string;
+  windowLabel: string;
 }) {
   const { t } = useTranslation();
+  const inventorySlots = splitInventorySlots(slots);
 
   return (
     <Paper elevation={0} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 2.5 }}>
@@ -294,31 +322,62 @@ function OccupancyPanel({
         </Box>
         {isLoading && <CircularProgress size={22} />}
       </Stack>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
-        <TextField
-          error={isInvalidRange}
-          fullWidth
-          label={t('admin.occupancy.start')}
-          onChange={(event) => onStartChange(event.target.value)}
-          type="datetime-local"
-          value={start}
-        />
-        <TextField
-          error={isInvalidRange}
-          fullWidth
-          helperText={isInvalidRange ? t('admin.occupancy.rangeError', { days: MAX_RANGE_DAYS }) : ' '}
-          label={t('admin.occupancy.end')}
-          onChange={(event) => onEndChange(event.target.value)}
-          type="datetime-local"
-          value={end}
-        />
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={1.5}
+        sx={{ alignItems: { sm: 'center' }, justifyContent: 'space-between', mb: 2 }}
+      >
+        <Box>
+          <Typography sx={{ fontSize: 13, fontWeight: 800 }}>{t('admin.occupancy.window')}</Typography>
+          <Typography color="text.secondary">{windowLabel}</Typography>
+        </Box>
+        <Stack direction="row" spacing={1}>
+          <Tooltip title={t('admin.occupancy.previousWeek')}>
+            <IconButton onClick={onPreviousWeek}>
+              <NavigateBeforeIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={t('admin.occupancy.nextWeek')}>
+            <IconButton onClick={onNextWeek}>
+              <NavigateNextIcon />
+            </IconButton>
+          </Tooltip>
+        </Stack>
       </Stack>
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 2 }}>
         <Chip label={t('admin.occupancy.reserved', { count: occupancySummary.reserved })} />
         <Chip label={t('admin.occupancy.free', { count: occupancySummary.free })} />
         <Chip color="secondary" label={t('admin.occupancy.percent', { count: occupancySummary.occupancy })} />
       </Stack>
-      <OccupancyColumnsChart slots={slots} />
+      <Stack spacing={2}>
+        <OccupancyBlock title={t('admin.occupancy.shortTerm')} slots={inventorySlots.shortTerm} />
+        <OccupancyBlock title={t('admin.occupancy.longTerm')} slots={inventorySlots.longTerm} />
+      </Stack>
     </Paper>
+  );
+}
+
+function OccupancyBlock({ slots, title }: { slots: InventorySlot[]; title: string }) {
+  const { t } = useTranslation();
+  const summary = getOccupancySummary(slots);
+
+  return (
+    <Box>
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={1}
+        sx={{ alignItems: { sm: 'center' }, justifyContent: 'space-between', mb: 1 }}
+      >
+        <Typography component="h3" sx={{ fontSize: 16, fontWeight: 900 }}>
+          {title}
+        </Typography>
+        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', rowGap: 1 }}>
+          <Chip label={t('admin.occupancy.reserved', { count: summary.reserved })} size="small" />
+          <Chip label={t('admin.occupancy.free', { count: summary.free })} size="small" />
+          <Chip color="secondary" label={t('admin.occupancy.percent', { count: summary.occupancy })} size="small" />
+        </Stack>
+      </Stack>
+      <OccupancyColumnsChart slots={slots} />
+    </Box>
   );
 }

@@ -26,6 +26,11 @@ export function ParkingSearchForm({
   onSubmit,
 }: ParkingSearchFormProps) {
   const { t } = useTranslation();
+  const today = startOfToday();
+  const checkInDate = parseDateTimeDate(checkIn);
+  const checkOutDate = parseDateTimeDate(checkOut);
+  const checkoutMinDate = checkInDate && checkInDate > today ? checkInDate : today;
+  const checkoutReservedDates = getReservedDateRange(checkInDate, checkOutDate);
 
   return (
     <Box
@@ -75,6 +80,7 @@ export function ParkingSearchForm({
         <DateTimePickerField
           helperText={t('search.form.checkInHelp')}
           label={t('search.form.checkInLabel')}
+          minDate={today}
           onChange={onCheckInChange}
           value={checkIn}
         />
@@ -83,7 +89,9 @@ export function ParkingSearchForm({
         <DateTimePickerField
           helperText={t('search.form.checkOutHelp')}
           label={t('search.form.checkOutLabel')}
+          minDate={checkoutMinDate}
           onChange={onCheckOutChange}
+          reservedDates={checkoutReservedDates}
           value={checkOut}
         />
       </Box>
@@ -105,4 +113,42 @@ export function ParkingSearchForm({
       </Box>
     </Box>
   );
+}
+
+function startOfToday() {
+  const now = new Date();
+
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+function parseDateTimeDate(value: string) {
+  if (!value) {
+    return null;
+  }
+
+  const [datePart] = value.split('T');
+  const [year, month, day] = datePart.split('-').map(Number);
+
+  if (!year || !month || !day) {
+    return null;
+  }
+
+  return new Date(year, month - 1, day);
+}
+
+function getReservedDateRange(checkInDate: Date | null, checkOutDate: Date | null) {
+  if (!checkInDate) {
+    return [];
+  }
+
+  const endDate = checkOutDate && checkOutDate >= checkInDate ? checkOutDate : checkInDate;
+  const dates: Date[] = [];
+  const cursor = new Date(checkInDate);
+
+  while (cursor <= endDate) {
+    dates.push(new Date(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return dates;
 }
