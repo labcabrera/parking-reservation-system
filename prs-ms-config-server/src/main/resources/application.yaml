@@ -13,7 +13,7 @@ spring:
           default-label: ${CONFIG_GIT_DEFAULT_LABEL:develop}
           clone-on-start: ${CONFIG_GIT_CLONE_ON_START:true}
           force-pull: ${CONFIG_GIT_FORCE_PULL:true}
-          search-paths: ${CONFIG_GIT_SEARCH_PATHS:cloud-config}
+          search-paths: ${CONFIG_GIT_SEARCH_PATHS:cloud-config/shared,cloud-config/microservices}
 
 server:
   port: ${SERVER_PORT:8888}

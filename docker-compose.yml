@@ -4,15 +4,11 @@
 # All services reach healthy state within ~90 seconds on a modern laptop.
 # ---------------------------------------------------------------------------
 
-x-service-common: &service-common
-  restart: unless-stopped
-
 services:
   # -----------------------------------------------------------------------
   # Infrastructure: PostgreSQL (one instance, three databases)
   # -----------------------------------------------------------------------
   postgres:
-    <<: *service-common
     profiles: [infrastructure]
     image: postgres:17
     environment:
@@ -34,7 +30,6 @@ services:
   # Infrastructure: Redis
   # -----------------------------------------------------------------------
   redis:
-    <<: *service-common
     profiles: [infrastructure]
     image: redis:7-alpine
     command: redis-server --requirepass ${REDIS_PASSWORD:-redis_pass}
@@ -51,7 +46,6 @@ services:
   # Infrastructure: Kafka (KRaft mode — no ZooKeeper)
   # -----------------------------------------------------------------------
   kafka:
-    <<: *service-common
     profiles: [infrastructure]
     image: confluentinc/cp-kafka:7.6.1
     environment:
@@ -104,7 +98,6 @@ services:
   # Infrastructure: Kafka UI
   # -----------------------------------------------------------------------
   kafka-ui:
-    <<: *service-common
     profiles: [infrastructure]
     image: provectuslabs/kafka-ui:latest
     environment:
@@ -120,18 +113,14 @@ services:
   # Infrastructure: Keycloak
   # -----------------------------------------------------------------------
   keycloak:
-    <<: *service-common
     profiles: [infrastructure]
     image: quay.io/keycloak/keycloak:24.0.4
     command: start-dev
-    # command: start-dev --import-realm
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
       KC_HTTP_PORT: 8080
       KC_HEALTH_ENABLED: "true"
-    # volumes:
-    #   - ./infrastructure/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
     ports:
       - "8080:8080"
     healthcheck:
@@ -143,14 +132,40 @@ services:
       start_period: 60s
 
   # -----------------------------------------------------------------------
-  # Backend: Catalog Service
+  # Infrastructure: Spring Cloud Config Server
   # -----------------------------------------------------------------------
-  catalog-service:
-    <<: *service-common
-    profiles: [apps]
+  prs-ms-config-server:
+    profiles: [infrastructure]
     build:
       context: .
-      dockerfile: catalog-service/Dockerfile
+      dockerfile: prs-ms-config-server/Dockerfile
+    environment:
+      CONFIG_GIT_URI: https://github.com/labcabrera/parking-reservation-system.git
+      CONFIG_GIT_DEFAULT_LABEL: develop
+      CONFIG_GIT_CLONE_ON_START: true
+      CONFIG_GIT_FORCE_PULL: true
+      CONFIG_GIT_SEARCH_PATHS: cloud-config/shared,cloud-config/microservices
+    ports:
+      - "8888:8888"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -sf http://localhost:8888/actuator/health || exit 1",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  # -----------------------------------------------------------------------
+  # Microservice Parking Facilities
+  # -----------------------------------------------------------------------
+  prs-ms-parking-facilities:
+    profiles: [apps]
+    build:
+      context: prs-ms-parking-facilities
+      dockerfile: Dockerfile
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/catalog_db
       SPRING_DATASOURCE_USERNAME: parking
@@ -173,6 +188,8 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
+      prs-ms-config-server:
+        condition: service_healthy
     healthcheck:
       test:
         [
@@ -187,87 +204,84 @@ services:
   # -----------------------------------------------------------------------
   # Backend: Reservation Service
   # -----------------------------------------------------------------------
-  reservation-service:
-    <<: *service-common
-    profiles: [apps]
-    build:
-      context: .
-      dockerfile: reservation-service/Dockerfile
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/reservation_db
-      SPRING_DATASOURCE_USERNAME: parking
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-parking}
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/parking
-      SPRING_FLYWAY_SCHEMAS: reservation
-      KEYCLOAK_URL: http://keycloak:8080
-      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:-change-me}
-      CATALOG_SERVICE_URL: http://catalog-service:8081
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
-      OTEL_SERVICE_NAME: reservation-service
-    ports:
-      - "8082:8082"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-      keycloak:
-        condition: service_healthy
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "curl -sf http://localhost:8082/actuator/health || exit 1",
-        ]
-      interval: 15s
-      timeout: 10s
-      retries: 10
-      start_period: 60s
+  # reservation-service:
+  #   profiles: [apps]
+  #   build:
+  #     context: .
+  #     dockerfile: reservation-service/Dockerfile
+  #   environment:
+  #     SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/reservation_db
+  #     SPRING_DATASOURCE_USERNAME: parking
+  #     SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-parking}
+  #     SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+  #     SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/parking
+  #     SPRING_FLYWAY_SCHEMAS: reservation
+  #     KEYCLOAK_URL: http://keycloak:8080
+  #     KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:-change-me}
+  #     CATALOG_SERVICE_URL: http://catalog-service:8081
+  #     OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+  #     OTEL_SERVICE_NAME: reservation-service
+  #   ports:
+  #     - "8082:8082"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     kafka:
+  #       condition: service_healthy
+  #     keycloak:
+  #       condition: service_healthy
+  #   healthcheck:
+  #     test:
+  #       [
+  #         "CMD-SHELL",
+  #         "curl -sf http://localhost:8082/actuator/health || exit 1",
+  #       ]
+  #     interval: 15s
+  #     timeout: 10s
+  #     retries: 10
+  #     start_period: 60s
 
   # -----------------------------------------------------------------------
   # Backend: Payment Service
   # -----------------------------------------------------------------------
-  payment-service:
-    <<: *service-common
-    profiles: [apps]
-    build:
-      context: .
-      dockerfile: payment-service/Dockerfile
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payment_db
-      SPRING_DATASOURCE_USERNAME: parking
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-parking}
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      SPRING_FLYWAY_SCHEMAS: payment
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
-      OTEL_SERVICE_NAME: payment-service
-    ports:
-      - "8083:8083"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "curl -sf http://localhost:8083/actuator/health || exit 1",
-        ]
-      interval: 15s
-      timeout: 10s
-      retries: 10
-      start_period: 60s
+  # payment-service:
+  #   profiles: [apps]
+  #   build:
+  #     context: .
+  #     dockerfile: payment-service/Dockerfile
+  #   environment:
+  #     SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payment_db
+  #     SPRING_DATASOURCE_USERNAME: parking
+  #     SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-parking}
+  #     SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+  #     SPRING_FLYWAY_SCHEMAS: payment
+  #     OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+  #     OTEL_SERVICE_NAME: payment-service
+  #   ports:
+  #     - "8083:8083"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     kafka:
+  #       condition: service_healthy
+  #   healthcheck:
+  #     test:
+  #       [
+  #         "CMD-SHELL",
+  #         "curl -sf http://localhost:8083/actuator/health || exit 1",
+  #       ]
+  #     interval: 15s
+  #     timeout: 10s
+  #     retries: 10
+  #     start_period: 60s
 
   # -----------------------------------------------------------------------
   # Frontend: Main SPA
   # -----------------------------------------------------------------------
   frontend:
-    <<: *service-common
     profiles: [apps]
     build:
-      context: frontend
+      context: prs-frontend
       dockerfile: Dockerfile
     environment:
       VITE_CATALOG_SERVICE_URL: ""
@@ -279,7 +293,6 @@ services:
   # Frontend: Payment Gateway SPA
   # -----------------------------------------------------------------------
   payment-gateway:
-    <<: *service-common
     profiles: [apps]
     build:
       context: payment-gateway
@@ -293,8 +306,7 @@ services:
   # Observability: OpenTelemetry Collector
   # -----------------------------------------------------------------------
   otel-collector:
-    <<: *service-common
-    profiles: [apps]
+    profiles: [observability]
     image: otel/opentelemetry-collector:latest
     command: ["--config=/etc/otel-collector-config.yaml"]
     volumes:
@@ -307,8 +319,7 @@ services:
   # Observability: Prometheus
   # -----------------------------------------------------------------------
   prometheus:
-    <<: *service-common
-    profiles: [apps]
+    profiles: [observability]
     image: prom/prometheus:latest
     volumes:
       - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -323,8 +334,7 @@ services:
   # Observability: Grafana
   # -----------------------------------------------------------------------
   grafana:
-    <<: *service-common
-    profiles: [apps]
+    profiles: [observability]
     image: grafana/grafana:latest
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}

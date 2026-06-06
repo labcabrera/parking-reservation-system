@@ -533,7 +533,30 @@ WARNING: Usar Axon a nivel de anotaciones en el modelo de dominio genera acoplam
 
 == Ejecución local
 
-=== Docker compose
+Para ejecutar el proyecto localmente primero compilaremos los proyectos Java con _gradle_:
+
+----
+./gradlew clean build -x test
+----
+
+Después podremos levantar los servicios con docker compose. En el fichero _docker-compose.yaml_ se han definido los siguientes perfiles:
+
+- infrastructure: para los servicios de infraestructura (PostgreSQL, Redis, Kafka, Keycloak, Prometheus, Grafana y el servidor de configuración).
+- apps: para los microservicios y frontends.
+- observability: para los servicios de observabilidad (OpenTelemetry Collector, Prometheus y Grafana).
+
+Para levantar todos los servicios haremos:
+
+----
+docker compose --profile infrastructure down -v
+
+docker compose --profile infrastructure --profile apps up -d --build
+
+docker compose --profile infrastructure up -d --build
+
+docker compose --profile infrastructure  up -d --build
+----
+
 
 Dentro del docker compose tendremos dos perfiles, uno para la infraestructura y otro para las aplicaciones. De este modo podemos levantar únicamente la infraestructura si queremos trabajar con los microservicios de forma local sin docker.
 
