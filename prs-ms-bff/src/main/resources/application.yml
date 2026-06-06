@@ -3,8 +3,4 @@ spring:
     import: configserver:${CLOUD_CONFIG_SERVER_URI:http://localhost:8888}
   cloud:
     config:
-      name:
-      - prs-ms-bff-config
-      - actuator-config
-      - spring-doc-config
-      - resource-server-config
+      name: prs-ms-bff-config,actuator-config,spring-doc-config,resource-server-config
