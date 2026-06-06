@@ -11,6 +11,12 @@ image:https://img.shields.io/badge/Spring%20Boot-4.0-green[Spring Boot 4]
 image:https://img.shields.io/badge/React-18-61DAFB[React 18]
 image:https://img.shields.io/badge/status-en%20desarrollo-yellow[Estado]
 
+++++
+<a href="https://www.postman.com/labcabrera/workspace/parking-reserve-system/collection/5547717-ea095ab9-9f5b-40ad-ab54-88904f3e774f?action=share&source=copy-link&creator=5547717" target="_blank">
+  <img src="https://run.pstmn.io/button.svg" alt="Run in Postman"/>
+</a>
+++++
+
 == Descripción general
 
 Este proyecto es un MVP para un sistema de reserva de aparcamiento diseñado con el objetivo de soportar alta concurrencia y picos masivos de tráfico dentro de un flujo de reserva sencillo.
