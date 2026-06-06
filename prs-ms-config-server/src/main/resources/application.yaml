@@ -7,7 +7,7 @@ spring:
     config:
       server:
         git:
-          uri: ${CONFIG_GIT_URI:https://github.com/labcabrera/mcm-config.git}
+          uri: ${CONFIG_GIT_URI:https://github.com/labcabrera/parking-reservation-system.git}
           username: ${CONFIG_GIT_USERNAME}
           password: ${CONFIG_GIT_PASSWORD}
           default-label: ${CONFIG_GIT_DEFAULT_LABEL:develop}

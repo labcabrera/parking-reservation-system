@@ -1,13 +1,3 @@
-spring:
-  config:
-    import: configserver:${CLOUD_CONFIG_SERVER_URI:http://localhost:8888}
-  cloud:
-    config:
-      name:
-      - prs-ms-bff
-      - actuator-config
-      - spring-doc-config
-      - resource-server-config
 
 server:
   port: 8085
@@ -22,11 +12,11 @@ spring:
   application:
     name: prs-bff-service
 
-  # security:
-  #   oauth2:
-  #     resourceserver:
-  #       jwt:
-  #         issuer-uri: ${OIDC_ISSUER_URI:http://localhost:8080/realms/parking}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OIDC_ISSUER_URI:http://localhost:8080/realms/parking}
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
@@ -48,17 +38,17 @@ bff:
     cors:
       allowed-origins: ${BFF_CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:3001}
 
-# management:
-#   endpoints:
-#     web:
-#       exposure:
-#         include: health,info,metrics,prometheus
-#   endpoint:
-#     health:
-#       show-details: always
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
 
-# springdoc:
-#   api-docs:
-#     path: /v3/api-docs
-#   swagger-ui:
-#     path: /swagger-ui.html
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

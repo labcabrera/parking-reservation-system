@@ -549,6 +549,12 @@ Eliminar todo:
 docker compose --profile infrastructure down -v
 ----
 
+## Spring Cloud Config
+
+Podemos comprobar si el servicio de configuración está funcionando correctamente accediendo a la URL:
+
+http://localhost:8888/actuator-config/default/develop
+
 ## Enlaces
 
 * Swagger
