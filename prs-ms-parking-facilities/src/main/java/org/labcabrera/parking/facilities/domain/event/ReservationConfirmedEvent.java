@@ -10,10 +10,11 @@ public record ReservationConfirmedEvent(
     String userId,
     LocalDateTime checkIn,
     LocalDateTime checkOut,
+    LocalDateTime expiresAt,
     BigDecimal estimatedPrice,
     String currency) {
 
     public ReservationConfirmedEvent(UUID reservationId) {
-        this(reservationId, null, null, null, null, null, null);
+        this(reservationId, null, null, null, null, null, null, null);
     }
 }

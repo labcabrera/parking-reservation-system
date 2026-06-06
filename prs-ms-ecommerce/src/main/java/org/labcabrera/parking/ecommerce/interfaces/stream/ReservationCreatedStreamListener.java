@@ -1,4 +1,4 @@
-package org.labcabrera.parking.ecommerce.infrastructure.stream;
+package org.labcabrera.parking.ecommerce.interfaces.stream;
 
 import java.util.function.Consumer;
 
@@ -19,6 +19,7 @@ public class ReservationCreatedStreamListener {
             log.info("Received reservation created message {}", message.reservationId());
             orderSaga.on(new ReservationCreatedForOrder(
                 message.reservationId(),
+                message.expiresAt(),
                 message.amount(),
                 message.currency()));
         };

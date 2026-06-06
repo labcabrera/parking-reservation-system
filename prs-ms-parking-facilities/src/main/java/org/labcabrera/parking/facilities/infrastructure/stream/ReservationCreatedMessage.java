@@ -11,6 +11,7 @@ public record ReservationCreatedMessage(
     String userId,
     LocalDateTime checkIn,
     LocalDateTime checkOut,
+    LocalDateTime expiresAt,
     BigDecimal amount,
     String currency,
     Instant occurredAt,

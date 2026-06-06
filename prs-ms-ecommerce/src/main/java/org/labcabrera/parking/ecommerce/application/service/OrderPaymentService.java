@@ -19,7 +19,6 @@ import org.labcabrera.parking.ecommerce.domain.exception.DomainException;
 import org.labcabrera.parking.ecommerce.domain.exception.EntityNotFoundException;
 import org.labcabrera.parking.ecommerce.domain.exception.InvalidOrderStateException;
 import org.labcabrera.parking.ecommerce.domain.valueobject.OrderStatus;
-import org.labcabrera.parking.ecommerce.domain.valueobject.PaymentAttemptStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

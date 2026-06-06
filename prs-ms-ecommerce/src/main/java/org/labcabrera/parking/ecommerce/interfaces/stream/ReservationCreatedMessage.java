@@ -1,4 +1,4 @@
-package org.labcabrera.parking.ecommerce.infrastructure.stream;
+package org.labcabrera.parking.ecommerce.interfaces.stream;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -11,6 +11,7 @@ public record ReservationCreatedMessage(
     String userId,
     LocalDateTime checkIn,
     LocalDateTime checkOut,
+    LocalDateTime expiresAt,
     BigDecimal amount,
     String currency,
     Instant occurredAt,

@@ -1,0 +1,11 @@
+# Cloud Config
+
+Esta carpeta contiene la configuración de Spring Cloud Config Server, que se utiliza para centralizar la configuración de los microservicios. El servidor de configuración obtiene su configuración de un repositorio Git, lo que permite gestionar la configuración de manera centralizada y versionada.
+
+Aunque añade un punto adicional de fallo, las ventajas son significativas:
+
+- Centralización de la configuración: Todos los microservicios pueden obtener su configuración desde un único lugar, lo que facilita la gestión y el mantenimiento.
+
+- Capacidad de ajustar el funcionamiento de los microservicios sin necesidad de redespliegues. Si queremos cambiar el nombre de un topic, este valor no estará dentro de la configuración local de los microservicios.
+
+- Evitar configuraciones boilerplate en cada microservicio (OpenApi, Actuator, etc).

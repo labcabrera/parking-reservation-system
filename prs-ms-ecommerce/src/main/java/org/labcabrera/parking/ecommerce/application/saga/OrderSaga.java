@@ -34,8 +34,10 @@ public class OrderSaga {
 
     private void createOrder(ReservationCreatedForOrder event, UUID holdId) {
         UUID orderId = UUID.randomUUID();
-        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(orderTtlMinutes);
-        log.info("Creating order {} from reservation {}", orderId, holdId);
+        LocalDateTime expiresAt = event.expiresAt() != null
+            ? event.expiresAt()
+            : LocalDateTime.now().plusMinutes(orderTtlMinutes);
+        log.info("Creating order {} from reservation {} expires at {}", orderId, holdId, expiresAt);
         commandGateway.sendAndWait(new CreateOrderCommand(
             orderId,
             holdId,

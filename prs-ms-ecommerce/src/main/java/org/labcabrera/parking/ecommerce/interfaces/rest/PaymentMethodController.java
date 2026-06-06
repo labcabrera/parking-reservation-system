@@ -5,6 +5,8 @@ import java.util.UUID;
 
 import org.labcabrera.parking.ecommerce.application.service.PaymentMethodService;
 import org.labcabrera.parking.ecommerce.interfaces.rest.dto.CreatePaymentMethodRequest;
+import org.labcabrera.parking.ecommerce.interfaces.rest.dto.PageResponse;
+import org.labcabrera.parking.ecommerce.interfaces.rest.dto.Pagination;
 import org.labcabrera.parking.ecommerce.interfaces.rest.dto.PaymentMethodDto;
 import org.labcabrera.parking.ecommerce.interfaces.rest.dto.UpdatePaymentMethodRequest;
 import org.labcabrera.parking.ecommerce.interfaces.rest.mapper.PaymentMethodMapper;
@@ -55,10 +57,14 @@ public class PaymentMethodController {
 
     @GetMapping
     @Operation(summary = "List supported payment methods")
-    public ResponseEntity<Page<PaymentMethodDto>> list(
+    public ResponseEntity<PageResponse<PaymentMethodDto>> list(
         @RequestParam(defaultValue = "true") boolean activeOnly,
         Pageable pageable) {
-        return ResponseEntity.ok(service.list(defaultSort(pageable), activeOnly).map(mapper::toDto));
+        Page<PaymentMethodDto> page = service.list(defaultSort(pageable), activeOnly).map(mapper::toDto);
+        var response = new PageResponse<>(
+            page.getContent(),
+            new Pagination(page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages()));
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")

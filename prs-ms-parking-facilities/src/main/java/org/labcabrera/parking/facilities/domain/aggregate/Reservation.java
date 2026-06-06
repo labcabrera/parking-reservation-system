@@ -160,6 +160,7 @@ public class Reservation {
             userId,
             checkIn,
             checkOut,
+            expiresAt,
             estimatedPrice,
             currency));
     }

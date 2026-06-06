@@ -30,6 +30,7 @@ public class ReservationCreatedStreamPublisher {
             event.userId(),
             event.checkIn(),
             event.checkOut(),
+            event.expiresAt(),
             event.estimatedPrice(),
             event.currency(),
             Instant.now(),
