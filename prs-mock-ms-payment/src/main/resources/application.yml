@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: prs-mock-ms-payment
+
+server:
+  port: 8089
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+mock:
+  payment:
+    redirect-base-url: ${PAYMENT_REDIRECT_BASE_URL:http://localhost:3001/payment-result}
