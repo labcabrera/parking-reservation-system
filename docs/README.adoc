@@ -1,0 +1,16 @@
+# Documentación
+
+En esta carpeta se incluyen las instrucciones que se han seguido para el desarrollo del prototipo, así como la documentación de las decisiones de diseño tomadas durante el desarrollo.
+
+Inicialmente la estructura inicial del proyecto se ha definido usando SDD con spec-kit aunque sólo se han hecho dos iteraciones de refinamiento ya que cada una de ellas hace un consumo extensivo de tokens.
+
+El fichero *exercise-instructions.md* contiene las instrucciones iniciales para el desarrollo del prototipo, incluyendo los requisitos funcionales y no funcionales, así como las restricciones y criterios de aceptación.
+
+El fichero *01-refined-instructions.md* contiene una versión refinada de las instrucciones iniciales, con aclaraciones y detalles adicionales que se han ido definiendo a lo largo del desarrollo y que ha sido utilizado para la definición de la primera especificación. Esta especificación se ha usado para crear la estructura inicial de los proyectos (aunque posteriormente ha sido refactorizada y no refleja la estructura actual del proyecto).
+
+El fichero *02-refined-instructions.md* contiene las instrucciones para crear la segunda iteración de especificaciones para crear la primera versión del sistema de reservas a partir de la estructura inicial.
+
+TIP: Se ha incluido dentro de la carpeta `specs` los ficheros de cada especificación. También se han mantenido las ramas de git a modo ilustrativo.
+
+A partir de la segunda iteración en lugar de especificaciones se ha optado por el uso de diferentes agentes (_spring-boot-developer_ y _react-developer_) para ir realizando las diferentes tareas de desarrollo alternando entre *Copilot* (principalmente usando Claude Sonnet 4.6 para las tareas de complejidad media y GPT-5 mini para tareas simples) y *Codex*.
+

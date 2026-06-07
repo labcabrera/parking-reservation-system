@@ -264,9 +264,10 @@ function PricingRuleForm({
         />
       </Stack>
       <TextField
+        helperText={t('admin.pricing.form.taxRateHelp')}
         label={t('admin.pricing.form.taxRate')}
         onChange={(event) => setRule((current) => ({ ...current, taxRate: Number(event.target.value) }))}
-        slotProps={{ htmlInput: { min: 0, step: 0.0001 } }}
+        slotProps={{ htmlInput: { max: 1, min: 0, step: 0.0001 } }}
         type="number"
         value={rule.taxRate ?? ''}
       />

@@ -1,4 +1,4 @@
-import type { Money, PageResponse } from './catalog';
+import type { Money } from './catalog';
 
 export const BillingType = {
   DAILY: 'DAILY',
@@ -32,23 +32,3 @@ export interface PricingRule {
 }
 
 export type CreatePricingRuleRequest = Omit<PricingRule, 'createdAt' | 'id' | 'updatedAt' | 'version'>;
-
-export interface SpringPageResponse<T> {
-  content: T[];
-  number: number;
-  size: number;
-  totalElements: number;
-  totalPages: number;
-}
-
-export function toPageResponse<T>(page: SpringPageResponse<T>): PageResponse<T> {
-  return {
-    content: page.content,
-    pagination: {
-      page: page.number,
-      size: page.size,
-      totalElements: page.totalElements,
-      totalPages: page.totalPages,
-    },
-  };
-}

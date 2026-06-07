@@ -25,10 +25,8 @@ subprojects {
     ext {
         axonVersion = '4.13.1'
         springdocVersion = '3.0.3'
-
-        swaggerAnnotationsVersion = '2.2.13'
+        //swaggerAnnotationsVersion = '2.2.13'
         springCloudVersion = '2025.1.1'
-        rsqlParserVersion = '2.1.0'
         mapstructVersion = '1.5.5.Final'
     }
 

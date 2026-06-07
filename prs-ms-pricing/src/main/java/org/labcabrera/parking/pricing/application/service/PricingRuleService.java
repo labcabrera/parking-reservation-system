@@ -9,17 +9,20 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @Service
+@Validated
 @RequiredArgsConstructor
 public class PricingRuleService {
 
     private final PricingRuleRepository repository;
 
     @Transactional
-    public PricingRule create(PricingRule pricingRule) {
+    public PricingRule create(@Valid PricingRule pricingRule) {
         return repository.save(pricingRule);
     }
 
@@ -35,7 +38,7 @@ public class PricingRuleService {
     }
 
     @Transactional
-    public PricingRule update(UUID id, PricingRule source) {
+    public PricingRule update(UUID id, @Valid PricingRule source) {
         PricingRule existing = get(id);
         existing.update(
             source.getName(),

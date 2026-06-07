@@ -157,6 +157,8 @@ Para la implementación basada en Java las reglas que se han seguido son:
 
 - Se ha *descartado el uso de Weblux* para este MVP ya que si bien el modelo reactivo aporta mejoras en la gestión de la concurrencia, añade una complejidad adicional al prototipo que se centrará más en la lógica de negocio. Podrían usarse Virtual Threads de Java 21 en entornos de alta concurrencia para mejorar la concurrencia sin añadir la complejidad del modelo reactivo, pero para el MVP se ha optado por el modelo tradicional de hilos. Donde podría encajar más es el módulo BFF donde permitiría mejoras en el caso de manejar SSEs.
 
+- Para la comunicación síncrona a través de APIs REST entre módulos se ha usado el plugin `org.openapi.generator` de _Gradle_ usando la modalidad `restclient` adaptada para las dependencias de Spring Boot 4 y Java 21 (uso de anotaciones de Jakarta y Jackson 3+).
+
 - Otras decisiones de diseño han sido:
 
 ** Uso de *PostgreSQL* como base de datos principal con un modelo relacional tradicional con separación por dominios.
@@ -168,6 +170,47 @@ Para la implementación basada en Java las reglas que se han seguido son:
 ====
 Se ha optado por una aproximación pragmática a la hora de realizar la separación de capas dentro del paradigma de arquitectura héxagonal usando Axon. Si bien una separación purista de capas haría que el uso de elementos como @Aggregate o @Saga estuvieran a nivel de infraescructura, para aprovechar las ventajas de estos frameworks y evitar niveles de abstracción innencesarios se ha optado por aceptar este acoplamiento a nivel de la capa de aplicación. Si bien es posible aislarlo, al hacerlo se pierden muchas de las ventajas de usar Spring y se requiere de mas código manual para gestionar aspectos que el framework ya gestiona de forma automática.
 ====
+
+=== Seguridad
+
+El sistema tiene la particularidad de aceptar operaciones anónimas para la búsqueda y bloqueo de plazas pero requiere autenticación para la confirmación de la reserva. Para esto se ha diseñado un modelo híbrido en el que el módulo BFF es el encargado de gestionar esta lógica y delegar las operaciones a los módulos backend correspondientes.
+
+Para la autenticación a través del frontend se utilizará *OIDC* con Keycloak como proveedor de identidad. En las operaciones *anónimas* el sistema generará un identificador de sesión anónimo que se usará para mantener el contexto de la reserva durante el proceso de compra. Este *identificador se mantendrá en una cookie* y se usará para asociar las operaciones de bloqueo y reserva con la sesión anónima correspondiente. En caso de que el usuario decida autenticarse durante el proceso de compra, el sistema podrá asociar la sesión anónima con el perfil de usuario autenticado para futuras referencias.
+
+Para las peticiones autenticadas se usará la librería `spring-boot-starter-oauth2-resource-server` configurada del siguiente modo para validar los tokens contra el almacén público de Keycloak:
+
+[source, yaml]
+----
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${IAM_JWK_URI:http://localhost:8080/realms/${realm}/protocol/openid-connect/certs}
+          issuer-uri: ${IAM_ISSUER_URI:http://localhost:8080/auth/realms/${realm}}
+----
+
+=== Clientes de Keycloak
+
+Este prototipo incluye dos clientes de Keycloak para gestionar la autenticación creados por _Terraform_:
+
+- _parking-client_ con autenticación para las comunicaciones Backend to Backend utilizando client credentials.
+- _parking-client-frontend_ con autenticación PKCE para las comunicaciones del frontend SPA con los backends.
+
+=== Consideraciones de la implementación
+
+Aunque Spring Security permite activar `@EnableMethodSecurity` para establecer las restricciones de los métodos a través de anotaciones como `@PreAuthorize("hasAuthority('parking:create')")`, este mecanismo no encaja demasiado bien con un modelo de Arquitectura Hexagonal ya que un funcionamiento crítico como la seguridad quede acoplado al framework. Para evitar esto se optará por crear Guards programáticos con el modelo _port/adapter_ de un modo similar al siguiente:
+
+[source, java]
+----
+public interface ParkingAccessGuardPort {
+    void canCreateParking(CurrentUser user);
+    void canUpdateParking(CurrentUser user, UUID parkingId);
+    // ...
+}
+----
+
+Esto nos permitirá una mejor granularidad a la hora de establecer las reglas de seguridad y podrá ser testeada como un componente más de infraestructura.
 
 == Ejecución local
 
@@ -235,3 +278,13 @@ terraform apply
 | *Kafka UI*                  | http://localhost:8090/
 | *Ejemplo de configuración*  | http://localhost:8888/actuator-config/default/develop
 |===
+
+== TODO
+
+* Pruebas unitarias y de integración
+* Integración del modelo de seguridad
+** Guards basados en roles y permisos para las operaciones que lo requieran.
+** Integración de SecurityContext en los módulos de lectura de eventos de Spring Cloud Stream.
+** Crear un Bridge con autenticación para propagar cabeceras de autenticación en los eventos.
+* Modelo de indexación de precios usados para realizar las estimaciones de aparcamiento.
+* Modelo de indexación geográfico (leerá los eventos emitidos al realizar cambios en el catálogo de aparcamientos para actualizar las proyecciones en ElasticSearch / OpenSearch).
