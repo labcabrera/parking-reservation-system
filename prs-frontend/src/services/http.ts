@@ -1,4 +1,5 @@
 import { userManager } from '../auth/oidc';
+import { BOOKING_SESSION_HEADER, getBookingSessionId } from './bookingSession';
 
 export function getBaseUrl(envName: string, fallback = '') {
   const value = import.meta.env[envName] as string | undefined;
@@ -10,6 +11,10 @@ export async function authenticatedFetch(input: RequestInfo | URL, init: Request
   const user = storedUser?.expired ? await userManager?.signinSilent().catch(() => null) : storedUser;
   const token = user && !user.expired ? user.access_token : undefined;
   const headers = new Headers(init.headers);
+
+  if (!headers.has(BOOKING_SESSION_HEADER)) {
+    headers.set(BOOKING_SESSION_HEADER, getBookingSessionId());
+  }
 
   if (token && !headers.has('Authorization')) {
     headers.set('Authorization', `Bearer ${token}`);

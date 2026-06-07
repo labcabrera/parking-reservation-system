@@ -30,8 +30,11 @@ public class ReservationJpaEntity {
     @Column(name = "facility_id", nullable = false)
     private UUID facilityId;
 
-    @Column(name = "user_id", nullable = false, length = 100)
+    @Column(name = "user_id", length = 100)
     private String userId;
+
+    @Column(name = "booking_session_id", nullable = false, length = 100)
+    private String bookingSessionId;
 
     @Column(name = "check_in", nullable = false)
     private LocalDateTime checkIn;

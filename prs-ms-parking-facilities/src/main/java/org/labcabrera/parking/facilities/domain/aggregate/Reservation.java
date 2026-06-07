@@ -46,6 +46,8 @@ public class Reservation {
 
     private String userId;
 
+    private String bookingSessionId;
+
     private LocalDateTime checkIn;
 
     private LocalDateTime checkOut;
@@ -68,6 +70,7 @@ public class Reservation {
         UUID id,
         UUID facilityId,
         String userId,
+        String bookingSessionId,
         LocalDateTime checkIn,
         LocalDateTime checkOut,
         ReservationStatus status,
@@ -80,6 +83,7 @@ public class Reservation {
         this.id = id;
         this.facilityId = facilityId;
         this.userId = userId;
+        this.bookingSessionId = bookingSessionId;
         this.checkIn = checkIn;
         this.checkOut = checkOut;
         this.status = status;
@@ -100,6 +104,7 @@ public class Reservation {
             cmd.reservationId(),
             cmd.facilityId(),
             cmd.userId(),
+            cmd.bookingSessionId(),
             cmd.checkIn(),
             cmd.checkOut(),
             now.plusMinutes(config.holdMinutes())));
@@ -110,6 +115,7 @@ public class Reservation {
         this.id = ev.reservationId();
         this.facilityId = ev.facilityId();
         this.userId = ev.userId();
+        this.bookingSessionId = ev.bookingSessionId();
         this.checkIn = ev.checkIn();
         this.checkOut = ev.checkOut();
         this.status = ReservationStatus.PENDING;
@@ -158,6 +164,7 @@ public class Reservation {
             cmd.reservationId(),
             facilityId,
             userId,
+            bookingSessionId,
             checkIn,
             checkOut,
             expiresAt,

@@ -8,6 +8,7 @@ public record ReservationConfirmedEvent(
     UUID reservationId,
     UUID facilityId,
     String userId,
+    String bookingSessionId,
     LocalDateTime checkIn,
     LocalDateTime checkOut,
     LocalDateTime expiresAt,
@@ -15,6 +16,6 @@ public record ReservationConfirmedEvent(
     String currency) {
 
     public ReservationConfirmedEvent(UUID reservationId) {
-        this(reservationId, null, null, null, null, null, null, null);
+        this(reservationId, null, null, null, null, null, null, null, null);
     }
 }

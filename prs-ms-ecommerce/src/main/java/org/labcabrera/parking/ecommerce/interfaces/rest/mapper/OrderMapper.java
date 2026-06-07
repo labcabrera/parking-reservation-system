@@ -11,6 +11,7 @@ public class OrderMapper {
         return new OrderDto(
             order.getId(),
             order.getHoldId(),
+            order.getBookingSessionId(),
             order.getExpiresAt(),
             order.getMoney().amount(),
             order.getMoney().currency(),

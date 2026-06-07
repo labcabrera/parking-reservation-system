@@ -41,6 +41,7 @@ public class OrderSaga {
         commandGateway.sendAndWait(new CreateOrderCommand(
             orderId,
             holdId,
+            event.bookingSessionId(),
             expiresAt,
             event.amount(),
             event.currency()), 10, TimeUnit.SECONDS);

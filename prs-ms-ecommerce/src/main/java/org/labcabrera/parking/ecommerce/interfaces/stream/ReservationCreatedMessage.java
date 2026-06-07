@@ -9,6 +9,7 @@ public record ReservationCreatedMessage(
     UUID reservationId,
     UUID facilityId,
     String userId,
+    String bookingSessionId,
     LocalDateTime checkIn,
     LocalDateTime checkOut,
     LocalDateTime expiresAt,

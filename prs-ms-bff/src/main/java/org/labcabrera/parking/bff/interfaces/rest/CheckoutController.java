@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
+
 import org.labcabrera.parking.bff.generated.client.ecommerce.api.OrdersApi;
 import org.labcabrera.parking.bff.generated.client.ecommerce.model.InitiatePaymentRequest;
 import org.labcabrera.parking.bff.generated.client.ecommerce.model.Order;
@@ -11,6 +13,7 @@ import org.labcabrera.parking.bff.generated.client.ecommerce.model.Pageable;
 import org.labcabrera.parking.bff.generated.client.facilities.api.ParkingFacilitiesApi;
 import org.labcabrera.parking.bff.generated.client.facilities.api.ReservationsApi;
 import org.labcabrera.parking.bff.generated.client.facilities.model.FacilityAvailability;
+import org.labcabrera.parking.bff.generated.client.facilities.model.PageResponse;
 import org.labcabrera.parking.bff.generated.client.facilities.model.Reservation;
 import org.labcabrera.parking.bff.generated.client.facilities.model.StartReservationRequest;
 import org.labcabrera.parking.bff.interfaces.rest.dto.CheckoutDto;
@@ -21,15 +24,20 @@ import org.labcabrera.parking.bff.interfaces.rest.dto.SelectOptionRequest;
 import org.labcabrera.parking.bff.interfaces.rest.mapper.CheckoutMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,7 +46,10 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/checkout")
 @Tag(name = "Checkout", description = "End-to-end parking reservation and payment flow")
+@Slf4j
 public class CheckoutController {
+
+    private static final String BOOKING_SESSION_HEADER = "X-Booking-Session-Id";
 
     private final ParkingFacilitiesApi parkingFacilitiesApi;
     private final ReservationsApi reservationsApi;
@@ -79,7 +90,6 @@ public class CheckoutController {
 
         ResponseEntity<List<FacilityAvailability>> response = parkingFacilitiesApi.searchAvailabilityWithHttpInfo(q, checkIn, checkOut,
             limit);
-
         List<ParkingOptionDto> options = response.getBody() == null
             ? List.of()
             : response.getBody().stream().map(checkoutMapper::toParkingOptionDto).toList();
@@ -92,20 +102,57 @@ public class CheckoutController {
      * {@code checkoutId} must be used in all subsequent operations. The hold expires
      * after a short window; the user must confirm before it lapses.
      */
-    @PostMapping("/{checkoutId}/select-option")
+    @PostMapping("/select-option")
     @Operation(summary = "Select a parking option", description = "Creates a time-limited hold on the chosen facility for the requested period. "
         + "Returns the checkout state including the expiry time.")
     public ResponseEntity<CheckoutDto> selectOption(
-        @Parameter(description = "Client-generated idempotency key for this checkout session") @PathVariable UUID checkoutId,
-        @Valid @RequestBody SelectOptionRequest request) {
+        @Valid @RequestBody SelectOptionRequest request,
+        @RequestHeader(name = BOOKING_SESSION_HEADER, required = false) String bookingSessionHeader,
+        HttpServletRequest httpRequest,
+        Authentication authentication) {
 
+        String bookingSessionId = resolveBookingSessionId(bookingSessionHeader, httpRequest);
+        String userId = authenticatedUserIdOrNull(authentication);
+        log.info("Received select-option for facilityId={}, checkIn={}, checkOut={}, userIdPresent={}, bookingSessionId={}",
+            request.facilityId(), request.checkIn(), request.checkOut(), userId != null, bookingSessionId);
         StartReservationRequest startRequest = new StartReservationRequest()
             .facilityId(request.facilityId())
+            .userId(userId)
+            .bookingSessionId(bookingSessionId)
             .checkIn(request.checkIn())
             .checkOut(request.checkOut());
-
         Reservation reservation = reservationsApi.startWithHttpInfo(startRequest).getBody();
         return ResponseEntity.ok(checkoutMapper.toCheckoutDto(awaitPricedReservation(reservation), null));
+    }
+
+    /**
+     * Returns reservations owned by the authenticated user inside the requested time
+     * window. The reservation id returned in each item is the checkout id to use in
+     * follow-up checkout operations.
+     */
+    @GetMapping("/reservations")
+    @Operation(summary = "Search current user's reservations", description = "Returns reservations owned by the authenticated user within the requested time window.")
+    public ResponseEntity<List<CheckoutDto>> findUserReservations(
+        @Parameter(description = "Window start (ISO-8601)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
+        @Parameter(description = "Window end (ISO-8601)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end,
+        @Parameter(description = "Optional facility filter") @RequestParam(required = false) UUID facilityId,
+        @RequestParam(defaultValue = "0") Integer page,
+        @RequestParam(defaultValue = "20") Integer size,
+        @RequestParam(required = false) List<String> sort,
+        Authentication authentication) {
+
+        String userId = authenticatedUserId(authentication);
+        var pageable = new org.labcabrera.parking.bff.generated.client.facilities.model.Pageable()
+            .page(page)
+            .size(size)
+            .sort(sort);
+        PageResponse response = reservationsApi.callListWithHttpInfo(start, end, pageable, facilityId, userId, null).getBody();
+        List<CheckoutDto> reservations = response == null || response.getContent() == null
+            ? List.of()
+            : response.getContent().stream()
+                .map(reservation -> checkoutMapper.toCheckoutDto(reservation, findOrderByHoldIdOrNull(reservation.getId())))
+                .toList();
+        return ResponseEntity.ok(reservations);
     }
 
     /**
@@ -116,10 +163,16 @@ public class CheckoutController {
     @Operation(summary = "Confirm the checkout hold", description = "Confirms the parking reservation. An order is created automatically. "
         + "After confirmation the user can proceed to payment.")
     public ResponseEntity<CheckoutDto> confirm(
-        @Parameter(description = "Checkout identifier returned by select-option") @PathVariable UUID checkoutId) {
+        @Parameter(description = "Checkout identifier returned by select-option") @PathVariable UUID checkoutId,
+        @RequestHeader(name = BOOKING_SESSION_HEADER, required = false) String bookingSessionHeader,
+        HttpServletRequest httpRequest,
+        Authentication authentication) {
 
+        log.info("Received confirm for checkoutId={}", checkoutId);
+        Reservation existingReservation = findReservationById(checkoutId);
+        assertCheckoutBelongsToCaller(existingReservation, authentication, resolveBookingSessionId(bookingSessionHeader, httpRequest));
         reservationsApi.confirmWithHttpInfo(checkoutId);
-        Reservation reservation = reservationsApi.getWithHttpInfo(checkoutId).getBody();
+        Reservation reservation = findReservationById(checkoutId);
         return ResponseEntity.ok(checkoutMapper.toCheckoutDto(reservation, null));
     }
 
@@ -132,8 +185,13 @@ public class CheckoutController {
         + "The response contains the redirect URL to the payment gateway page.")
     public ResponseEntity<PaymentAttemptResultDto> pay(
         @Parameter(description = "Checkout identifier returned by select-option") @PathVariable UUID checkoutId,
-        @Valid @RequestBody InitiateCheckoutPaymentRequest request) {
+        @Valid @RequestBody InitiateCheckoutPaymentRequest request,
+        @RequestHeader(name = BOOKING_SESSION_HEADER, required = false) String bookingSessionHeader,
+        HttpServletRequest httpRequest,
+        Authentication authentication) {
 
+        Reservation reservation = findReservationById(checkoutId);
+        assertCheckoutBelongsToCaller(reservation, authentication, resolveBookingSessionId(bookingSessionHeader, httpRequest));
         Order order = findOrderByHoldId(checkoutId);
 
         UUID idempotencyKey = request.idempotencyKey() != null
@@ -159,14 +217,20 @@ public class CheckoutController {
     @GetMapping("/{checkoutId}")
     @Operation(summary = "Get checkout state", description = "Returns the full checkout state: reservation details, expiry time, amount and payment status.")
     public ResponseEntity<CheckoutDto> getCheckout(
-        @Parameter(description = "Checkout identifier returned by select-option") @PathVariable UUID checkoutId) {
+        @Parameter(description = "Checkout identifier returned by select-option") @PathVariable UUID checkoutId,
+        @RequestHeader(name = BOOKING_SESSION_HEADER, required = false) String bookingSessionHeader,
+        HttpServletRequest httpRequest,
+        Authentication authentication) {
 
-        Reservation reservation = reservationsApi.getWithHttpInfo(checkoutId).getBody();
+        Reservation reservation = findReservationById(checkoutId);
+        assertCheckoutBelongsToCaller(reservation, authentication, resolveBookingSessionId(bookingSessionHeader, httpRequest));
         Order order = findOrderByHoldIdOrNull(checkoutId);
         return ResponseEntity.ok(checkoutMapper.toCheckoutDto(reservation, order));
     }
 
-    // --- Mapping helpers ---
+    private Reservation findReservationById(UUID checkoutId) {
+        return reservationsApi.getWithHttpInfo(checkoutId).getBody();
+    }
 
     private Reservation awaitPricedReservation(Reservation initialReservation) {
         if (initialReservation == null || initialReservation.getId() == null || hasPrice(initialReservation)) {
@@ -218,5 +282,48 @@ public class CheckoutController {
             return null;
         }
         return response.getBody().getContent().get(0);
+    }
+
+    private String authenticatedUserId(Authentication authentication) {
+        String userId = authenticatedUserIdOrNull(authentication);
+        if (userId == null) {
+            throw new IllegalStateException("Authenticated user is required");
+        }
+        return userId;
+    }
+
+    private String authenticatedUserIdOrNull(Authentication authentication) {
+        if (authentication == null
+            || !authentication.isAuthenticated()
+            || authentication.getName() == null
+            || authentication.getName().isBlank()
+            || "anonymousUser".equals(authentication.getName())) {
+            return null;
+        }
+        return authentication.getName();
+    }
+
+    private String resolveBookingSessionId(String bookingSessionHeader, HttpServletRequest httpRequest) {
+        if (hasText(bookingSessionHeader)) {
+            return bookingSessionHeader.trim();
+        }
+        return httpRequest.getSession(true).getId();
+    }
+
+    private void assertCheckoutBelongsToCaller(Reservation reservation, Authentication authentication, String bookingSessionId) {
+        String userId = authenticatedUserIdOrNull(authentication);
+        if (hasText(reservation.getUserId()) && reservation.getUserId().equals(userId)) {
+            return;
+        }
+        if (!hasText(reservation.getUserId())
+            && hasText(reservation.getBookingSessionId())
+            && reservation.getBookingSessionId().equals(bookingSessionId)) {
+            return;
+        }
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Checkout does not belong to the current caller");
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 }

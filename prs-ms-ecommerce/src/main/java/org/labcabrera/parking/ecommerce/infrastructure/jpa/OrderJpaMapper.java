@@ -15,6 +15,7 @@ public interface OrderJpaMapper {
         return new Order(
             entity.getId(),
             entity.getHoldId(),
+            entity.getBookingSessionId(),
             entity.getExpiresAt(),
             new Money(entity.getMoney().getAmount(), entity.getMoney().getCurrency()),
             entity.getStatus(),

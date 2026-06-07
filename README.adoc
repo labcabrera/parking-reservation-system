@@ -343,8 +343,12 @@ npm run build
 * Pruebas unitarias y de integración
 * Integración del modelo de seguridad
 ** Integrar configuración común de CORS en cada módulo correspondiente
+** Establecer anotaciones de seguridad en cada módulo para proteger las APIs
 ** Guards basados en roles y permisos para las operaciones que lo requieran
 ** Integración de SecurityContext en los módulos de lectura de eventos de Spring Cloud Stream
 ** Crear un Bridge con autenticación para propagar cabeceras de autenticación en los eventos
+* Mejoras generales en la integración de errores. Configuración de los más fina de los RestControllerAdvice para ofrecer mensajes de error más consistentes
+* Cambiar el polling en el BFF por un modelo basado en SSEs para mejorar la experiencia de usuario durante el proceso de reserva y reducir la carga al emitir eventos a través de los cambios de estado leidos de Kafka
+* Gestión correcta de eventos de Spring Cloud Stream con reintentos, backoff y circuit breakers
 * Modelo de indexación de precios usados para realizar las estimaciones de aparcamiento
 * Modelo de indexación geográfico (leerá los eventos emitidos al realizar cambios en el catálogo de aparcamientos para actualizar las proyecciones en Elastic/OpenSearch)

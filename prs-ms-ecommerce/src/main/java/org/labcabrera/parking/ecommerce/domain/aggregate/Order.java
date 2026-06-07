@@ -38,6 +38,8 @@ public class Order {
 
     private UUID holdId;
 
+    private String bookingSessionId;
+
     private LocalDateTime expiresAt;
 
     private Money money;
@@ -55,6 +57,7 @@ public class Order {
     public Order(
         UUID id,
         UUID holdId,
+        String bookingSessionId,
         LocalDateTime expiresAt,
         Money money,
         OrderStatus status,
@@ -64,6 +67,7 @@ public class Order {
         Long version) {
         this.id = id;
         this.holdId = holdId;
+        this.bookingSessionId = bookingSessionId;
         this.expiresAt = expiresAt;
         this.money = money;
         this.status = status;
@@ -80,6 +84,7 @@ public class Order {
         apply(new OrderCreatedEvent(
             command.orderId(),
             command.holdId(),
+            command.bookingSessionId(),
             command.expiresAt(),
             command.amount(),
             command.currency(),
@@ -90,6 +95,7 @@ public class Order {
     void on(OrderCreatedEvent event) {
         this.id = event.orderId();
         this.holdId = event.holdId();
+        this.bookingSessionId = event.bookingSessionId();
         this.expiresAt = event.expiresAt();
         this.money = new Money(event.amount(), event.currency());
         this.status = OrderStatus.PENDING_PAYMENT;

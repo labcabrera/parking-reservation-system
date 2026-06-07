@@ -28,6 +28,7 @@ public class ReservationCreatedStreamPublisher {
             event.reservationId(),
             event.facilityId(),
             event.userId(),
+            event.bookingSessionId(),
             event.checkIn(),
             event.checkOut(),
             event.expiresAt(),

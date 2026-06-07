@@ -56,6 +56,22 @@
             }
           },
           {
+            "name": "userId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bookingSessionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "pageable",
             "in": "query",
             "required": true,
@@ -468,6 +484,14 @@
             "description": "ID of the parking facility to reserve",
             "examples": ["123e4567-e89b-12d3-a456-426614174000"]
           },
+          "userId": {
+            "type": "string",
+            "description": "User id who starts the reservation when authenticated"
+          },
+          "bookingSessionId": {
+            "type": "string",
+            "description": "Stable booking session id used to correlate anonymous and authenticated checkout calls"
+          },
           "checkIn": {
             "type": "string",
             "format": "date-time",
@@ -481,7 +505,7 @@
             "examples": ["2026-01-02T15:00:00.000Z"]
           }
         },
-        "required": ["checkIn", "checkOut", "facilityId"]
+        "required": ["bookingSessionId", "checkIn", "checkOut", "facilityId"]
       },
       "Reservation": {
         "type": "object",
@@ -501,7 +525,11 @@
           },
           "userId": {
             "type": "string",
-            "description": "User id who started the reservation"
+            "description": "User id who started the reservation when authenticated"
+          },
+          "bookingSessionId": {
+            "type": "string",
+            "description": "Stable booking session id used to correlate checkout calls"
           },
           "checkIn": {
             "type": "string",
@@ -540,7 +568,7 @@
             "description": "Failure reason, when status is FAILED or similar"
           }
         },
-        "required": ["checkIn", "checkOut", "facilityId", "id", "userId"]
+        "required": ["bookingSessionId", "checkIn", "checkOut", "facilityId", "id"]
       },
       "CancellationPolicy": {
         "type": "object",

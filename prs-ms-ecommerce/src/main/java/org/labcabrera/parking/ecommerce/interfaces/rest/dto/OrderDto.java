@@ -17,6 +17,9 @@ public record OrderDto(
     @Schema(description = "Hold identifier")
     UUID holdId,
 
+    @Schema(description = "Stable booking session id used to correlate checkout calls")
+    String bookingSessionId,
+
     @Schema(description = "Order expiration timestamp")
     LocalDateTime expiresAt,
 

@@ -20,6 +20,8 @@ public record CreateOrderCommand(
     @NotNull
     UUID holdId,
 
+    String bookingSessionId,
+
     @NotNull
     @Future
     LocalDateTime expiresAt,

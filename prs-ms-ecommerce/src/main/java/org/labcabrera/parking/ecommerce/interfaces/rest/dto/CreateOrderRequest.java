@@ -17,6 +17,9 @@ public record CreateOrderRequest(
     @Schema(description = "Hold identifier confirmed by the reservation flow", requiredMode = Schema.RequiredMode.REQUIRED)
     UUID holdId,
 
+    @Schema(description = "Stable booking session id used to correlate checkout calls")
+    String bookingSessionId,
+
     @NotNull
     @Future
     @Schema(description = "Order expiration timestamp", requiredMode = Schema.RequiredMode.REQUIRED)

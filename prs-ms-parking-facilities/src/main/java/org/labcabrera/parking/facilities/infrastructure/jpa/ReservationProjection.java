@@ -29,6 +29,7 @@ class ReservationProjection {
         entity.setId(event.reservationId());
         entity.setFacilityId(event.facilityId());
         entity.setUserId(event.userId());
+        entity.setBookingSessionId(event.bookingSessionId());
         entity.setCheckIn(event.checkIn());
         entity.setCheckOut(event.checkOut());
         entity.setStatus(ReservationStatus.PENDING);

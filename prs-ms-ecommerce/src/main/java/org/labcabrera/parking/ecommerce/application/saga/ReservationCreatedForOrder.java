@@ -6,6 +6,7 @@ import java.util.UUID;
 
 public record ReservationCreatedForOrder(
     UUID reservationId,
+    String bookingSessionId,
     LocalDateTime expiresAt,
     BigDecimal amount,
     String currency) {

@@ -14,7 +14,9 @@ public record ReservationDto(
 
     @Schema(description = "Facility id", examples = "3fa85f64-5717-4562-b3fc-2c963f66afa6", requiredMode = RequiredMode.REQUIRED) UUID facilityId,
 
-    @Schema(description = "User id who started the reservation", requiredMode = RequiredMode.REQUIRED) String userId,
+    @Schema(description = "User id who started the reservation when authenticated") String userId,
+
+    @Schema(description = "Stable booking session id used to correlate checkout calls", requiredMode = RequiredMode.REQUIRED) String bookingSessionId,
 
     @Schema(description = "Check-in datetime", examples = "2026-01-01T15:00:00.000Z", requiredMode = RequiredMode.REQUIRED) LocalDateTime checkIn,
 

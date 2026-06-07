@@ -7,6 +7,7 @@ import java.util.UUID;
 public record OrderCreatedEvent(
     UUID orderId,
     UUID holdId,
+    String bookingSessionId,
     LocalDateTime expiresAt,
     BigDecimal amount,
     String currency,

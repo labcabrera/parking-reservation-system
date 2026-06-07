@@ -14,9 +14,8 @@ const PAYMENT_METHODS_URL = `${BFF_URL}/api/v1/payment-methods`;
 export async function selectCheckoutOption(
   request: SelectOptionRequest,
 ): Promise<Checkout> {
-  const checkoutRequestId = crypto.randomUUID();
   const response = await authenticatedFetch(
-    `${CHECKOUT_URL}/${checkoutRequestId}/select-option`,
+    `${CHECKOUT_URL}/select-option`,
     {
       body: JSON.stringify(request),
       headers: {
@@ -70,6 +69,41 @@ export async function listPaymentMethods(): Promise<PaymentMethod[]> {
 
   return [...page.content].sort(
     (left, right) => (left.displayOrder ?? 0) - (right.displayOrder ?? 0),
+  );
+}
+
+export interface ListUserReservationsRequest {
+  end: string;
+  facilityId?: string;
+  page?: number;
+  size?: number;
+  sort?: string[];
+  start: string;
+}
+
+export async function listUserReservations(
+  request: ListUserReservationsRequest,
+): Promise<Checkout[]> {
+  const searchParams = new URLSearchParams({
+    end: request.end,
+    page: String(request.page ?? 0),
+    size: String(request.size ?? 20),
+    start: request.start,
+  });
+
+  if (request.facilityId) {
+    searchParams.set("facilityId", request.facilityId);
+  }
+
+  request.sort?.forEach((sort) => searchParams.append("sort", sort));
+
+  const response = await authenticatedFetch(
+    `${CHECKOUT_URL}/reservations?${searchParams.toString()}`,
+  );
+
+  return parseJsonResponse<Checkout[]>(
+    response,
+    "User reservations could not be loaded",
   );
 }
 

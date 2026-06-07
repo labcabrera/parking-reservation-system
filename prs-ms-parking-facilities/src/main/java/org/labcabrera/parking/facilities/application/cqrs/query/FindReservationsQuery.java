@@ -14,6 +14,10 @@ public record FindReservationsQuery(
 
     UUID facilityId,
 
+    String userId,
+
+    String bookingSessionId,
+
     @NotNull Pageable pageable) {
 
     public FindReservationsQuery {

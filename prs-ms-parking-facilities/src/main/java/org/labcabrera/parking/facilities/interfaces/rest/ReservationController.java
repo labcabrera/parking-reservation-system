@@ -14,6 +14,7 @@ import org.axonframework.queryhandling.QueryGateway;
 import org.labcabrera.parking.facilities.application.cqrs.command.CancelReservationCommand;
 import org.labcabrera.parking.facilities.application.cqrs.command.ConfirmReservationCommand;
 import org.labcabrera.parking.facilities.application.cqrs.command.StartReservationCommand;
+import org.labcabrera.parking.facilities.application.cqrs.query.FindHeldReservationsForOwnerQuery;
 import org.labcabrera.parking.facilities.application.cqrs.query.FindReservationsQuery;
 import org.labcabrera.parking.facilities.application.cqrs.query.GetReservationByIdQuery;
 import org.labcabrera.parking.facilities.domain.aggregate.Reservation;
@@ -59,10 +60,9 @@ public class ReservationController {
         log.info("Received StartReservationRequest for facility {} from {} to {}",
             request.facilityId(), request.checkIn(), request.checkOut());
 
-        // TODO integrate with security to extract real user id
         UUID reservationId = UUID.randomUUID();
-        String userId = "user-test";
-        var command = new StartReservationCommand(reservationId, request.facilityId(), userId, request.checkIn(), request.checkOut());
+        var command = new StartReservationCommand(reservationId, request.facilityId(), request.userId(), request.bookingSessionId(),
+            request.checkIn(), request.checkOut());
         commandGateway.sendAndWait(command, 10, TimeUnit.SECONDS);
 
         //TODO leer del comand directamente
@@ -92,10 +92,12 @@ public class ReservationController {
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end,
         @RequestParam(required = false) UUID facilityId,
+        @RequestParam(required = false) String userId,
+        @RequestParam(required = false) String bookingSessionId,
         Pageable pageable) {
 
         log.debug("Received list reservations request for facility {} from {} to {}", facilityId, start, end);
-        var query = new FindReservationsQuery(start, end, facilityId, pageable);
+        var query = new FindReservationsQuery(start, end, facilityId, userId, bookingSessionId, pageable);
         var respType = ResponseTypes.instanceOf(Page.class);
         Page<Reservation> page = queryGateway.query(query, respType).join();
         Page<ReservationDto> dtoPage = page.map(reservationMapper::toDto);
@@ -109,11 +111,10 @@ public class ReservationController {
     @Operation(summary = "Confirm a HELD reservation")
     public ResponseEntity<ReservationDto> confirm(@PathVariable UUID id) {
         log.info("Received confirm request for reservation {}", id);
+        Reservation heldReservation = findReservationById(id);
         commandGateway.sendAndWait(new ConfirmReservationCommand(id), 5, TimeUnit.SECONDS);
-        var query = new GetReservationByIdQuery(id);
-        ResponseType<Optional<Reservation>> responseType = ResponseTypes.optionalInstanceOf(Reservation.class);
-        Reservation reservation = queryGateway.query(query, responseType).join()
-            .orElseThrow(() -> new EntityNotFoundException("Reservation %s not found".formatted(id)));
+        cancelOtherHeldReservations(heldReservation);
+        Reservation reservation = findReservationById(id);
         return ResponseEntity.ok(reservationMapper.toDto(reservation));
     }
 
@@ -123,6 +124,30 @@ public class ReservationController {
         log.info("Received cancel request for reservation {}", id);
         commandGateway.sendAndWait(new CancelReservationCommand(id, "user-cancelled"), 5, TimeUnit.SECONDS);
         return ResponseEntity.noContent().build();
+    }
+
+    private Reservation findReservationById(UUID id) {
+        var query = new GetReservationByIdQuery(id);
+        ResponseType<Optional<Reservation>> responseType = ResponseTypes.optionalInstanceOf(Reservation.class);
+        return queryGateway.query(query, responseType).join()
+            .orElseThrow(() -> new EntityNotFoundException("Reservation %s not found".formatted(id)));
+    }
+
+    private void cancelOtherHeldReservations(Reservation confirmedReservation) {
+        var query = new FindHeldReservationsForOwnerQuery(
+            confirmedReservation.getUserId(),
+            confirmedReservation.getBookingSessionId(),
+            confirmedReservation.getId());
+        ResponseType<java.util.List<Reservation>> responseType = ResponseTypes.multipleInstancesOf(Reservation.class);
+        java.util.List<Reservation> heldReservations = queryGateway.query(query, responseType).join();
+        heldReservations.forEach(reservation -> {
+            log.info("Cancelling held reservation {} superseded by confirmed reservation {}", reservation.getId(),
+                confirmedReservation.getId());
+            commandGateway.sendAndWait(
+                new CancelReservationCommand(reservation.getId(), "superseded-by-confirmed-reservation"),
+                5,
+                TimeUnit.SECONDS);
+        });
     }
 
 }

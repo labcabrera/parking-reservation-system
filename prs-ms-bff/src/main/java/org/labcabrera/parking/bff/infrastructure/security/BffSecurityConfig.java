@@ -34,6 +34,8 @@ public class BffSecurityConfig {
             .cors(Customizer.withDefaults())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.OPTIONS, "/**")
+                .permitAll()
                 .requestMatchers(
                     "/actuator/health",
                     "/actuator/info",
@@ -41,7 +43,21 @@ public class BffSecurityConfig {
                     "/swagger-ui.html",
                     "/swagger-ui/**")
                 .permitAll()
-                .anyRequest().permitAll())
+                .requestMatchers(HttpMethod.GET, "/api/v1/checkout/search")
+                .permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/checkout/select-option")
+                .permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/checkout/reservations")
+                .authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/v1/checkout/{checkoutId}")
+                .permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/checkout/{checkoutId}/confirm")
+                .permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/checkout/{checkoutId}/payment-attempts")
+                .permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/payment-methods")
+                .permitAll()
+                .anyRequest().authenticated())
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
             .addFilterAfter(new AnonymousSessionCookieFilter(), BearerTokenAuthenticationFilter.class);
 

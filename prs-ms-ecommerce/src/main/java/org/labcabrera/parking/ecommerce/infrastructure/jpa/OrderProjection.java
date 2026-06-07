@@ -28,6 +28,7 @@ class OrderProjection {
         OrderJpaEntity entity = new OrderJpaEntity();
         entity.setId(event.orderId());
         entity.setHoldId(event.holdId());
+        entity.setBookingSessionId(event.bookingSessionId());
         entity.setExpiresAt(event.expiresAt());
         entity.setMoney(new MoneyEmbeddable(event.amount(), event.currency()));
         entity.setStatus(OrderStatus.PENDING_PAYMENT);

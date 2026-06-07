@@ -15,6 +15,7 @@ public interface ReservationJpaMapper {
             entity.getId(),
             entity.getFacilityId(),
             entity.getUserId(),
+            entity.getBookingSessionId(),
             entity.getCheckIn(),
             entity.getCheckOut(),
             entity.getStatus(),

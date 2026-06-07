@@ -59,6 +59,7 @@ public class OrderController {
         var command = new CreateOrderCommand(
             orderId,
             request.holdId(),
+            request.bookingSessionId(),
             request.expiresAt(),
             request.amount(),
             request.currency());

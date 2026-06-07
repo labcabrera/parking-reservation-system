@@ -72,7 +72,7 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        log.warn("Validation exception", ex.getMessage());
+        log.warn("Validation exception {}", ex.getMessage());
         var details = new ArrayList<String>();
         ex.getBindingResult().getAllErrors().forEach(error -> {
             String fieldName = ((FieldError) error).getField();

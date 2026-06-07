@@ -19,6 +19,7 @@ public class ReservationCreatedStreamListener {
             log.info("Received reservation created message {}", message.reservationId());
             orderSaga.on(new ReservationCreatedForOrder(
                 message.reservationId(),
+                message.bookingSessionId(),
                 message.expiresAt(),
                 message.amount(),
                 message.currency()));

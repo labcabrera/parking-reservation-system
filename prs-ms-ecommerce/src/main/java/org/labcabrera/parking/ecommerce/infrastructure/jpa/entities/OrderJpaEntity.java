@@ -30,6 +30,9 @@ public class OrderJpaEntity {
     @Column(name = "hold_id", nullable = false, unique = true)
     private UUID holdId;
 
+    @Column(name = "booking_session_id", length = 100)
+    private String bookingSessionId;
+
     @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiresAt;
 
