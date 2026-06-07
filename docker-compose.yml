@@ -117,7 +117,7 @@ services:
       start_period: 60s
 
   # -----------------------------------------------------------------------
-  # Observability: OpenTelemetry Collector
+  # Infrastructure: OpenTelemetry Collector
   # -----------------------------------------------------------------------
   otel-collector:
     profiles: [infrastructure, apps]
@@ -128,6 +128,37 @@ services:
     ports:
       - "4317:4317"
       - "4318:4318"
+
+  # -----------------------------------------------------------------------
+  # Infrastructure: Prometheus
+  # -----------------------------------------------------------------------
+  prometheus:
+    profiles: [infrastructure, apps]
+    image: prom/prometheus:latest
+    volumes:
+      - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+
+  # -----------------------------------------------------------------------
+  # Infrastructure: Grafana
+  # -----------------------------------------------------------------------
+  grafana:
+    profiles: [infrastructure, apps]
+    image: grafana/grafana:latest
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3002:3000"
+    depends_on:
+      - prometheus
 
   # -----------------------------------------------------------------------
   # Infrastructure: Spring Cloud Config Server
@@ -447,36 +478,6 @@ services:
       - "3001:80"
     depends_on:
       - prs-mock-ms-payment
-
-  # -----------------------------------------------------------------------
-  # Observability: Prometheus
-  # -----------------------------------------------------------------------
-  prometheus:
-    profiles: [observability]
-    image: prom/prometheus:latest
-    volumes:
-      - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
-    ports:
-      - "9090:9090"
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.path=/prometheus"
-
-  # -----------------------------------------------------------------------
-  # Observability: Grafana
-  # -----------------------------------------------------------------------
-  grafana:
-    profiles: [observability]
-    image: grafana/grafana:latest
-    environment:
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
-    volumes:
-      - grafana_data:/var/lib/grafana
-    ports:
-      - "3002:3000"
-    depends_on:
-      - prometheus
 
 volumes:
   postgres_data:

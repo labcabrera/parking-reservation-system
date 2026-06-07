@@ -5,7 +5,7 @@ import type {
   PaymentMethod,
   SelectOptionRequest,
 } from "../types/checkout";
-import { authenticatedFetch, getBaseUrl, parseJsonResponse } from "./http";
+import { authenticatedFetch, bookingSessionFetch, getBaseUrl, parseJsonResponse } from "./http";
 
 const BFF_URL = getBaseUrl("VITE_BFF_URL");
 const CHECKOUT_URL = `${BFF_URL}/api/v1/checkout`;
@@ -14,7 +14,7 @@ const PAYMENT_METHODS_URL = `${BFF_URL}/api/v1/payment-methods`;
 export async function selectCheckoutOption(
   request: SelectOptionRequest,
 ): Promise<Checkout> {
-  const response = await authenticatedFetch(
+  const response = await bookingSessionFetch(
     `${CHECKOUT_URL}/select-option`,
     {
       body: JSON.stringify(request),
@@ -32,7 +32,7 @@ export async function selectCheckoutOption(
 }
 
 export async function confirmCheckout(checkoutId: string): Promise<Checkout> {
-  const response = await authenticatedFetch(
+  const response = await bookingSessionFetch(
     `${CHECKOUT_URL}/${encodeURIComponent(checkoutId)}/confirm`,
     {
       method: "POST",
@@ -46,7 +46,7 @@ export async function confirmCheckout(checkoutId: string): Promise<Checkout> {
 }
 
 export async function getCheckout(checkoutId: string): Promise<Checkout> {
-  const response = await authenticatedFetch(
+  const response = await bookingSessionFetch(
     `${CHECKOUT_URL}/${encodeURIComponent(checkoutId)}`,
   );
 
@@ -59,7 +59,7 @@ export async function listPaymentMethods(): Promise<PaymentMethod[]> {
     page: "0",
     size: "20",
   });
-  const response = await authenticatedFetch(
+  const response = await bookingSessionFetch(
     `${PAYMENT_METHODS_URL}?${searchParams.toString()}`,
   );
   const page = await parseJsonResponse<PageResponse<PaymentMethod>>(
@@ -112,7 +112,7 @@ export async function initiateCheckoutPayment(
   paymentMethodCode: string,
   idempotencyKey: string,
 ): Promise<PaymentAttemptResult> {
-  const response = await authenticatedFetch(
+  const response = await bookingSessionFetch(
     `${CHECKOUT_URL}/${encodeURIComponent(checkoutId)}/payment-attempts`,
     {
       body: JSON.stringify({ paymentMethodCode, idempotencyKey }),

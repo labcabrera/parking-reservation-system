@@ -10,11 +10,7 @@ export async function authenticatedFetch(input: RequestInfo | URL, init: Request
   const storedUser = await userManager?.getUser();
   const user = storedUser?.expired ? await userManager?.signinSilent().catch(() => null) : storedUser;
   const token = user && !user.expired ? user.access_token : undefined;
-  const headers = new Headers(init.headers);
-
-  if (!headers.has(BOOKING_SESSION_HEADER)) {
-    headers.set(BOOKING_SESSION_HEADER, getBookingSessionId());
-  }
+  const headers = withBookingSessionHeader(init.headers);
 
   if (token && !headers.has('Authorization')) {
     headers.set('Authorization', `Bearer ${token}`);
@@ -24,6 +20,23 @@ export async function authenticatedFetch(input: RequestInfo | URL, init: Request
     ...init,
     headers,
   });
+}
+
+export async function bookingSessionFetch(input: RequestInfo | URL, init: RequestInit = {}) {
+  return fetch(input, {
+    ...init,
+    headers: withBookingSessionHeader(init.headers),
+  });
+}
+
+function withBookingSessionHeader(headersInit?: HeadersInit) {
+  const headers = new Headers(headersInit);
+
+  if (!headers.has(BOOKING_SESSION_HEADER)) {
+    headers.set(BOOKING_SESSION_HEADER, getBookingSessionId());
+  }
+
+  return headers;
 }
 
 export async function parseJsonResponse<T>(response: Response, message: string): Promise<T> {

@@ -1,6 +1,6 @@
 import type { FacilityResult, InventoryBlockType, PageResponse, ParkingCapacity, SearchRequest, SearchResponse } from '../types/catalog';
 import { getBookingSessionId } from './bookingSession';
-import { authenticatedFetch, getBaseUrl, parseJsonResponse } from './http';
+import { bookingSessionFetch, getBaseUrl, parseJsonResponse } from './http';
 
 const BFF_URL = getBaseUrl('VITE_BFF_URL');
 const CHECKOUT_URL = `${BFF_URL}/api/v1/checkout`;
@@ -46,7 +46,7 @@ export async function searchParking(params: SearchRequest): Promise<SearchRespon
   searchParams.set('checkOut', params.checkOut);
   if (params.size != null) searchParams.set('limit', String(params.size));
 
-  const response = await authenticatedFetch(`${CHECKOUT_URL}/search?${searchParams.toString()}`);
+  const response = await bookingSessionFetch(`${CHECKOUT_URL}/search?${searchParams.toString()}`);
   const payload = await parseJsonResponse<ParkingOptionDto[] | PageResponse<ParkingOptionDto>>(
     response,
     'Search failed',
