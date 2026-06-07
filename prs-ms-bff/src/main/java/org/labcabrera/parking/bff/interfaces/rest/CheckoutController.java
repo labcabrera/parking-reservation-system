@@ -18,6 +18,7 @@ import org.labcabrera.parking.bff.interfaces.rest.dto.InitiateCheckoutPaymentReq
 import org.labcabrera.parking.bff.interfaces.rest.dto.ParkingOptionDto;
 import org.labcabrera.parking.bff.interfaces.rest.dto.PaymentAttemptResultDto;
 import org.labcabrera.parking.bff.interfaces.rest.dto.SelectOptionRequest;
+import org.labcabrera.parking.bff.interfaces.rest.mapper.CheckoutMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -42,6 +43,7 @@ public class CheckoutController {
     private final ParkingFacilitiesApi parkingFacilitiesApi;
     private final ReservationsApi reservationsApi;
     private final OrdersApi ordersApi;
+    private final CheckoutMapper checkoutMapper;
 
     @Value("${bff.mock-payment.redirect-base-url:http://localhost:3001/payment}")
     private String mockPaymentRedirectBaseUrl;
@@ -55,10 +57,12 @@ public class CheckoutController {
     public CheckoutController(
         ParkingFacilitiesApi parkingFacilitiesApi,
         ReservationsApi reservationsApi,
-        OrdersApi ordersApi) {
+        OrdersApi ordersApi,
+        CheckoutMapper checkoutMapper) {
         this.parkingFacilitiesApi = parkingFacilitiesApi;
         this.reservationsApi = reservationsApi;
         this.ordersApi = ordersApi;
+        this.checkoutMapper = checkoutMapper;
     }
 
     /**
@@ -78,7 +82,7 @@ public class CheckoutController {
 
         List<ParkingOptionDto> options = response.getBody() == null
             ? List.of()
-            : response.getBody().stream().map(this::toParkingOptionDto).toList();
+            : response.getBody().stream().map(checkoutMapper::toParkingOptionDto).toList();
 
         return ResponseEntity.ok(options);
     }
@@ -101,7 +105,7 @@ public class CheckoutController {
             .checkOut(request.checkOut());
 
         Reservation reservation = reservationsApi.startWithHttpInfo(startRequest).getBody();
-        return ResponseEntity.ok(toCheckoutDto(awaitPricedReservation(reservation), null));
+        return ResponseEntity.ok(checkoutMapper.toCheckoutDto(awaitPricedReservation(reservation), null));
     }
 
     /**
@@ -116,7 +120,7 @@ public class CheckoutController {
 
         reservationsApi.confirmWithHttpInfo(checkoutId);
         Reservation reservation = reservationsApi.getWithHttpInfo(checkoutId).getBody();
-        return ResponseEntity.ok(toCheckoutDto(reservation, null));
+        return ResponseEntity.ok(checkoutMapper.toCheckoutDto(reservation, null));
     }
 
     /**
@@ -132,7 +136,9 @@ public class CheckoutController {
 
         Order order = findOrderByHoldId(checkoutId);
 
-        UUID idempotencyKey = UUID.randomUUID();
+        UUID idempotencyKey = request.idempotencyKey() != null
+            ? request.idempotencyKey()
+            : UUID.randomUUID();
         ordersApi.payWithHttpInfo(order.getId(), new InitiatePaymentRequest()
             .idempotencyKey(idempotencyKey)
             .paymentMethodCode(request.paymentMethodCode()));
@@ -157,43 +163,10 @@ public class CheckoutController {
 
         Reservation reservation = reservationsApi.getWithHttpInfo(checkoutId).getBody();
         Order order = findOrderByHoldIdOrNull(checkoutId);
-        return ResponseEntity.ok(toCheckoutDto(reservation, order));
+        return ResponseEntity.ok(checkoutMapper.toCheckoutDto(reservation, order));
     }
 
     // --- Mapping helpers ---
-
-    private ParkingOptionDto toParkingOptionDto(FacilityAvailability fa) {
-        return new ParkingOptionDto(
-            fa.getId(),
-            fa.getName(),
-            fa.getCity(),
-            fa.getAddress(),
-            fa.getAvailableSpots(),
-            Boolean.TRUE.equals(fa.getLowAvailability()),
-            fa.getEstimatedPrice(),
-            fa.getCurrency());
-    }
-
-    private CheckoutDto toCheckoutDto(Reservation reservation, Order order) {
-        if (reservation == null) {
-            return null;
-        }
-        String paymentStatus = order != null && order.getStatus() != null
-            ? order.getStatus().getValue()
-            : null;
-        return new CheckoutDto(
-            reservation.getId(),
-            reservation.getStatus(),
-            reservation.getFacilityId(),
-            null,
-            reservation.getCheckIn(),
-            reservation.getCheckOut(),
-            reservation.getExpiresAt(),
-            reservation.getEstimatedPrice(),
-            reservation.getCurrency(),
-            paymentStatus,
-            null);
-    }
 
     private Reservation awaitPricedReservation(Reservation initialReservation) {
         if (initialReservation == null || initialReservation.getId() == null || hasPrice(initialReservation)) {
