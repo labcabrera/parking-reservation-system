@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 
+let logoutCallbackPromise: Promise<void> | null = null;
+
 export default function LogoutCallbackPage() {
   const { completeLogout } = useAuth();
   const navigate = useNavigate();
@@ -11,9 +13,12 @@ export default function LogoutCallbackPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    completeLogout()
+    logoutCallbackPromise ??= completeLogout();
+
+    logoutCallbackPromise
       .then(() => navigate('/', { replace: true }))
       .catch((error: unknown) => {
+        logoutCallbackPromise = null;
         setErrorMessage(error instanceof Error ? error.message : t('auth.callback.logoutError'));
       });
   }, [completeLogout, navigate, t]);

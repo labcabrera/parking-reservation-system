@@ -1,6 +1,24 @@
+import { userManager } from '../auth/oidc';
+
 export function getBaseUrl(envName: string, fallback = '') {
   const value = import.meta.env[envName] as string | undefined;
   return value?.replace(/\/$/, '') ?? fallback;
+}
+
+export async function authenticatedFetch(input: RequestInfo | URL, init: RequestInit = {}) {
+  const storedUser = await userManager?.getUser();
+  const user = storedUser?.expired ? await userManager?.signinSilent().catch(() => null) : storedUser;
+  const token = user && !user.expired ? user.access_token : undefined;
+  const headers = new Headers(init.headers);
+
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  return fetch(input, {
+    ...init,
+    headers,
+  });
 }
 
 export async function parseJsonResponse<T>(response: Response, message: string): Promise<T> {

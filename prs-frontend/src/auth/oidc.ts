@@ -27,8 +27,13 @@ export const oidcSettings: UserManagerSettings | null = isOidcConfigured
       post_logout_redirect_uri:
         (import.meta.env.VITE_OIDC_POST_LOGOUT_REDIRECT_URI as string | undefined) ??
         `${appOrigin}/auth/logout-callback`,
+      silent_redirect_uri:
+        (import.meta.env.VITE_OIDC_SILENT_REDIRECT_URI as string | undefined) ??
+        `${appOrigin}/auth/silent-callback`,
       response_type: 'code',
       scope: oidcScope,
+      automaticSilentRenew: true,
+      loadUserInfo: true,
       userStore: new WebStorageStateStore({ store: window.localStorage }),
     }
   : null;

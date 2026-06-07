@@ -87,13 +87,45 @@ variable "parking_client_web_origins" {
 variable "parking_client_front_valid_redirect_uris" {
   description = "List of valid redirect URIs for parking-client-front."
   type        = list(string)
-  default     = ["http://localhost:*/*"]
+  default = [
+    "http://localhost:3000/*",
+    "http://localhost:3001/*",
+    "http://localhost:3002/*",
+    "http://localhost:3003/*",
+    "http://localhost:5173/*",
+    "http://127.0.0.1:3000/*",
+    "http://127.0.0.1:3001/*",
+    "http://127.0.0.1:3002/*",
+    "http://127.0.0.1:3003/*",
+    "http://127.0.0.1:5173/*",
+    "http://192.168.1.107:3000/*",
+    "http://192.168.1.107:3001/*",
+    "http://192.168.1.107:3002/*",
+    "http://192.168.1.107:3003/*",
+    "http://192.168.1.107:5173/*"
+  ]
 }
 
 variable "parking_client_front_web_origins" {
   description = "List of allowed web origins for parking-client-front (CORS)."
   type        = list(string)
-  default     = ["http://localhost:*"]
+  default = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:3002",
+    "http://localhost:3003",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    "http://127.0.0.1:3002",
+    "http://127.0.0.1:3003",
+    "http://127.0.0.1:5173",
+    "http://192.168.1.107:3000",
+    "http://192.168.1.107:3001",
+    "http://192.168.1.107:3002",
+    "http://192.168.1.107:3003",
+    "http://192.168.1.107:5173"
+  ]
 }
 
 variable "primary_user_username" {

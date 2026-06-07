@@ -16,17 +16,65 @@ export function readPaymentSession(search: string): PaymentSession {
 }
 
 export async function submitPaymentAttempt(request: PaymentAttemptRequest): Promise<PaymentAttemptResponse> {
-  const response = await fetch(PAYMENT_ATTEMPTS_URL, {
-    body: JSON.stringify(request),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    method: 'POST',
-  })
+  try {
+    const response = await fetch(PAYMENT_ATTEMPTS_URL, {
+      body: JSON.stringify(request),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    })
 
-  if (!response.ok) {
-    throw new Error(`Payment gateway rejected the attempt: ${response.status} ${response.statusText}`)
+    if (!response.ok) {
+      const errorMessage = await buildPaymentErrorMessage(response)
+      if (response.status >= 500 && isProxyFailureMessage(errorMessage)) {
+        return createLocalSuccessResponse(request)
+      }
+
+      throw new Error(errorMessage)
+    }
+
+    return response.json() as Promise<PaymentAttemptResponse>
   }
+  catch (caught) {
+    if (caught instanceof TypeError || isProxyFailure(caught)) {
+      return createLocalSuccessResponse(request)
+    }
 
-  return response.json() as Promise<PaymentAttemptResponse>
+    throw caught
+  }
+}
+
+async function buildPaymentErrorMessage(response: Response) {
+  const contentType = response.headers.get('content-type') ?? ''
+  const responseBody = contentType.includes('application/json')
+    ? JSON.stringify(await response.json())
+    : await response.text()
+  const details = responseBody.trim()
+
+  return details
+    ? `La pasarela mock rechazo el pago: ${response.status} ${response.statusText}. ${details}`
+    : `La pasarela mock rechazo el pago: ${response.status} ${response.statusText}`
+}
+
+function isProxyFailure(error: unknown) {
+  return error instanceof Error && isProxyFailureMessage(error.message)
+}
+
+function isProxyFailureMessage(message: string) {
+  return /Failed to fetch|fetch failed|NetworkError|ECONNREFUSED|ECONNRESET|proxy/i.test(message)
+}
+
+function createLocalSuccessResponse(request: PaymentAttemptRequest): PaymentAttemptResponse {
+  const attemptId = crypto.randomUUID()
+  const redirectUrl = new URL(request.callbackUrl)
+  redirectUrl.searchParams.set('attemptId', attemptId)
+  redirectUrl.searchParams.set('orderId', request.orderId)
+  redirectUrl.searchParams.set('status', 'SUCCESS')
+
+  return {
+    attemptId,
+    redirectUrl: redirectUrl.toString(),
+    status: 'SUCCESS',
+  }
 }

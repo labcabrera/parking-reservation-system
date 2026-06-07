@@ -5,7 +5,7 @@ import type {
   ParkingFacility,
   ParkingFacilityListParams,
 } from '../types/catalog';
-import { getBaseUrl, parseJsonResponse } from './http';
+import { authenticatedFetch, getBaseUrl, parseJsonResponse } from './http';
 
 const BASE_URL = `${getBaseUrl('VITE_PARKING_FACILITIES_SERVICE_URL', '/admin-api')}/api/v1/parking-facilities`;
 
@@ -18,13 +18,13 @@ export async function listParkingFacilities(
   if (params.rsql) searchParams.set('rsql', params.rsql);
 
   const query = searchParams.toString();
-  const response = await fetch(query ? `${BASE_URL}?${query}` : BASE_URL);
+  const response = await authenticatedFetch(query ? `${BASE_URL}?${query}` : BASE_URL);
 
   return parseJsonResponse<PageResponse<ParkingFacility>>(response, 'Parking facilities could not be loaded');
 }
 
 export async function getParkingFacility(facilityId: string): Promise<ParkingFacility> {
-  const response = await fetch(`${BASE_URL}/${encodeURIComponent(facilityId)}`);
+  const response = await authenticatedFetch(`${BASE_URL}/${encodeURIComponent(facilityId)}`);
 
   return parseJsonResponse<ParkingFacility>(response, 'Parking facility could not be loaded');
 }
@@ -32,7 +32,7 @@ export async function getParkingFacility(facilityId: string): Promise<ParkingFac
 export async function createParkingFacility(
   request: CreateParkingFacilityRequest,
 ): Promise<ParkingFacility> {
-  const response = await fetch(BASE_URL, {
+  const response = await authenticatedFetch(BASE_URL, {
     body: JSON.stringify(request),
     headers: {
       'Content-Type': 'application/json',
@@ -49,7 +49,7 @@ export async function getFacilityInventory(
   end: string,
 ): Promise<InventorySlot[]> {
   const searchParams = new URLSearchParams({ end, start });
-  const response = await fetch(`${BASE_URL}/${encodeURIComponent(facilityId)}/inventory?${searchParams.toString()}`);
+  const response = await authenticatedFetch(`${BASE_URL}/${encodeURIComponent(facilityId)}/inventory?${searchParams.toString()}`);
 
   return parseJsonResponse<InventorySlot[]>(response, 'Parking inventory could not be loaded');
 }

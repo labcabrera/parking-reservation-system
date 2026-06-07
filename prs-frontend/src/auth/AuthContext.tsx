@@ -9,6 +9,7 @@ import {
 } from 'react';
 import type { User } from 'oidc-client-ts';
 import { isOidcConfigured, userManager } from './oidc';
+import { rememberCurrentRoute } from './authRedirect';
 
 interface AuthContextValue {
   isAuthenticated: boolean;
@@ -17,7 +18,7 @@ interface AuthContextValue {
   user: User | null;
   login: () => Promise<void>;
   logout: () => Promise<void>;
-  completeLogin: () => Promise<void>;
+  completeLogin: () => Promise<User>;
   completeLogout: () => Promise<void>;
 }
 
@@ -71,7 +72,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('OIDC is not configured');
     }
 
-    await userManager.signinRedirect();
+    await userManager.clearStaleState().catch(() => undefined);
+
+    const returnTo = rememberCurrentRoute();
+    await userManager.signinRedirect({
+      state: {
+        returnTo,
+      },
+    });
   }, []);
 
   const logout = useCallback(async () => {
@@ -79,8 +87,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('OIDC is not configured');
     }
 
+    const currentUser = user ?? (await userManager.getUser());
+    if (!currentUser) {
+      setUser(null);
+      return;
+    }
+
     await userManager.signoutRedirect();
-  }, []);
+  }, [user]);
 
   const completeLogin = useCallback(async () => {
     if (!userManager) {
@@ -89,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const loggedUser = await userManager.signinRedirectCallback();
     setUser(loggedUser);
+    return loggedUser;
   }, []);
 
   const completeLogout = useCallback(async () => {

@@ -26,7 +26,11 @@ public class PaymentAttemptController {
     @Operation(summary = "Submit a payment attempt", description = "Simulates a payment and returns the redirect URL on success")
     public ResponseEntity<PaymentAttemptResponse> attempt(@Valid @RequestBody PaymentAttemptRequest request) {
         UUID attemptId = UUID.randomUUID();
-        String redirectUrl = redirectBaseUrl + "?attemptId=" + attemptId + "&orderId=" + request.orderId() + "&status=SUCCESS";
+        String baseUrl = request.callbackUrl() == null || request.callbackUrl().isBlank()
+            ? redirectBaseUrl
+            : request.callbackUrl();
+        String separator = baseUrl.contains("?") ? "&" : "?";
+        String redirectUrl = baseUrl + separator + "attemptId=" + attemptId + "&orderId=" + request.orderId() + "&status=SUCCESS";
         PaymentAttemptResponse response = new PaymentAttemptResponse(attemptId, "SUCCESS", redirectUrl);
         return ResponseEntity.ok(response);
     }

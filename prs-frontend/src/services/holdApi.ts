@@ -1,10 +1,10 @@
 import type { CreateHoldRequest, HoldCreatedResponse, HoldResponse } from '../types/hold';
-import { getBaseUrl } from './http';
+import { authenticatedFetch, getBaseUrl } from './http';
 
 const BASE_URL = `${getBaseUrl('VITE_BFF_URL')}/api/v1/reservations/holds`;
 
 export async function createHold(request: CreateHoldRequest): Promise<HoldCreatedResponse> {
-  const response = await fetch(BASE_URL, {
+  const response = await authenticatedFetch(BASE_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
@@ -18,7 +18,7 @@ export async function createHold(request: CreateHoldRequest): Promise<HoldCreate
 }
 
 export async function getHold(holdId: string): Promise<HoldResponse> {
-  const response = await fetch(`${BASE_URL}/${holdId}`);
+  const response = await authenticatedFetch(`${BASE_URL}/${holdId}`);
 
   if (response.status === 404) {
     throw new Error(`Hold not found: ${holdId}`);
@@ -32,7 +32,7 @@ export async function getHold(holdId: string): Promise<HoldResponse> {
 }
 
 export async function releaseHold(holdId: string): Promise<void> {
-  const response = await fetch(`${BASE_URL}/${holdId}`, { method: 'DELETE' });
+  const response = await authenticatedFetch(`${BASE_URL}/${holdId}`, { method: 'DELETE' });
 
   if (response.status === 409) {
     throw new Error('Hold is in a terminal state and cannot be released');

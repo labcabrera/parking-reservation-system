@@ -112,7 +112,7 @@ services:
   keycloak:
     profiles: [infrastructure]
     image: quay.io/keycloak/keycloak:24.0.4
-    command: start-dev
+    command: start-dev --import-realm
     environment:
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN_USER}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
@@ -279,6 +279,16 @@ services:
     build:
       context: prs-frontend
       dockerfile: Dockerfile
+      args:
+        VITE_BFF_URL: http://localhost:8085
+        VITE_PARKING_FACILITIES_SERVICE_URL: http://localhost:8081
+        VITE_PRICING_SERVICE_URL: http://localhost:8083
+        VITE_ECOMMERCE_SERVICE_URL: http://localhost:8082
+        VITE_PAYMENT_GATEWAY_URL: http://localhost:3001
+        VITE_KEYCLOAK_URL: http://localhost:8080
+        VITE_KEYCLOAK_REALM: parking
+        VITE_KEYCLOAK_CLIENT_ID: parking-client-front
+        VITE_KEYCLOAK_SCOPE: openid profile email
     environment:
       VITE_CATALOG_SERVICE_URL: ""
       VITE_PAYMENT_GATEWAY_URL: http://localhost:3001
@@ -286,17 +296,30 @@ services:
       - "3000:80"
 
   # -----------------------------------------------------------------------
+  # Mock Payment API
+  # -----------------------------------------------------------------------
+  prs-mock-ms-payment:
+    profiles: [apps]
+    build:
+      context: .
+      dockerfile: prs-mock-ms-payment/Dockerfile
+    ports:
+      - "8089:8089"
+
+  # -----------------------------------------------------------------------
   # Frontend: Payment Gateway SPA
   # -----------------------------------------------------------------------
   payment-gateway:
     profiles: [apps]
     build:
-      context: payment-gateway
+      context: prs-mock-payment-gateway
       dockerfile: Dockerfile
     environment:
       VITE_PAYMENT_SERVICE_URL: ""
     ports:
       - "3001:80"
+    depends_on:
+      - prs-mock-ms-payment
 
   # -----------------------------------------------------------------------
   # Observability: OpenTelemetry Collector
