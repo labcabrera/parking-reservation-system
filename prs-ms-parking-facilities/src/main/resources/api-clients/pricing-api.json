@@ -1,0 +1,715 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "OpenAPI definition",
+    "version": "v0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8083",
+      "description": "Generated server url"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Pricing Rules",
+      "description": "Create, read, update, delete, and list pricing rule configurations"
+    },
+    {
+      "name": "Pricing",
+      "description": "Pricing calculations"
+    }
+  ],
+  "paths": {
+    "/api/v1/pricing-rules/{id}": {
+      "get": {
+        "tags": ["Pricing Rules"],
+        "summary": "Get a pricing rule",
+        "description": "Returns the pricing rule configuration identified by its id.",
+        "operationId": "getPricingRuleById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Pricing rule identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pricing rule found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricingRule"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pricing rule not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Pricing Rules"],
+        "summary": "Update a pricing rule",
+        "description": "Replaces the pricing rule configuration identified by its id.",
+        "operationId": "updatePricingRule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Pricing rule identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePricingRuleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Pricing rule updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricingRule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid pricing rule request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pricing rule not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Pricing Rules"],
+        "summary": "Delete a pricing rule",
+        "description": "Deletes the pricing rule configuration identified by its id.",
+        "operationId": "deletePricingRule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Pricing rule identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Pricing rule deleted"
+          },
+          "404": {
+            "description": "Pricing rule not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pricing/dynamic-rate": {
+      "post": {
+        "tags": ["Pricing"],
+        "summary": "Calculate a dynamic price from slot occupancy",
+        "description": "Calculates a dynamic price using a pricing rule and the occupancy rate of the involved slots. SHORT slots use half-hour pricing derived from the rule hourly rate; LONG slots use the rule daily rate.",
+        "operationId": "calculateDynamicRate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DynamicRateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Dynamic price calculated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DynamicRateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid dynamic pricing request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pricing rule not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pricing-rules": {
+      "get": {
+        "tags": ["Pricing Rules"],
+        "summary": "List pricing rules",
+        "description": "Returns a paginated list of pricing rule configurations.",
+        "operationId": "listPricingRules",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Zero-based page index (0..N)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "The size of the page to be returned",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Page of pricing rules",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid pagination request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Pricing Rules"],
+        "summary": "Create a pricing rule",
+        "description": "Creates a pricing rule with base, hourly, daily, and tax parameters used by static and dynamic pricing calculations.",
+        "operationId": "createPricingRule",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePricingRuleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Pricing rule created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricingRule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid pricing rule request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Money": {
+        "type": "object",
+        "description": "Monetary amount with ISO-4217 currency",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "description": "Monetary amount",
+            "example": 12.5,
+            "minimum": 0
+          },
+          "currency": {
+            "type": "string",
+            "description": "ISO-4217 currency code",
+            "example": "EUR",
+            "minLength": 1
+          }
+        },
+        "required": ["amount", "currency"]
+      },
+      "PricingRule": {
+        "type": "object",
+        "description": "Pricing rule configuration",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Pricing rule identifier",
+            "example": "018f4f3b-9c52-7d87-9f0b-7b2d8a4b8c12"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable pricing rule name",
+            "example": "Airport hybrid rate"
+          },
+          "billingType": {
+            "type": "string",
+            "description": "Billing strategy supported by the rule",
+            "enum": ["HOURLY", "DAILY", "FLAT", "HYBRID"],
+            "example": "HYBRID"
+          },
+          "baseRate": {
+            "$ref": "#/components/schemas/Money",
+            "description": "Base rate applied by generic pricing calculations"
+          },
+          "hourlyRate": {
+            "$ref": "#/components/schemas/Money",
+            "description": "Hourly rate used by hourly and short-slot dynamic pricing"
+          },
+          "dailyRate": {
+            "$ref": "#/components/schemas/Money",
+            "description": "Daily rate used by daily and long-slot dynamic pricing"
+          },
+          "taxRate": {
+            "type": "number",
+            "description": "Tax rate as a decimal ratio from 0.0000 to 1.0000",
+            "example": 0.21
+          },
+          "status": {
+            "type": "string",
+            "description": "Lifecycle status of the pricing rule",
+            "enum": ["ACTIVE", "INACTIVE"],
+            "example": "ACTIVE"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date-time",
+            "description": "First instant when this rule is valid",
+            "example": "2026-06-01T00:00:00"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last instant when this rule is valid",
+            "example": "2026-12-31T23:59:59"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp",
+            "example": "2026-06-01T10:15:30"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp",
+            "example": "2026-06-02T10:15:30"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Optimistic locking version",
+            "example": 1
+          }
+        }
+      },
+      "ApiError": {
+        "type": "object",
+        "description": "Error response returned by the pricing API",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Error timestamp",
+            "example": "2026-06-07T10:15:30Z"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "description": "HTTP status code",
+            "example": 400
+          },
+          "error": {
+            "type": "string",
+            "description": "HTTP status reason",
+            "example": "Bad Request"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable error message",
+            "example": "Validation failed"
+          },
+          "path": {
+            "type": "string",
+            "description": "Request path",
+            "example": "/api/v1/pricing/dynamic-rate"
+          },
+          "details": {
+            "type": "array",
+            "description": "Field-level or validation details",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "UpdatePricingRuleRequest": {
+        "type": "object",
+        "description": "Request to replace a pricing rule configuration",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Human-readable pricing rule name",
+            "example": "Airport hybrid rate",
+            "minLength": 1
+          },
+          "billingType": {
+            "type": "string",
+            "description": "Billing strategy supported by the rule",
+            "enum": ["HOURLY", "DAILY", "FLAT", "HYBRID"],
+            "example": "HYBRID"
+          },
+          "baseRate": {
+            "$ref": "#/components/schemas/Money",
+            "description": "Base rate applied by generic pricing calculations"
+          },
+          "hourlyRate": {
+            "$ref": "#/components/schemas/Money",
+            "description": "Hourly rate used by hourly and short-slot dynamic pricing"
+          },
+          "dailyRate": {
+            "$ref": "#/components/schemas/Money",
+            "description": "Daily rate used by daily and long-slot dynamic pricing"
+          },
+          "taxRate": {
+            "type": "number",
+            "description": "Tax rate as a decimal ratio from 0.0000 to 1.0000. Example: 0.2100 means 21%.",
+            "example": 0.21,
+            "maximum": 1,
+            "minimum": 0
+          },
+          "status": {
+            "type": "string",
+            "description": "Lifecycle status of the pricing rule",
+            "enum": ["ACTIVE", "INACTIVE"],
+            "example": "ACTIVE"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date-time",
+            "description": "First instant when this rule is valid",
+            "example": "2026-06-01T00:00:00"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last instant when this rule is valid. Null means no configured end date.",
+            "example": "2026-12-31T23:59:59"
+          }
+        },
+        "required": ["baseRate", "billingType", "name"]
+      },
+      "DynamicPriceBreakdown": {
+        "type": "object",
+        "description": "Monetary breakdown for a dynamic pricing calculation",
+        "properties": {
+          "baseAmount": {
+            "type": "number",
+            "description": "Base amount before taxes",
+            "example": 35
+          },
+          "taxAmount": {
+            "type": "number",
+            "description": "Tax amount calculated from the pricing rule tax rate",
+            "example": 7.35
+          },
+          "totalAmount": {
+            "type": "number",
+            "description": "Total amount including taxes",
+            "example": 42.35
+          },
+          "currency": {
+            "type": "string",
+            "description": "Currency resolved from the pricing rule rate",
+            "example": "EUR"
+          }
+        }
+      },
+      "DynamicRateResponse": {
+        "type": "object",
+        "description": "Calculated dynamic price and the intermediate pricing factors",
+        "properties": {
+          "pricingRuleId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Pricing rule identifier used for the calculation",
+            "example": "018f4f3b-9c52-7d87-9f0b-7b2d8a4b8c12"
+          },
+          "slotType": {
+            "type": "string",
+            "description": "Slot duration model used in the calculation",
+            "enum": ["SHORT", "LONG"],
+            "example": "SHORT"
+          },
+          "slotCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of slots used in the calculation",
+            "example": 2
+          },
+          "averageOccupancyRate": {
+            "type": "number",
+            "description": "Average occupancy rate of all involved slots",
+            "example": 0.75
+          },
+          "averageOccupancyMultiplier": {
+            "type": "number",
+            "description": "Average occupancy multiplier applied to the base slot total",
+            "example": 1.75
+          },
+          "price": {
+            "$ref": "#/components/schemas/DynamicPriceBreakdown",
+            "description": "Price breakdown with base amount, taxes, total amount, and currency"
+          }
+        }
+      },
+      "DynamicRateRequest": {
+        "type": "object",
+        "description": "Request to calculate a dynamic price from a pricing rule and slot occupancy",
+        "properties": {
+          "pricingRuleId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Pricing rule identifier used to resolve hourly or daily rate parameters",
+            "example": "018f4f3b-9c52-7d87-9f0b-7b2d8a4b8c12"
+          },
+          "slotType": {
+            "type": "string",
+            "description": "Slot duration model. SHORT represents a half-hour slot; LONG represents a one-day slot.",
+            "enum": ["SHORT", "LONG"],
+            "example": "SHORT"
+          },
+          "slots": {
+            "type": "array",
+            "description": "Involved slots with their current occupancy rates",
+            "items": {
+              "$ref": "#/components/schemas/SlotOccupancy"
+            },
+            "minItems": 1
+          }
+        },
+        "required": ["pricingRuleId", "slotType", "slots"]
+      },
+      "SlotOccupancy": {
+        "type": "object",
+        "description": "Current occupancy of one slot involved in a dynamic pricing calculation",
+        "properties": {
+          "occupancyRate": {
+            "type": "number",
+            "description": "Occupancy rate as a decimal ratio from 0.0000 to 1.0000",
+            "example": 0.75,
+            "maximum": 1,
+            "minimum": 0
+          }
+        },
+        "required": ["occupancyRate"]
+      },
+      "CreatePricingRuleRequest": {
+        "type": "object",
+        "description": "Request to create a pricing rule configuration",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Human-readable pricing rule name",
+            "example": "Airport hybrid rate",
+            "minLength": 1
+          },
+          "billingType": {
+            "type": "string",
+            "description": "Billing strategy supported by the rule",
+            "enum": ["HOURLY", "DAILY", "FLAT", "HYBRID"],
+            "example": "HYBRID"
+          },
+          "baseRate": {
+            "$ref": "#/components/schemas/Money",
+            "description": "Base rate applied by generic pricing calculations"
+          },
+          "hourlyRate": {
+            "$ref": "#/components/schemas/Money",
+            "description": "Hourly rate used by hourly and short-slot dynamic pricing"
+          },
+          "dailyRate": {
+            "$ref": "#/components/schemas/Money",
+            "description": "Daily rate used by daily and long-slot dynamic pricing"
+          },
+          "taxRate": {
+            "type": "number",
+            "description": "Tax rate as a decimal ratio from 0.0000 to 1.0000. Example: 0.2100 means 21%.",
+            "example": 0.21,
+            "maximum": 1,
+            "minimum": 0
+          },
+          "status": {
+            "type": "string",
+            "description": "Lifecycle status of the pricing rule",
+            "enum": ["ACTIVE", "INACTIVE"],
+            "example": "ACTIVE"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date-time",
+            "description": "First instant when this rule is valid",
+            "example": "2026-06-01T00:00:00"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last instant when this rule is valid. Null means no configured end date.",
+            "example": "2026-12-31T23:59:59"
+          }
+        },
+        "required": ["baseRate", "billingType", "name"]
+      },
+      "PageResponse": {
+        "type": "object",
+        "description": "Generic paginated response wrapper",
+        "properties": {
+          "content": {
+            "type": "array",
+            "description": "List of items in the current page",
+            "items": {}
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination",
+            "description": "Pagination metadata"
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "description": "Pagination metadata for paginated responses",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Current page number (0-based index)",
+            "example": 0
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of items per page",
+            "example": 20
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Total number of items across all pages",
+            "example": 100
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Total number of pages available",
+            "example": 5
+          }
+        }
+      }
+    }
+  }
+}

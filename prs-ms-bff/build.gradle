@@ -6,7 +6,7 @@ plugins {
 }
 
 ext {
-  set('springCloudVersion', "2025.1.1")
+  set('springCloudVersion', "${springCloudVersion}")
 }
 
 dependencies {
