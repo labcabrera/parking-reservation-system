@@ -1,7 +1,6 @@
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
   Alert,
   Box,
@@ -33,6 +32,11 @@ import {
   listParkingFacilities,
 } from '../services/catalogApi';
 import type { CreateParkingFacilityRequest, InventorySlot, ParkingFacility } from '../types/catalog';
+import {
+  getFacilityCapacityLongTerm,
+  getFacilityCapacityShortTerm,
+  getFacilityCapacityTotal,
+} from '../types/catalog';
 import { formatPrice } from '../utils/formatters';
 
 const INVENTORY_WINDOW_DAYS = 14;
@@ -130,7 +134,7 @@ export default function AdminDashboardPage() {
     }
   }, [facilities, selectedFacilityId]);
 
-  const totalSpots = facilities.reduce((total, facility) => total + facility.totalSpots, 0);
+  const totalSpots = facilities.reduce((total, facility) => total + getFacilityCapacityTotal(facility), 0);
   const activeFacilities = facilities.filter((facility) => facility.status === 'ACTIVE').length;
   const occupancySummary = getOccupancySummary(inventoryQuery.data ?? []);
 
@@ -229,6 +233,13 @@ function FacilitiesTable({
 }) {
   const { t } = useTranslation();
 
+  function handleFacilityKeyDown(event: React.KeyboardEvent<HTMLTableRowElement>, facilityId: string) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onSelectFacility(facilityId);
+    }
+  }
+
   return (
     <Paper elevation={0} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
       <Box sx={{ alignItems: 'center', display: 'flex', justifyContent: 'space-between', p: 2 }}>
@@ -246,12 +257,20 @@ function FacilitiesTable({
               <TableCell align="right">{t('admin.facilities.spots')}</TableCell>
               <TableCell>{t('admin.facilities.status')}</TableCell>
               <TableCell align="right">{t('admin.facilities.price')}</TableCell>
-              <TableCell align="right">{t('admin.facilities.actions')}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {facilities.map((facility) => (
-              <TableRow hover key={facility.id} selected={facility.id === selectedFacilityId}>
+              <TableRow
+                hover
+                key={facility.id}
+                onClick={() => onSelectFacility(facility.id)}
+                onKeyDown={(event) => handleFacilityKeyDown(event, facility.id)}
+                role="button"
+                selected={facility.id === selectedFacilityId}
+                sx={{ cursor: 'pointer' }}
+                tabIndex={0}
+              >
                 <TableCell>
                   <Typography sx={{ fontWeight: 800 }}>{facility.name}</Typography>
                   <Typography color="text.secondary" sx={{ fontSize: 12 }}>
@@ -259,23 +278,24 @@ function FacilitiesTable({
                   </Typography>
                 </TableCell>
                 <TableCell>{facility.city}</TableCell>
-                <TableCell align="right">{facility.totalSpots}</TableCell>
+                <TableCell align="right">
+                  <Typography sx={{ fontWeight: 800 }}>{getFacilityCapacityTotal(facility)}</Typography>
+                  <Typography color="text.secondary" sx={{ fontSize: 12 }}>
+                    {t('admin.facilities.capacityBreakdown', {
+                      longTerm: getFacilityCapacityLongTerm(facility),
+                      shortTerm: getFacilityCapacityShortTerm(facility),
+                    })}
+                  </Typography>
+                </TableCell>
                 <TableCell>
                   <Chip label={facility.status} size="small" />
                 </TableCell>
                 <TableCell align="right">{formatPrice(facility.pricingRule.estimatedDailyPrice)}</TableCell>
-                <TableCell align="right">
-                  <Tooltip title={t('admin.facilities.view')}>
-                    <IconButton onClick={() => onSelectFacility(facility.id)} size="small">
-                      <VisibilityIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </TableCell>
               </TableRow>
             ))}
             {!isLoading && facilities.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6}>
+                <TableCell colSpan={5}>
                   <Typography color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
                     {t('admin.facilities.empty')}
                   </Typography>

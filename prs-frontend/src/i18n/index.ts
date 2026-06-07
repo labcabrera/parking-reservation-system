@@ -64,6 +64,7 @@ const resources = {
           actions: 'Acciones',
           view: 'Ver inventario',
           empty: 'No hay instalaciones registradas.',
+          capacityBreakdown: 'Corta {{shortTerm}} · Larga {{longTerm}}',
         },
         form: {
           title: 'Crear parking facility',
@@ -73,6 +74,8 @@ const resources = {
           latitude: 'Latitud',
           longitude: 'Longitud',
           totalSpots: 'Plazas totales',
+          shortTermSpots: 'Plazas corta duracion',
+          longTermSpots: 'Plazas larga duracion',
           dailyPrice: 'Precio diario estimado',
           externalPricingId: 'Pricing externo',
           freeCancelHours: 'Horas cancelacion gratuita',
@@ -346,6 +349,7 @@ const resources = {
           actions: 'Actions',
           view: 'View inventory',
           empty: 'No facilities registered.',
+          capacityBreakdown: 'Short {{shortTerm}} · Long {{longTerm}}',
         },
         form: {
           title: 'Create parking facility',
@@ -355,6 +359,8 @@ const resources = {
           latitude: 'Latitude',
           longitude: 'Longitude',
           totalSpots: 'Total spots',
+          shortTermSpots: 'Short-term spots',
+          longTermSpots: 'Long-term spots',
           dailyPrice: 'Estimated daily price',
           externalPricingId: 'External pricing',
           freeCancelHours: 'Free cancel hours',

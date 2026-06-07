@@ -1,48 +1,6 @@
-server:
-  port: 8083
-
 spring:
-  application:
-    name: prs-ms-pricing
-
-  datasource:
-    url: jdbc:postgresql://localhost:5432/pricing_db
-    username: ${DB_USERNAME:parking}
-    password: ${DB_PASSWORD:parking}
-    driver-class-name: org.postgresql.Driver
-
-  jpa:
-    show-sql: false
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
-        highlight_sql: true
-
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-    consumer:
-      group-id: pricing-service
-      auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics,prometheus
-  endpoint:
-    health:
-      show-details: always
-
-springdoc:
-  api-docs:
-    path: /v3/api-docs
-  swagger-ui:
-    path: /swagger-ui.html
+  config:
+    import: configserver:${CLOUD_CONFIG_SERVER_URI:http://localhost:8888}
+  cloud:
+    config:
+      name: prs-ms-pricing-config,actuator-config,jpa-config,redis-config,spring-doc-config,resource-server-config

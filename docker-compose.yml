@@ -171,6 +171,8 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
       SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      FACILITIES_CORS_ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:3002,http://127.0.0.1:3003,http://127.0.0.1:5173,http://192.168.1.107:3000,http://192.168.1.107:3001,http://192.168.1.107:3002,http://192.168.1.107:3003,http://192.168.1.107:5173
+      FACILITIES_CORS_ALLOWED_ORIGIN_PATTERNS: ""
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_SERVICE_NAME: prs-ms-parking-facilities
     ports:

@@ -44,7 +44,11 @@ const defaultFacility: CreateParkingFacilityRequest = {
   },
   status: FacilityStatus.ACTIVE,
   tags: [],
-  totalSpots: 100,
+  capacity: {
+    longTerm: 40,
+    shortTerm: 60,
+    total: 100,
+  },
 };
 
 const tagOptions = Object.values(FacilityTag);
@@ -64,6 +68,23 @@ export function ParkingFacilityForm({ isSubmitting, onSubmit }: ParkingFacilityF
       ...current,
       tags: typeof value === 'string' ? (value.split(',') as FacilityTagValue[]) : value,
     }));
+  }
+
+  function updateCapacity(partialCapacity: Partial<CreateParkingFacilityRequest['capacity']>) {
+    setFacility((current) => {
+      const capacity = {
+        ...current.capacity,
+        ...partialCapacity,
+      };
+
+      return {
+        ...current,
+        capacity: {
+          ...capacity,
+          total: capacity.shortTerm + capacity.longTerm,
+        },
+      };
+    });
   }
 
   return (
@@ -123,12 +144,31 @@ export function ParkingFacilityForm({ isSubmitting, onSubmit }: ParkingFacilityF
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
         <TextField
           fullWidth
-          label={t('admin.form.totalSpots')}
-          onChange={(event) => setFacility((current) => ({ ...current, totalSpots: Number(event.target.value) }))}
+          label={t('admin.form.shortTermSpots')}
+          onChange={(event) => updateCapacity({ shortTerm: Number(event.target.value) })}
           required
+          slotProps={{ htmlInput: { min: 0 } }}
+          type="number"
+          value={facility.capacity.shortTerm}
+        />
+        <TextField
+          fullWidth
+          label={t('admin.form.longTermSpots')}
+          onChange={(event) => updateCapacity({ longTerm: Number(event.target.value) })}
+          required
+          slotProps={{ htmlInput: { min: 0 } }}
+          type="number"
+          value={facility.capacity.longTerm}
+        />
+      </Stack>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+        <TextField
+          fullWidth
+          disabled
+          label={t('admin.form.totalSpots')}
           slotProps={{ htmlInput: { min: 1 } }}
           type="number"
-          value={facility.totalSpots}
+          value={facility.capacity.total}
         />
         <TextField
           fullWidth

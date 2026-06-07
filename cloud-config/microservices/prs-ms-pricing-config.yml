@@ -1,0 +1,10 @@
+server:
+  port: 8083
+spring:
+  application:
+    name: prs-ms-pricing
+  datasource:
+    url: jdbc:postgresql://localhost:5432/pricing_db
+    username: ${DB_USERNAME:parking}
+    password: ${DB_PASSWORD:parking}
+    driver-class-name: org.postgresql.Driver

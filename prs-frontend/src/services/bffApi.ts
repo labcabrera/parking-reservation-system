@@ -1,4 +1,4 @@
-import type { FacilityResult, PageResponse, SearchRequest, SearchResponse } from '../types/catalog';
+import type { FacilityResult, InventoryBlockType, PageResponse, ParkingCapacity, SearchRequest, SearchResponse } from '../types/catalog';
 import { getBaseUrl, parseJsonResponse } from './http';
 
 const BFF_URL = getBaseUrl('VITE_BFF_URL');
@@ -9,7 +9,9 @@ interface ParkingOptionDto {
   name: string;
   city: string;
   address: string;
+  capacity?: ParkingCapacity;
   totalSpots?: number;
+  blockType?: InventoryBlockType;
   availableSpots: number;
   lowAvailability: boolean;
   estimatedPrice: number;
@@ -22,6 +24,8 @@ function toFacilityResult(dto: ParkingOptionDto): FacilityResult {
     availableSpots: dto.availableSpots,
     city: dto.city,
     currency: dto.currency,
+    blockType: dto.blockType,
+    capacity: dto.capacity,
     estimatedPrice: {
       amount: dto.estimatedPrice,
       currency: dto.currency,
@@ -30,7 +34,7 @@ function toFacilityResult(dto: ParkingOptionDto): FacilityResult {
     lowAvailability: dto.lowAvailability,
     name: dto.name,
     tags: [],
-    totalSpots: dto.totalSpots,
+    totalSpots: dto.capacity?.total ?? dto.totalSpots,
   };
 }
 

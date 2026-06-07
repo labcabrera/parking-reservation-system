@@ -30,7 +30,10 @@ export interface FacilityResult {
   lowAvailability: boolean;
   availableSpots: number;
   estimatedPrice?: Money;
+  capacity?: ParkingCapacity;
+  /** @deprecated use capacity.total */
   totalSpots?: number;
+  blockType?: InventoryBlockType;
 }
 
 export interface SearchRequest {
@@ -78,20 +81,28 @@ export interface ParkingPricingRule {
   estimatedDailyPrice: number;
 }
 
+export interface ParkingCapacity {
+  total: number;
+  shortTerm: number;
+  longTerm: number;
+}
+
 export interface ParkingFacility {
   id: string;
   name: string;
   city: string;
   address: string;
   location: Coordinates;
-  totalSpots: number;
+  capacity: ParkingCapacity;
+  /** @deprecated use capacity.total */
+  totalSpots?: number;
   tags: FacilityTag[];
   status: FacilityStatus;
   cancellationPolicy: CancellationPolicy;
   pricingRule: ParkingPricingRule;
 }
 
-export type CreateParkingFacilityRequest = Omit<ParkingFacility, 'id'>;
+export type CreateParkingFacilityRequest = Omit<ParkingFacility, 'id' | 'totalSpots'>;
 
 export interface Pagination {
   page: number;
@@ -113,8 +124,22 @@ export interface ParkingFacilityListParams {
 
 export interface InventorySlot {
   slotStart: string;
-  blockType?: 'SHORT_TERM' | 'LONG_TERM';
+  blockType?: InventoryBlockType;
   capacity: number;
   reserved: number;
   free: number;
+}
+
+export type InventoryBlockType = 'SHORT_TERM' | 'LONG_TERM';
+
+export function getFacilityCapacityTotal(facility: Pick<ParkingFacility, 'capacity' | 'totalSpots'>) {
+  return facility.capacity?.total ?? facility.totalSpots ?? 0;
+}
+
+export function getFacilityCapacityShortTerm(facility: Pick<ParkingFacility, 'capacity' | 'totalSpots'>) {
+  return facility.capacity?.shortTerm ?? facility.totalSpots ?? 0;
+}
+
+export function getFacilityCapacityLongTerm(facility: Pick<ParkingFacility, 'capacity' | 'totalSpots'>) {
+  return facility.capacity?.longTerm ?? 0;
 }
