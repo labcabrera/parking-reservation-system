@@ -163,9 +163,9 @@ secrets manager; hardcoded credentials are a **build-breaking violation**.
 4. **Code review** MUST have a minimum of 1 approval. The reviewer MUST verify
    constitution compliance and the absence of cross-layer dependency violations
    (enforced by ArchUnit).
-6. **Quality gates** — spec quality, plan coverage, task traceability, and completeness
+5. **Quality gates** — spec quality, plan coverage, task traceability, and completeness
    review — MUST all pass before a feature branch is merged into `develop`.
-7. Merges to `develop` trigger the full CI pipeline (build, unit tests, integration tests,
+6. Merges to `develop` trigger the full CI pipeline (build, unit tests, integration tests,
    Testcontainers-based infrastructure tests).
 
 ## Governance
@@ -180,6 +180,7 @@ semantic versioning rules below. Amendments that affect Principles I or II
 (architecture or DDD) require explicit team consensus before merging.
 
 **Versioning policy**:
+
 - MAJOR — backward-incompatible principle removals or redefinitions.
 - MINOR — new principle or section added, or materially expanded guidance.
 - PATCH — clarifications, wording improvements, or typo fixes.
