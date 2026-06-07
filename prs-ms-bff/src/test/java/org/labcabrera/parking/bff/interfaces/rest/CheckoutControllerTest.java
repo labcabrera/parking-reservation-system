@@ -29,6 +29,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.client.RestClientResponseException;
 
 class CheckoutControllerTest {
 
@@ -153,6 +154,54 @@ class CheckoutControllerTest {
         assertThat(response.getBody().get(0).checkoutId()).isEqualTo(userReservationId);
     }
 
+    @Test
+    void confirmResolvesStaleCheckoutIdFromBookingSessionHeldReservation() {
+        UUID staleCheckoutId = UUID.randomUUID();
+        UUID reservationId = UUID.randomUUID();
+        UUID facilityId = UUID.randomUUID();
+        LocalDateTime checkIn = LocalDateTime.of(2026, 6, 10, 10, 0);
+        LocalDateTime checkOut = LocalDateTime.of(2026, 6, 11, 10, 0);
+        Reservation held = reservation(reservationId, facilityId, checkIn, checkOut)
+            .userId(null)
+            .status("HELD");
+        Reservation confirmed = reservation(reservationId, facilityId, checkIn, checkOut)
+            .userId(null)
+            .status("CONFIRMED");
+        PageResponse pageResponse = new PageResponse().content(List.of(held));
+
+        when(reservationsApi.getWithHttpInfo(staleCheckoutId)).thenThrow(notFound(staleCheckoutId));
+        when(reservationsApi.callListWithHttpInfo(
+            any(LocalDateTime.class),
+            any(LocalDateTime.class),
+            any(org.labcabrera.parking.bff.generated.client.facilities.model.Pageable.class),
+            isNull(),
+            isNull(),
+            eq(BOOKING_SESSION_ID))).thenReturn(ResponseEntity.ok(pageResponse));
+        when(reservationsApi.getWithHttpInfo(reservationId)).thenReturn(ResponseEntity.ok(confirmed));
+        when(checkoutMapper.toCheckoutDto(confirmed, null)).thenReturn(new CheckoutDto(
+            reservationId,
+            "CONFIRMED",
+            facilityId,
+            null,
+            checkIn,
+            checkOut,
+            null,
+            null,
+            null,
+            null,
+            null));
+
+        ResponseEntity<CheckoutDto> response = controller.confirm(
+            staleCheckoutId,
+            BOOKING_SESSION_ID,
+            new MockHttpServletRequest(),
+            null);
+
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().checkoutId()).isEqualTo(reservationId);
+        verify(reservationsApi).confirmWithHttpInfo(reservationId);
+    }
+
     private Reservation reservation(UUID reservationId, UUID facilityId, LocalDateTime checkIn, LocalDateTime checkOut) {
         return new Reservation()
             .id(reservationId)
@@ -161,5 +210,15 @@ class CheckoutControllerTest {
             .bookingSessionId(BOOKING_SESSION_ID)
             .checkIn(checkIn)
             .checkOut(checkOut);
+    }
+
+    private RestClientResponseException notFound(UUID checkoutId) {
+        return new RestClientResponseException(
+            "Reservation %s not found".formatted(checkoutId),
+            404,
+            "Not Found",
+            null,
+            null,
+            null);
     }
 }

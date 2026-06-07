@@ -67,6 +67,12 @@ class BffSecurityConfigTest {
     }
 
     @Test
+    void deprecatedCheckoutMutationPathIsPublic() throws Exception {
+        mockMvc.perform(post("/api/v1/checkout/{checkoutId}/select-option", UUID.randomUUID()))
+            .andExpect(status().isOk());
+    }
+
+    @Test
     void checkoutReadIsPublic() throws Exception {
         mockMvc.perform(get("/api/v1/checkout/{checkoutId}", UUID.randomUUID()))
             .andExpect(status().isOk());
@@ -109,6 +115,11 @@ class BffSecurityConfigTest {
         @PostMapping("/checkout/select-option")
         String selectOption() {
             return "select-option";
+        }
+
+        @PostMapping("/checkout/{checkoutId}/select-option")
+        String selectOptionWithClientId(@PathVariable UUID checkoutId) {
+            return checkoutId.toString();
         }
 
         @PostMapping("/checkout/{checkoutId}/confirm")

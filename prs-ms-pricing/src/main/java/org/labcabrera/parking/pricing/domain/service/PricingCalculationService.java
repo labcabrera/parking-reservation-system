@@ -14,12 +14,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * MVP pricing formula: confirmedPrice = baseRatePerDay × max(days, 1)
  */
 @Service
 @Validated
+@Slf4j
 public class PricingCalculationService {
 
     private static final int RATE_SCALE = 4;
@@ -33,7 +35,9 @@ public class PricingCalculationService {
             throw new IllegalArgumentException("days must be >= 0");
         }
         int effectiveDays = Math.max(days, 1);
-        return baseRatePerDay.multiply(BigDecimal.valueOf(effectiveDays));
+        BigDecimal result = baseRatePerDay.multiply(BigDecimal.valueOf(effectiveDays)).setScale(RATE_SCALE, RoundingMode.HALF_UP);
+        log.info("Calculated price: baseRatePerDay={}, days={}, effectiveDays={}, result={}", baseRatePerDay, days, effectiveDays, result);
+        return result;
     }
 
     public DynamicPricingResult calculateDynamicRate(
@@ -50,6 +54,8 @@ public class PricingCalculationService {
         if (slots == null || slots.isEmpty()) {
             throw new IllegalArgumentException("slots must not be empty");
         }
+        log.info("Calculating dynamic price: pricingRuleId={}, slotType={}, slotCount={}", pricingRule.getId(), slotType,
+            slots != null ? slots.size() : 0);
 
         Money slotRate = resolveSlotRate(pricingRule, slotType);
         BigDecimal parkingRate = slotRate.amount();
@@ -80,20 +86,20 @@ public class PricingCalculationService {
 
     private Money resolveSlotRate(PricingRule pricingRule, PricingSlotType slotType) {
         return switch (slotType) {
-            case SHORT -> {
-                if (pricingRule.getHourlyRate() == null) {
-                    throw new IllegalArgumentException("hourlyRate is required for SHORT dynamic pricing");
-                }
-                yield new Money(
-                    pricingRule.getHourlyRate().amount().divide(BigDecimal.valueOf(2), RATE_SCALE, RoundingMode.HALF_UP),
-                    pricingRule.getHourlyRate().currency());
+        case SHORT -> {
+            if (pricingRule.getHourlyRate() == null) {
+                throw new IllegalArgumentException("hourlyRate is required for SHORT dynamic pricing");
             }
-            case LONG -> {
-                if (pricingRule.getDailyRate() == null) {
-                    throw new IllegalArgumentException("dailyRate is required for LONG dynamic pricing");
-                }
-                yield pricingRule.getDailyRate();
+            yield new Money(
+                pricingRule.getHourlyRate().amount().divide(BigDecimal.valueOf(2), RATE_SCALE, RoundingMode.HALF_UP),
+                pricingRule.getHourlyRate().currency());
+        }
+        case LONG -> {
+            if (pricingRule.getDailyRate() == null) {
+                throw new IllegalArgumentException("dailyRate is required for LONG dynamic pricing");
             }
+            yield pricingRule.getDailyRate();
+        }
         };
     }
 }

@@ -36,6 +36,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.client.RestClientResponseException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
@@ -125,6 +126,20 @@ public class CheckoutController {
         return ResponseEntity.ok(checkoutMapper.toCheckoutDto(awaitPricedReservation(reservation), null));
     }
 
+    @PostMapping("/{ignoredCheckoutId}/select-option")
+    @Operation(summary = "Select a parking option", description = "Compatibility endpoint. The client-provided checkout id is ignored; "
+        + "the returned checkout id is always the reservation id created by the reservation service.")
+    public ResponseEntity<CheckoutDto> selectOptionWithClientId(
+        @Parameter(description = "Deprecated client-provided checkout id, ignored by the BFF") @PathVariable UUID ignoredCheckoutId,
+        @Valid @RequestBody SelectOptionRequest request,
+        @RequestHeader(name = BOOKING_SESSION_HEADER, required = false) String bookingSessionHeader,
+        HttpServletRequest httpRequest,
+        Authentication authentication) {
+
+        log.warn("Received deprecated select-option path with client-provided checkoutId={}; ignoring it", ignoredCheckoutId);
+        return selectOption(request, bookingSessionHeader, httpRequest, authentication);
+    }
+
     /**
      * Returns reservations owned by the authenticated user inside the requested time
      * window. The reservation id returned in each item is the checkout id to use in
@@ -169,10 +184,11 @@ public class CheckoutController {
         Authentication authentication) {
 
         log.info("Received confirm for checkoutId={}", checkoutId);
-        Reservation existingReservation = findReservationById(checkoutId);
-        assertCheckoutBelongsToCaller(existingReservation, authentication, resolveBookingSessionId(bookingSessionHeader, httpRequest));
-        reservationsApi.confirmWithHttpInfo(checkoutId);
-        Reservation reservation = findReservationById(checkoutId);
+        String bookingSessionId = resolveBookingSessionId(bookingSessionHeader, httpRequest);
+        Reservation existingReservation = findReservationByIdOrHeldForCaller(checkoutId, authentication, bookingSessionId);
+        assertCheckoutBelongsToCaller(existingReservation, authentication, bookingSessionId);
+        reservationsApi.confirmWithHttpInfo(existingReservation.getId());
+        Reservation reservation = findReservationById(existingReservation.getId());
         return ResponseEntity.ok(checkoutMapper.toCheckoutDto(reservation, null));
     }
 
@@ -190,9 +206,10 @@ public class CheckoutController {
         HttpServletRequest httpRequest,
         Authentication authentication) {
 
-        Reservation reservation = findReservationById(checkoutId);
-        assertCheckoutBelongsToCaller(reservation, authentication, resolveBookingSessionId(bookingSessionHeader, httpRequest));
-        Order order = findOrderByHoldId(checkoutId);
+        String bookingSessionId = resolveBookingSessionId(bookingSessionHeader, httpRequest);
+        Reservation reservation = findReservationByIdOrHeldForCaller(checkoutId, authentication, bookingSessionId);
+        assertCheckoutBelongsToCaller(reservation, authentication, bookingSessionId);
+        Order order = findOrderByHoldId(reservation.getId());
 
         UUID idempotencyKey = request.idempotencyKey() != null
             ? request.idempotencyKey()
@@ -222,14 +239,58 @@ public class CheckoutController {
         HttpServletRequest httpRequest,
         Authentication authentication) {
 
-        Reservation reservation = findReservationById(checkoutId);
-        assertCheckoutBelongsToCaller(reservation, authentication, resolveBookingSessionId(bookingSessionHeader, httpRequest));
-        Order order = findOrderByHoldIdOrNull(checkoutId);
+        String bookingSessionId = resolveBookingSessionId(bookingSessionHeader, httpRequest);
+        Reservation reservation = findReservationByIdOrHeldForCaller(checkoutId, authentication, bookingSessionId);
+        assertCheckoutBelongsToCaller(reservation, authentication, bookingSessionId);
+        Order order = findOrderByHoldIdOrNull(reservation.getId());
         return ResponseEntity.ok(checkoutMapper.toCheckoutDto(reservation, order));
     }
 
     private Reservation findReservationById(UUID checkoutId) {
         return reservationsApi.getWithHttpInfo(checkoutId).getBody();
+    }
+
+    private Reservation findReservationByIdOrHeldForCaller(UUID checkoutId, Authentication authentication, String bookingSessionId) {
+        try {
+            return findReservationById(checkoutId);
+        }
+        catch (RestClientResponseException exception) {
+            if (exception.getStatusCode().value() != HttpStatus.NOT_FOUND.value()) {
+                throw exception;
+            }
+            return findHeldReservationForCaller(checkoutId, authentication, bookingSessionId);
+        }
+    }
+
+    private Reservation findHeldReservationForCaller(UUID requestedCheckoutId, Authentication authentication, String bookingSessionId) {
+        String userId = authenticatedUserIdOrNull(authentication);
+        var pageable = new org.labcabrera.parking.bff.generated.client.facilities.model.Pageable()
+            .page(0)
+            .size(10);
+        PageResponse response = reservationsApi.callListWithHttpInfo(
+            LocalDateTime.now().minusDays(1),
+            LocalDateTime.now().plusYears(5),
+            pageable,
+            null,
+            userId,
+            userId == null ? bookingSessionId : null).getBody();
+
+        List<Reservation> heldReservations = response == null || response.getContent() == null
+            ? List.of()
+            : response.getContent().stream()
+                .filter(reservation -> "HELD".equals(reservation.getStatus()))
+                .toList();
+
+        if (heldReservations.size() == 1) {
+            Reservation resolvedReservation = heldReservations.get(0);
+            log.warn("Resolved stale checkoutId={} to held reservation {} for current caller", requestedCheckoutId,
+                resolvedReservation.getId());
+            return resolvedReservation;
+        }
+
+        throw new ResponseStatusException(
+            HttpStatus.NOT_FOUND,
+            "Checkout %s not found and current caller has %d held reservations".formatted(requestedCheckoutId, heldReservations.size()));
     }
 
     private Reservation awaitPricedReservation(Reservation initialReservation) {

@@ -47,6 +47,8 @@ public class BffSecurityConfig {
                 .permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/checkout/select-option")
                 .permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/checkout/{checkoutId}/select-option")
+                .permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/checkout/reservations")
                 .authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/v1/checkout/{checkoutId}")
