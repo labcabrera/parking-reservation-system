@@ -128,6 +128,19 @@ services:
       start_period: 60s
 
   # -----------------------------------------------------------------------
+  # Observability: OpenTelemetry Collector
+  # -----------------------------------------------------------------------
+  otel-collector:
+    profiles: [infrastructure, apps]
+    image: otel/opentelemetry-collector:latest
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./infrastructure/otel/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+
+  # -----------------------------------------------------------------------
   # Infrastructure: Spring Cloud Config Server
   # -----------------------------------------------------------------------
   prs-ms-config-server:
@@ -170,9 +183,11 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
       SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      CLOUD_CONFIG_SERVER_URI: ${CLOUD_CONFIG_SERVER_URI}
       FACILITIES_CORS_ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:3002,http://127.0.0.1:3003,http://127.0.0.1:5173,http://192.168.1.107:3000,http://192.168.1.107:3001,http://192.168.1.107:3002,http://192.168.1.107:3003,http://192.168.1.107:5173
       FACILITIES_CORS_ALLOWED_ORIGIN_PATTERNS: ""
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_SERVICE_NAME: prs-ms-parking-facilities
     ports:
       - "8081:8081"
@@ -215,7 +230,8 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
       SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_SERVICE_NAME: prs-ms-ecommerce
     ports:
       - "8082:8082"
@@ -257,7 +273,8 @@ services:
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
       SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_SERVICE_NAME: prs-ms-pricing
     ports:
       - "8083:8083"
@@ -291,7 +308,8 @@ services:
       dockerfile: prs-ms-geo/Dockerfile
     environment:
       CLOUD_CONFIG_SERVER_URI: http://prs-ms-config-server:8888
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_SERVICE_NAME: prs-ms-geo
     ports:
       - "8084:8084"
@@ -323,7 +341,8 @@ services:
       ECOMMERCE_SERVICE_URL: http://prs-ms-ecommerce:8082
       KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
       OIDC_ISSUER_URI: http://keycloak:8080/realms/parking
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_SERVICE_NAME: prs-ms-bff
     ports:
       - "8085:8085"
@@ -362,7 +381,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
       OIDC_ISSUER_URI: http://keycloak:8080/realms/parking
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_SERVICE_NAME: prs-ms-users
     ports:
       - "8086:8083"
@@ -435,19 +455,6 @@ services:
       - "3001:80"
     depends_on:
       - prs-mock-ms-payment
-
-  # -----------------------------------------------------------------------
-  # Observability: OpenTelemetry Collector
-  # -----------------------------------------------------------------------
-  otel-collector:
-    profiles: [observability]
-    image: otel/opentelemetry-collector:latest
-    command: ["--config=/etc/otel-collector-config.yaml"]
-    volumes:
-      - ./infrastructure/otel/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
-    ports:
-      - "4317:4317"
-      - "4318:4318"
 
   # -----------------------------------------------------------------------
   # Observability: Prometheus

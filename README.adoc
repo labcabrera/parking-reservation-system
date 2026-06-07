@@ -252,13 +252,10 @@ En primer lugar levantaremos los servicios de infraestructura y usaremos _Terraf
 ----
 cp .env.example .env
 # editar .env con tus credenciales y configuraciones
-
-# Si queremos borrar los volúmenes existentes para comenzar con un entorno limpio:
-#
-# docker compose --profile infrastructure --profile apps down -v
-
 docker compose --profile infrastructure up -d --build
 ----
+
+TIP: Si para partir de un entorno limpio podremos ejecutaremos `docker compose --profile infrastructure --profile apps down -v`.
 
 Después desde las carpetas de terraform ejecutaremos los comandos de inicialización y aplicación de la infraestructura:
 
