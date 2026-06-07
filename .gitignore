@@ -1,8 +1,7 @@
 .vscode
-.github
-.specify
 .agents
 .codex
+REPORT.md
 
 # Gradle
 .gradle/

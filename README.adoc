@@ -31,7 +31,7 @@ image:../diagrams/c4-context-diagram.png[width=100%]
 
 Al diseñar el sistema el enfoque ha sido en primer lugar la identificación de los *bounded contexts* del dominio y la definición de los microservicios correspondientes, asegurando una clara separación de responsabilidades y un acoplamiento bajo entre ellos. Dentro de esta separación de lógica los problemas identificados son:
 
-- *Gestión de catálogo de aparcamientos y disponibilidad en tiempo real*: modelado de un sistema que permita búsquedas ligeras junto con un sistema de bloqueo de plazas disponibles con políticas de sobreventa que tenga capacidades de tarificaciñón.
+- *Gestión de catálogo de aparcamientos y disponibilidad en tiempo real*: modelado de un sistema que permita búsquedas ligeras junto con un sistema de bloqueo de plazas disponibles con políticas de sobreventa que tenga capacidades de tarificación.
 
 - *Gestión del ciclo de vida de una orden de compra* a partir de un hold de plaza, incluyendo confirmación de precio, pago y cancelación.
 
@@ -138,7 +138,9 @@ Este módulo es el responsable de la gestión de usuarios a través de Keycloak.
 
 ==== Módulo prs-ms-bff
 
-Fachada del resto de módulos para la integraciñon con los diferentes frontends. Si bien este componente añade una capa adicional de complejidad, permite desacoplar comportamientos específicos como el modelo híbrido de autenticación anónima/autenticada, reglas de seguridad específicas (por ejempo manejo de sesiones anónimas de compra, cookies, bloqueos por IP, etc). De este modo hacemos que el resto de módulos no tengan que tener en cuenta esta lógica y se centren únicamente en su responsabilidad principal. De este modo también reducimos las reglas de seguridad la superficie de ataque a un único módulo. Esta es la única API expuesta al exterior mientras que el resto de componentes permanecen aislados dentro del orquestador de microservicios.
+Fachada de módulos de contratación usados por el frontend. Si bien este componente añade una capa adicional de complejidad, permite desacoplar comportamientos específicos como el modelo híbrido de autenticación anónima/autenticada, reglas de seguridad específicas (por ejempo manejo de sesiones anónimas de compra, cookies, bloqueos por IP, etc). De este modo hacemos que el resto de módulos no tengan que tener en cuenta esta lógica y se centren únicamente en su responsabilidad principal. De este modo también reducimos las reglas de seguridad la superficie de ataque a un único módulo. Esta es la única API expuesta al exterior mientras que el resto de componentes permanecen aislados dentro del orquestador de microservicios.
+
+NOTE: Por cuestiones de tiempo se han incluído operaciones de administración directamente en el frontal y este consume APIs internas. Esto no sería lo deseable en un sistema real.
 
 *Responsabilidades:*
 

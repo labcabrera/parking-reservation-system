@@ -80,17 +80,6 @@ services:
       retries: 10
       start_period: 30s
 
-  kafka-init:
-    profiles: [infrastructure, apps]
-    image: confluentinc/cp-kafka:7.6.1
-    depends_on:
-      kafka:
-        condition: service_healthy
-    entrypoint: ["/bin/bash", "/init-topics.sh"]
-    volumes:
-      - ./infrastructure/kafka/init-topics.sh:/init-topics.sh:ro
-    restart: "no"
-
   # -----------------------------------------------------------------------
   # Infrastructure: Kafka UI
   # -----------------------------------------------------------------------
