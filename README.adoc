@@ -259,7 +259,7 @@ docker compose --profile infrastructure up -d --build
 ====
 Para partir de un entorno limpio borraremos los volúmenes ejecutando:
 
-`docker compose --profile infrastructure --profile apps down -v`.
+`docker compose --profile infrastructure --profile apps down -v`
 ====
 
 
