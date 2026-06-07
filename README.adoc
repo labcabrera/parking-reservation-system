@@ -211,14 +211,14 @@ spring:
           issuer-uri: ${IAM_ISSUER_URI:http://localhost:8080/auth/realms/${realm}}
 ----
 
-=== Clientes de Keycloak
+==== Clientes de Keycloak
 
 Este prototipo incluye dos clientes de Keycloak para gestionar la autenticación creados por _Terraform_:
 
 - _parking-client_ con autenticación para las comunicaciones Backend to Backend utilizando client credentials.
 - _parking-client-frontend_ con autenticación PKCE para las comunicaciones del frontend SPA con los backends.
 
-=== Consideraciones de la implementación
+==== Consideraciones de la implementación
 
 Aunque Spring Security permite activar `@EnableMethodSecurity` para establecer las restricciones de los métodos a través de anotaciones como `@PreAuthorize("hasAuthority('parking:create')")`, este mecanismo no encaja demasiado bien con un modelo de Arquitectura Hexagonal ya que un funcionamiento crítico como la seguridad quede acoplado al framework. Para evitar esto se optará por crear Guards programáticos con el modelo _port/adapter_ de un modo similar al siguiente:
 
@@ -232,6 +232,18 @@ public interface ParkingAccessGuardPort {
 ----
 
 Esto nos permitirá una mejor granularidad a la hora de establecer las reglas de seguridad y podrá ser testeada como un componente más de infraestructura.
+
+=== Observabilidad y monitorización
+
+El MVP usa OpenTelemetry y Prometheus para la monitorización de los servicios a través de Actuator. Para esto se ha incluido un colector de OpenTelemetry que exporta las métricas a Prometheus y esta a su vez las expone para ser visualizadas en Grafana.
+
+Verificaremos primero que las métricas de Actuator están funcionando, por ejemplo con el servicio de parking-facilities:
+
+http://localhost:8081/actuator/prometheus
+
+Y después comprobar que desde Prometheus se están recogiendo las métricas:
+
+http://localhost:9090/query?g0.expr=jvm_memory_used_bytes
 
 == Ejecución local
 
@@ -277,8 +289,7 @@ terraform plan
 terraform apply
 ----
 
-
-WARNING: TODO: levantar apis y frontales
+Una vez creada la infraestructura ejecutaremos la build para compilar los microservicios y frontales:
 
 [source, bash]
 ----
@@ -300,16 +311,7 @@ Si todo ha ido bien podremos hacer una petición para listar los parkings dispon
 curl --location 'http://localhost:8081/api/v1/parking-facilities?page=0&size=1' | jq
 ----
 
-Una vez montadadas las APIs deberemos compilar los frontales. Para ello haremos:
-
-[source, bash]
-----
-cd prs-frontend
-npm run build
-
-cd ../prs-mock-payment-gateway
-npm run build
-----
+Si todo ha ido bien abriremos la interfaz de usuario en http://localhost:3000/
 
 ## Enlaces
 
