@@ -1,0 +1,24 @@
+{
+  "name": "Barcelona Passeig de Gràcia Parking",
+  "city": "Barcelona",
+  "address": "Passeig de Gràcia 21",
+  "location": {
+    "latitude": 41.3917,
+    "longitude": 2.1649
+  },
+  "capacity": {
+    "total": 120,
+    "shortTerm": 90,
+    "longTerm": 30
+  },
+  "tags": ["COVERED", "GUARDED", "EV_CHARGING", "WHEELCHAIR_ACCESSIBLE"],
+  "status": "ACTIVE",
+  "cancellationPolicy": {
+    "freeCancelHours": 12,
+    "penaltyCancelMinutes": 30
+  },
+  "pricingRule": {
+    "externalPricingId": "__PRICING_RULE_ID__",
+    "estimatedDailyPrice": 28.0
+  }
+}

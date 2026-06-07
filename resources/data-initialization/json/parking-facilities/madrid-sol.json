@@ -1,0 +1,24 @@
+{
+  "name": "Madrid Sol Underground Parking",
+  "city": "Madrid",
+  "address": "Puerta del Sol 1",
+  "location": {
+    "latitude": 40.4168,
+    "longitude": -3.7038
+  },
+  "capacity": {
+    "total": 150,
+    "shortTerm": 110,
+    "longTerm": 40
+  },
+  "tags": ["COVERED", "GUARDED", "WHEELCHAIR_ACCESSIBLE"],
+  "status": "ACTIVE",
+  "cancellationPolicy": {
+    "freeCancelHours": 12,
+    "penaltyCancelMinutes": 30
+  },
+  "pricingRule": {
+    "externalPricingId": "__PRICING_RULE_ID__",
+    "estimatedDailyPrice": 26.0
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "Madrid Retiro Parking",
+  "city": "Madrid",
+  "address": "Paseo del Prado 36",
+  "location": {
+    "latitude": 40.4138,
+    "longitude": -3.692
+  },
+  "capacity": {
+    "total": 110,
+    "shortTerm": 75,
+    "longTerm": 35
+  },
+  "tags": ["COVERED", "EV_CHARGING", "WHEELCHAIR_ACCESSIBLE"],
+  "status": "ACTIVE",
+  "cancellationPolicy": {
+    "freeCancelHours": 12,
+    "penaltyCancelMinutes": 30
+  },
+  "pricingRule": {
+    "externalPricingId": "__PRICING_RULE_ID__",
+    "estimatedDailyPrice": 22.0
+  }
+}

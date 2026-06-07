@@ -1,0 +1,24 @@
+{
+  "name": "Barcelona Sants Estació Parking",
+  "city": "Barcelona",
+  "address": "Plaça dels Països Catalans 1",
+  "location": {
+    "latitude": 41.3793,
+    "longitude": 2.1404
+  },
+  "capacity": {
+    "total": 200,
+    "shortTerm": 120,
+    "longTerm": 80
+  },
+  "tags": ["COVERED", "EXPRESS_ENTRY", "WHEELCHAIR_ACCESSIBLE"],
+  "status": "ACTIVE",
+  "cancellationPolicy": {
+    "freeCancelHours": 24,
+    "penaltyCancelMinutes": 45
+  },
+  "pricingRule": {
+    "externalPricingId": "__PRICING_RULE_ID__",
+    "estimatedDailyPrice": 22.0
+  }
+}

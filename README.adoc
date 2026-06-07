@@ -272,6 +272,34 @@ terraform plan
 terraform apply
 ----
 
+WARNING: TODO: levantar apis y frontales
+
+Una vez tengamos levantadas las APIs necesitaremos cargar algunos datos de ejemplo como las reglas de tarificación o unos parkings de prueba. Para ello dentro de la carpeta _resources/data-initialization_ tenemos un script que hace la carga inicial usando CURL y ficheros JSON:
+
+[source, bash]
+----
+cd resources/data-initialization
+./initialize-entities.sh
+----
+
+Si todo ha ido bien podremos hacer una petición para listar los parkings disponibles:
+
+[source, bash]
+----
+curl --location 'http://localhost:8081/api/v1/parking-facilities?page=0&size=1' | jq
+----
+
+Una vez montadadas las APIs deberemos compilar los frontales. Para ello haremos:
+
+[source, bash]
+----
+cd prs-frontend
+npm run build
+
+cd ../prs-mock-payment-gateway
+npm run build
+----
+
 ## Enlaces
 
 .Swagger

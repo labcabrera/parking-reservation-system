@@ -1,0 +1,24 @@
+{
+  "name": "Madrid Airport T4 Parking",
+  "city": "Madrid",
+  "address": "Terminal 4, Adolfo Suárez Madrid-Barajas Airport",
+  "location": {
+    "latitude": 40.4983,
+    "longitude": -3.5675
+  },
+  "capacity": {
+    "total": 300,
+    "shortTerm": 150,
+    "longTerm": 150
+  },
+  "tags": ["COVERED", "EXPRESS_ENTRY", "EV_CHARGING", "WHEELCHAIR_ACCESSIBLE"],
+  "status": "ACTIVE",
+  "cancellationPolicy": {
+    "freeCancelHours": 48,
+    "penaltyCancelMinutes": 60
+  },
+  "pricingRule": {
+    "externalPricingId": "__PRICING_RULE_ID__",
+    "estimatedDailyPrice": 28.0
+  }
+}

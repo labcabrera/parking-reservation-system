@@ -1,0 +1,24 @@
+{
+  "name": "Vigo Centro Parking",
+  "city": "Vigo",
+  "address": "Calle Policarpo Sanz 4",
+  "location": {
+    "latitude": 42.2328,
+    "longitude": -8.7226
+  },
+  "capacity": {
+    "total": 80,
+    "shortTerm": 60,
+    "longTerm": 20
+  },
+  "tags": ["COVERED", "GUARDED", "WHEELCHAIR_ACCESSIBLE"],
+  "status": "ACTIVE",
+  "cancellationPolicy": {
+    "freeCancelHours": 12,
+    "penaltyCancelMinutes": 30
+  },
+  "pricingRule": {
+    "externalPricingId": "__PRICING_RULE_ID__",
+    "estimatedDailyPrice": 18.0
+  }
+}
