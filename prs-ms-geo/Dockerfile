@@ -3,17 +3,19 @@ FROM gradle:8-jdk21 AS builder
 WORKDIR /workspace
 COPY gradle gradle
 COPY gradlew gradlew.bat settings.gradle build.gradle ./
-COPY payment-service/build.gradle payment-service/build.gradle
-COPY payment-service/src payment-service/src
-RUN ./gradlew :payment-service:bootJar --no-daemon -q
+COPY prs-ms-geo/build.gradle prs-ms-geo/build.gradle
+COPY prs-ms-geo/src prs-ms-geo/src
+RUN ./gradlew :prs-ms-geo:bootJar --no-daemon -q
+RUN mkdir -p /otel && curl -fsSL -o /otel/opentelemetry-javaagent.jar \
+    https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.5.0/opentelemetry-javaagent.jar
 
 # Stage 2: Runtime
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 RUN addgroup -S parking && adduser -S parking -G parking
-COPY --from=builder /workspace/payment-service/build/libs/*.jar app.jar
-ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.5.0/opentelemetry-javaagent.jar /otel/opentelemetry-javaagent.jar
+COPY --from=builder /workspace/prs-ms-geo/build/libs/*.jar app.jar
+COPY --from=builder /otel/opentelemetry-javaagent.jar /otel/opentelemetry-javaagent.jar
 ENV JAVA_TOOL_OPTIONS="-javaagent:/otel/opentelemetry-javaagent.jar"
 USER parking
-EXPOSE 8083
+EXPOSE 8084
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

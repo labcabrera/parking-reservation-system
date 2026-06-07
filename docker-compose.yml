@@ -199,6 +199,194 @@ services:
       start_period: 60s
 
   # -----------------------------------------------------------------------
+  # Microservice Ecommerce
+  # -----------------------------------------------------------------------
+  prs-ms-ecommerce:
+    profiles: [apps]
+    build:
+      context: .
+      dockerfile: prs-ms-ecommerce/Dockerfile
+    environment:
+      CLOUD_CONFIG_SERVER_URI: http://prs-ms-config-server:8888
+      DB_URL: jdbc:postgresql://postgres:5432/ecommerce_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_SERVICE_NAME: prs-ms-ecommerce
+    ports:
+      - "8082:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      prs-ms-config-server:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO /dev/null http://localhost:8082/actuator/health || exit 1",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  # -----------------------------------------------------------------------
+  # Microservice Pricing
+  # -----------------------------------------------------------------------
+  prs-ms-pricing:
+    profiles: [apps]
+    build:
+      context: .
+      dockerfile: prs-ms-pricing/Dockerfile
+    environment:
+      CLOUD_CONFIG_SERVER_URI: http://prs-ms-config-server:8888
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pricing_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_SERVICE_NAME: prs-ms-pricing
+    ports:
+      - "8083:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      prs-ms-config-server:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO /dev/null http://localhost:8083/actuator/health || exit 1",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  # -----------------------------------------------------------------------
+  # Microservice Geo
+  # -----------------------------------------------------------------------
+  prs-ms-geo:
+    profiles: [apps]
+    build:
+      context: .
+      dockerfile: prs-ms-geo/Dockerfile
+    environment:
+      CLOUD_CONFIG_SERVER_URI: http://prs-ms-config-server:8888
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_SERVICE_NAME: prs-ms-geo
+    ports:
+      - "8084:8084"
+    depends_on:
+      prs-ms-config-server:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO /dev/null http://localhost:8084/actuator/health || exit 1",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  # -----------------------------------------------------------------------
+  # Microservice BFF
+  # -----------------------------------------------------------------------
+  prs-ms-bff:
+    profiles: [apps]
+    build:
+      context: .
+      dockerfile: prs-ms-bff/Dockerfile
+    environment:
+      CLOUD_CONFIG_SERVER_URI: http://prs-ms-config-server:8888
+      FACILITIES_SERVICE_URL: http://prs-ms-parking-facilities:8081
+      ECOMMERCE_SERVICE_URL: http://prs-ms-ecommerce:8082
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      OIDC_ISSUER_URI: http://keycloak:8080/realms/parking
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_SERVICE_NAME: prs-ms-bff
+    ports:
+      - "8085:8085"
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      prs-ms-config-server:
+        condition: service_healthy
+      prs-ms-parking-facilities:
+        condition: service_healthy
+      prs-ms-ecommerce:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO /dev/null http://localhost:8085/actuator/health || exit 1",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  # -----------------------------------------------------------------------
+  # Microservice Users
+  # -----------------------------------------------------------------------
+  prs-ms-users:
+    profiles: [apps]
+    build:
+      context: .
+      dockerfile: prs-ms-users/Dockerfile
+    environment:
+      CLOUD_CONFIG_SERVER_URI: http://prs-ms-config-server:8888
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/users_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      OIDC_ISSUER_URI: http://keycloak:8080/realms/parking
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_SERVICE_NAME: prs-ms-users
+    ports:
+      - "8086:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      prs-ms-config-server:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO /dev/null http://localhost:8083/actuator/health || exit 1",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  # -----------------------------------------------------------------------
   # Frontend: Main SPA
   # -----------------------------------------------------------------------
   frontend:
