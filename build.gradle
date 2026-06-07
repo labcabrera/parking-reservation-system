@@ -25,7 +25,6 @@ subprojects {
     ext {
         axonVersion = '4.13.1'
         springdocVersion = '3.0.3'
-        //swaggerAnnotationsVersion = '2.2.13'
         springCloudVersion = '2025.1.1'
         mapstructVersion = '1.5.5.Final'
     }
@@ -43,15 +42,12 @@ subprojects {
     }
 
     dependencies {
-        // Shared dependencies accross all modules
         implementation 'org.springframework.boot:spring-boot-starter-web'
         implementation 'org.springframework.boot:spring-boot-starter-actuator'
         implementation 'org.springframework.boot:spring-boot-starter-security'
         implementation 'org.springframework.boot:spring-boot-starter-validation'
         implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
 	    implementation "org.mapstruct:mapstruct:${mapstructVersion}"
-
-        // runtimeOnly 'org.postgresql:postgresql'
 
         compileOnly 'org.projectlombok:lombok'
 

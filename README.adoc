@@ -255,7 +255,13 @@ cp .env.example .env
 docker compose --profile infrastructure up -d --build
 ----
 
-TIP: Si para partir de un entorno limpio podremos ejecutaremos `docker compose --profile infrastructure --profile apps down -v`.
+[TIP]
+====
+Para partir de un entorno limpio borraremos los volúmenes ejecutando:
+
+`docker compose --profile infrastructure --profile apps down -v`.
+====
+
 
 Después desde las carpetas de terraform ejecutaremos los comandos de inicialización y aplicación de la infraestructura:
 
