@@ -159,6 +159,8 @@ Para la implementación basada en Java las reglas que se han seguido son:
 
 - Para la comunicación síncrona a través de APIs REST entre módulos se ha usado el plugin `org.openapi.generator` de _Gradle_ usando la modalidad `restclient` adaptada para las dependencias de Spring Boot 4 y Java 21 (uso de anotaciones de Jakarta y Jackson 3+).
 
+- No se creará ninguna librería compartida entre módulos. Cada uno de ellos será completamente independiente. En un escenario real si que sería considerable crear librerías comunes a modo de _starters_ de Spring como por ejemplo para Guards de seguridad, modelo extensible de eventos, interfaces para trabajar con Command/Queries con autenticación, RSQL o cualquier otra funcionalidad común.
+
 - Otras decisiones de diseño han sido:
 
 ** Uso de *PostgreSQL* como base de datos principal con un modelo relacional tradicional con separación por dominios.
@@ -176,6 +178,23 @@ Se ha optado por una aproximación pragmática a la hora de realizar la separaci
 El sistema tiene la particularidad de aceptar operaciones anónimas para la búsqueda y bloqueo de plazas pero requiere autenticación para la confirmación de la reserva. Para esto se ha diseñado un modelo híbrido en el que el módulo BFF es el encargado de gestionar esta lógica y delegar las operaciones a los módulos backend correspondientes.
 
 Para la autenticación a través del frontend se utilizará *OIDC* con Keycloak como proveedor de identidad. En las operaciones *anónimas* el sistema generará un identificador de sesión anónimo que se usará para mantener el contexto de la reserva durante el proceso de compra. Este *identificador se mantendrá en una cookie* y se usará para asociar las operaciones de bloqueo y reserva con la sesión anónima correspondiente. En caso de que el usuario decida autenticarse durante el proceso de compra, el sistema podrá asociar la sesión anónima con el perfil de usuario autenticado para futuras referencias.
+
+[source, bash]
+----
+curl -v --location 'http://localhost:8085/api/v1/checkout/search?q=madrid&checkIn=2026-06-08T10%3A00%3A00&checkOut=2026-06-09T10%3A00%3A00'
+*   Trying 127.0.0.1:8085...
+* Connected to localhost (127.0.0.1) port 8085 (#0)
+> GET /api/v1/checkout/search?q=madrid&checkIn=2026-06-08T10%3A00%3A00&checkOut=2026-06-09T10%3A00%3A00 HTTP/1.1
+> Host: localhost:8085
+> User-Agent: curl/7.88.1
+> Accept: */*
+> 
+< HTTP/1.1 200 
+< Vary: Origin
+< ...
+< Set-Cookie: BFF_SESSION=40B9BBFB8A40A4D27AA3EC128874299A; Path=/; HttpOnly; SameSite=Lax
+< ...
+----
 
 Para las peticiones autenticadas se usará la librería `spring-boot-starter-oauth2-resource-server` configurada del siguiente modo para validar los tokens contra el almacén público de Keycloak:
 
@@ -235,6 +254,7 @@ cp .env.example .env
 # editar .env con tus credenciales y configuraciones
 
 # Si queremos borrar los volúmenes existentes para comenzar con un entorno limpio:
+#
 # docker compose --profile infrastructure down -v
 
 docker compose --profile infrastructure up -d --build
@@ -283,8 +303,9 @@ terraform apply
 
 * Pruebas unitarias y de integración
 * Integración del modelo de seguridad
-** Guards basados en roles y permisos para las operaciones que lo requieran.
-** Integración de SecurityContext en los módulos de lectura de eventos de Spring Cloud Stream.
-** Crear un Bridge con autenticación para propagar cabeceras de autenticación en los eventos.
-* Modelo de indexación de precios usados para realizar las estimaciones de aparcamiento.
-* Modelo de indexación geográfico (leerá los eventos emitidos al realizar cambios en el catálogo de aparcamientos para actualizar las proyecciones en ElasticSearch / OpenSearch).
+** Integrar configuración común de CORS en cada módulo correspondiente
+** Guards basados en roles y permisos para las operaciones que lo requieran
+** Integración de SecurityContext en los módulos de lectura de eventos de Spring Cloud Stream
+** Crear un Bridge con autenticación para propagar cabeceras de autenticación en los eventos
+* Modelo de indexación de precios usados para realizar las estimaciones de aparcamiento
+* Modelo de indexación geográfico (leerá los eventos emitidos al realizar cambios en el catálogo de aparcamientos para actualizar las proyecciones en Elastic/OpenSearch)

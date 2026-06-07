@@ -1,0 +1,20 @@
+{
+  "name": "Daily rate 01",
+  "billingType": "HYBRID",
+  "baseRate": {
+    "amount": 1.5,
+    "currency": "EUR"
+  },
+  "hourlyRate": {
+    "amount": 0,
+    "currency": "EUR"
+  },
+  "dailyRate": {
+    "amount": 14.0,
+    "currency": "EUR"
+  },
+  "taxRate": 0.21,
+  "status": "ACTIVE",
+  "validFrom": "2026-06-01T00:00:00",
+  "validTo": null
+}

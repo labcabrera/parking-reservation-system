@@ -55,7 +55,7 @@ public class ParkingFacility {
         this.address = address;
         this.location = location;
         this.capacity = capacity;
-        this.tags = tags != null ? EnumSet.copyOf(tags) : EnumSet.noneOf(FacilityTag.class);
+        this.tags = toTagSet(tags);
         this.status = status;
         this.cancellationPolicy = cancellationPolicy;
         this.pricingRule = pricingRule;
@@ -84,7 +84,7 @@ public class ParkingFacility {
         this.address = address;
         this.location = location;
         this.capacity = capacity;
-        this.tags = tags != null ? EnumSet.copyOf(tags) : EnumSet.noneOf(FacilityTag.class);
+        this.tags = toTagSet(tags);
         this.status = status;
         this.cancellationPolicy = cancellationPolicy;
         this.pricingRule = pricingRule;
@@ -98,6 +98,35 @@ public class ParkingFacility {
 
     public int getTotalSpots() {
         return capacity.total();
+    }
+
+    public void update(
+        String name,
+        String city,
+        String address,
+        Coordinates location,
+        ParkingCapacity capacity,
+        Set<FacilityTag> tags,
+        FacilityStatus status,
+        CancellationPolicy cancellationPolicy,
+        ParkingPricingRule pricingRule) {
+
+        if (capacity == null) {
+            throw new IllegalArgumentException("capacity is required");
+        }
+        this.name = name;
+        this.city = city;
+        this.address = address;
+        this.location = location;
+        this.capacity = capacity;
+        this.tags = toTagSet(tags);
+        this.status = status;
+        this.cancellationPolicy = cancellationPolicy;
+        this.pricingRule = pricingRule;
+    }
+
+    private static Set<FacilityTag> toTagSet(Set<FacilityTag> tags) {
+        return tags != null && !tags.isEmpty() ? EnumSet.copyOf(tags) : EnumSet.noneOf(FacilityTag.class);
     }
 
 }

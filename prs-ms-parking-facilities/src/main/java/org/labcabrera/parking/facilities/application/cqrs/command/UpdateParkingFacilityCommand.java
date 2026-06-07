@@ -4,6 +4,7 @@ import java.util.Set;
 
 import org.labcabrera.parking.facilities.domain.valueobject.CancellationPolicy;
 import org.labcabrera.parking.facilities.domain.valueobject.Coordinates;
+import org.labcabrera.parking.facilities.domain.valueobject.FacilityId;
 import org.labcabrera.parking.facilities.domain.valueobject.FacilityStatus;
 import org.labcabrera.parking.facilities.domain.valueobject.FacilityTag;
 import org.labcabrera.parking.facilities.domain.valueobject.ParkingCapacity;
@@ -13,7 +14,9 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-public record CreateParkingFacilityCommand(
+public record UpdateParkingFacilityCommand(
+
+    @NotNull FacilityId facilityId,
 
     @NotBlank String name,
 
@@ -32,5 +35,4 @@ public record CreateParkingFacilityCommand(
     @Valid CancellationPolicy cancellationPolicy,
 
     @NotNull @Valid ParkingPricingRule pricingRule) {
-
 }

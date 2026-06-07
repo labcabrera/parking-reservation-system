@@ -18,6 +18,7 @@ import java.util.UUID;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.queryhandling.QueryGateway;
 import org.labcabrera.parking.facilities.application.cqrs.command.CreateParkingFacilityCommand;
+import org.labcabrera.parking.facilities.application.cqrs.command.UpdateParkingFacilityCommand;
 import org.labcabrera.parking.facilities.application.cqrs.query.GetAvailableFacilitiesQuery;
 import org.labcabrera.parking.facilities.application.cqrs.query.GetFacilityInventoryQuery;
 import org.labcabrera.parking.facilities.application.cqrs.query.GetParkingFacilitiesQuery;
@@ -33,6 +34,7 @@ import org.labcabrera.parking.facilities.interfaces.rest.dto.InventorySlotDto;
 import org.labcabrera.parking.facilities.interfaces.rest.dto.PageResponse;
 import org.labcabrera.parking.facilities.interfaces.rest.dto.Pagination;
 import org.labcabrera.parking.facilities.interfaces.rest.dto.ParkingFacilityDto;
+import org.labcabrera.parking.facilities.interfaces.rest.dto.UpdateParkingFacilityRequest;
 import org.labcabrera.parking.facilities.interfaces.rest.mapper.CreateParkingFacilityMapper;
 import org.labcabrera.parking.facilities.interfaces.rest.mapper.InventorySlotMapper;
 import org.labcabrera.parking.facilities.interfaces.rest.mapper.ParkingFacilityMapper;
@@ -51,6 +53,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -120,6 +123,33 @@ public class FacilityParkingController {
         ParkingFacility parkingFacility = commandGateway.sendAndWait(command);
         var dto = parkingFacilityMapper.toDto(parkingFacility);
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
+    }
+
+    @PutMapping("/{parkingFacilityId}")
+    @Operation(operationId = "updateParkingFacility", summary = "Update a parking facility", description = "Replace a parking facility with the provided details", responses = {
+        @ApiResponse(responseCode = "200", description = "Updated parking facility", content = {
+            @Content(mediaType = "application/json", schema = @Schema(implementation = ParkingFacilityDto.class)) }),
+        @ApiResponse(responseCode = "400", description = "Invalid request", content = {
+            @Content(mediaType = "application/json", schema = @Schema(implementation = ApiError.class)) }),
+        @ApiResponse(responseCode = "404", description = "Parking facility or pricing rule not found", content = {
+            @Content(mediaType = "application/json", schema = @Schema(implementation = ApiError.class)) }) })
+    public ResponseEntity<ParkingFacilityDto> update(
+        @PathVariable String parkingFacilityId,
+        @Valid @RequestBody UpdateParkingFacilityRequest request) {
+
+        var command = new UpdateParkingFacilityCommand(
+            FacilityId.of(UUID.fromString(parkingFacilityId)),
+            request.name(),
+            request.city(),
+            request.address(),
+            request.location(),
+            request.capacity(),
+            request.tags(),
+            request.status(),
+            request.cancellationPolicy(),
+            request.pricingRule());
+        ParkingFacility parkingFacility = commandGateway.sendAndWait(command);
+        return ResponseEntity.ok(parkingFacilityMapper.toDto(parkingFacility));
     }
 
     @GetMapping("/availability")

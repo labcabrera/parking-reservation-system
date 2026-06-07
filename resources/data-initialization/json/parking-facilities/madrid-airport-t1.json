@@ -1,0 +1,28 @@
+{
+  "name": "Madrid Airport T1 Parking",
+  "city": "Madrid",
+  "address": "Terminal 1, Adolfo Suarez Madrid-Barajas Airport",
+  "location": {
+    "latitude": 40.4918,
+    "longitude": -3.5695
+  },
+  "capacity": {
+    "total": 180,
+    "shortTerm": 120,
+    "longTerm": 60
+  },
+  "tags": [
+    "COVERED",
+    "EXPRESS_ENTRY",
+    "EV_CHARGING"
+  ],
+  "status": "ACTIVE",
+  "cancellationPolicy": {
+    "freeCancelHours": 24,
+    "penaltyCancelMinutes": 30
+  },
+  "pricingRule": {
+    "externalPricingId": "__PRICING_RULE_ID__",
+    "estimatedDailyPrice": 24.00
+  }
+}

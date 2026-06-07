@@ -34,7 +34,7 @@ public interface FacilityJpaMapper {
             : EnumSet.noneOf(FacilityTag.class);
         Coordinates coords = new Coordinates(entity.getLatitude(), entity.getLongitude());
         CancellationPolicy cancellationPolicy = new CancellationPolicy(entity.getFreeCancelHours(), entity.getPenaltyCancelMinutes());
-        ParkingPricingRule pricingRule = new ParkingPricingRule(entity.getExternalPricingId(), entity.getEstimatedDailyPrice());
+        ParkingPricingRule pricingRule = new ParkingPricingRule(UUID.fromString(entity.getExternalPricingId()), entity.getEstimatedDailyPrice());
         ParkingCapacity capacity = capacityFrom(entity);
         EntityMetadata metadata = new EntityMetadata(
             entity.getCreatedAt(),
@@ -80,6 +80,10 @@ public interface FacilityJpaMapper {
             return null;
         }
         return tags.stream().map(Enum::name).toArray(String[]::new);
+    }
+
+    default String map(UUID id) {
+        return id == null ? null : id.toString();
     }
 
     static FacilityTag safeTagValueOf(String tag) {

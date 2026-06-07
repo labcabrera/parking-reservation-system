@@ -61,7 +61,7 @@ public class ParkingFacilityJpaEntity {
     @Column(name = "penalty_cancel_minutes", nullable = false)
     private int penaltyCancelMinutes;
 
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 36)
     private String externalPricingId;
 
     @Column(name = "estimated_daily_price", nullable = false, precision = 10, scale = 2)
@@ -105,7 +105,7 @@ public class ParkingFacilityJpaEntity {
             this.penaltyCancelMinutes = domain.getCancellationPolicy().penaltyCancelMinutes();
         }
         if (domain.getPricingRule() != null) {
-            this.externalPricingId = domain.getPricingRule().externalPricingId();
+            this.externalPricingId = domain.getPricingRule().externalPricingId().toString();
             this.estimatedDailyPrice = domain.getPricingRule().estimatedDailyPrice();
         }
         if (domain.getMetadata() != null) {
