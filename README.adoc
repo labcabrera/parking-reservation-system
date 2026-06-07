@@ -255,7 +255,7 @@ cp .env.example .env
 
 # Si queremos borrar los volúmenes existentes para comenzar con un entorno limpio:
 #
-# docker compose --profile infrastructure down -v
+# docker compose --profile infrastructure --profile apps down -v
 
 docker compose --profile infrastructure up -d --build
 ----
@@ -272,7 +272,13 @@ terraform plan
 terraform apply
 ----
 
+
 WARNING: TODO: levantar apis y frontales
+
+[source, bash]
+----
+docker compose --profile apps up -d --build
+----
 
 Una vez tengamos levantadas las APIs necesitaremos cargar algunos datos de ejemplo como las reglas de tarificación o unos parkings de prueba. Para ello dentro de la carpeta _resources/data-initialization_ tenemos un script que hace la carga inicial usando CURL y ficheros JSON:
 

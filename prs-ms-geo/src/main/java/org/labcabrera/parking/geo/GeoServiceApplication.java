@@ -1,12 +1,12 @@
-package org.labcabrera.parking.payment;
+package org.labcabrera.parking.geo;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class PaymentServiceApplication {
+public class GeoServiceApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(PaymentServiceApplication.class, args);
+        SpringApplication.run(GeoServiceApplication.class, args);
     }
 }
