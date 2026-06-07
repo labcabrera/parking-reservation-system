@@ -1,4 +1,8 @@
-terraform-old/
+.vscode
+.github
+.specify
+.agents
+.codex
 
 # Gradle
 .gradle/
