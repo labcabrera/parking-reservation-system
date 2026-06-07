@@ -341,7 +341,11 @@ services:
       FACILITIES_SERVICE_URL: http://prs-ms-parking-facilities:8081
       ECOMMERCE_SERVICE_URL: http://prs-ms-ecommerce:8082
       KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
-      OIDC_ISSUER_URI: http://keycloak:8080/realms/parking
+      # Spring Boot env-var naming overrides config-server resolved values (highest priority).
+      # jwk-set-uri uses the Docker-internal Keycloak hostname to fetch signing keys.
+      # issuer-uri must match the "iss" claim the browser token carries (localhost:8080).
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/parking/protocol/openid-connect/certs
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/realms/parking
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_SERVICE_NAME: prs-ms-bff
@@ -416,6 +420,7 @@ services:
       context: prs-frontend
       dockerfile: Dockerfile
       args:
+        # Direct URLs — the browser reaches each service through the host-exposed ports.
         VITE_BFF_URL: http://localhost:8085
         VITE_PARKING_FACILITIES_SERVICE_URL: http://localhost:8081
         VITE_PRICING_SERVICE_URL: http://localhost:8083
@@ -425,9 +430,6 @@ services:
         VITE_KEYCLOAK_REALM: parking
         VITE_KEYCLOAK_CLIENT_ID: parking-client-front
         VITE_KEYCLOAK_SCOPE: openid profile email
-    environment:
-      VITE_CATALOG_SERVICE_URL: ""
-      VITE_PAYMENT_GATEWAY_URL: http://localhost:3001
     ports:
       - "3000:80"
 
