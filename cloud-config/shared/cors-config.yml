@@ -17,6 +17,7 @@ security:
       - Authorization
       - Content-Type
       - X-Requested-With
+      - X-Booking-Session-Id
     exposed-headers:
       - Location
     allow-credentials: true

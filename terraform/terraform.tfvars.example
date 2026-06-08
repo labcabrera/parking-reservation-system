@@ -12,19 +12,19 @@ parking_client_secret = "changeme"
 
 parking_client_valid_redirect_uris = [
   "http://localhost:*/*",
-  "https://app.example.com/*",
+  "*",
 ]
 parking_client_web_origins = [
   "http://localhost:*",
-  "https://app.example.com",
+  "*",
 ]
 parking_client_front_valid_redirect_uris = [
   "http://localhost:*/*",
-  "https://app.example.com/*",
+  "*",
 ]
 parking_client_front_web_origins = [
   "http://localhost:*",
-  "https://app.example.com",
+  "*",
 ]
 
 # ---------------------------------------------------------------------------

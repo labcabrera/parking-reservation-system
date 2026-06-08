@@ -1,5 +1,6 @@
 package org.labcabrera.parking.facilities.infrastructure.config;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -29,7 +30,8 @@ public record FacilitiesCorsProperties(
         HttpHeaders.ACCEPT,
         HttpHeaders.AUTHORIZATION,
         HttpHeaders.CONTENT_TYPE,
-        "X-Requested-With");
+        "X-Requested-With",
+        "X-Booking-Session-Id");
     private static final List<String> DEFAULT_EXPOSED_HEADERS = List.of(HttpHeaders.LOCATION);
 
     public FacilitiesCorsProperties {
@@ -47,7 +49,7 @@ public record FacilitiesCorsProperties(
         allowedOrigins = normalizedOrigins;
         allowedOriginPatterns = normalizedPatterns.isEmpty() ? DEFAULT_ALLOWED_ORIGIN_PATTERNS : normalizedPatterns;
         allowedMethods = withDefault(allowedMethods, DEFAULT_ALLOWED_METHODS);
-        allowedHeaders = withDefault(allowedHeaders, DEFAULT_ALLOWED_HEADERS);
+        allowedHeaders = withMergedDefaults(allowedHeaders, DEFAULT_ALLOWED_HEADERS);
         exposedHeaders = withDefault(exposedHeaders, DEFAULT_EXPOSED_HEADERS);
         allowCredentials = allowCredentials == null ? Boolean.TRUE : allowCredentials;
         maxAge = maxAge == null ? 3600L : maxAge;
@@ -56,6 +58,12 @@ public record FacilitiesCorsProperties(
     private static List<String> withDefault(List<String> values, List<String> defaultValues) {
         List<String> normalized = normalize(values).toList();
         return normalized.isEmpty() ? defaultValues : normalized;
+    }
+
+    private static List<String> withMergedDefaults(List<String> values, List<String> defaultValues) {
+        LinkedHashSet<String> merged = new LinkedHashSet<>(defaultValues);
+        normalize(values).forEach(merged::add);
+        return List.copyOf(merged);
     }
 
     private static Stream<String> normalize(List<String> values) {
