@@ -1,5 +1,7 @@
 package org.labcabrera.parking.ecommerce.application.port;
 
+import java.util.UUID;
+
 import org.labcabrera.parking.ecommerce.domain.valueobject.Money;
 
 public interface PaymentGatewayPort {
@@ -14,7 +16,6 @@ public interface PaymentGatewayPort {
      * @param idempotencyKey stable key uniquely identifying this charge attempt
      * @param amount amount and currency to charge
      * @param paymentMethodCode code of the payment method (e.g. "CREDIT_CARD")
-     * @return result indicating success or failure
      */
-    PaymentGatewayResult charge(String idempotencyKey, Money amount, String paymentMethodCode);
+    void charge(UUID orderId, UUID paymentAttemptId, String idempotencyKey, Money amount, String paymentMethodCode);
 }

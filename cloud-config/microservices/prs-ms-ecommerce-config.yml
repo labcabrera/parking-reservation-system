@@ -30,3 +30,9 @@ spring:
 ecommerce:
   order:
     ttl-minutes: 15
+  payment:
+    gateway: mock
+    mock:
+      base-url: ${MOCK_PAYMENT_API_URL:http://localhost:8089}
+      customer-callback-url: ${MOCK_PAYMENT_CUSTOMER_CALLBACK_URL:http://localhost:3001/payment-result}
+      ecommerce-callback-url: ${MOCK_PAYMENT_ECOMMERCE_CALLBACK_URL:http://localhost:8082/api/v1/payment-callbacks/mock}

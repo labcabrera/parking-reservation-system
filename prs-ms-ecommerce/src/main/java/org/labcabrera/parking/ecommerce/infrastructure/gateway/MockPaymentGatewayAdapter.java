@@ -1,12 +1,14 @@
 package org.labcabrera.parking.ecommerce.infrastructure.gateway;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import org.labcabrera.parking.ecommerce.application.port.PaymentGatewayPort;
-import org.labcabrera.parking.ecommerce.application.port.PaymentGatewayResult;
 import org.labcabrera.parking.ecommerce.domain.valueobject.Money;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,16 +29,47 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MockPaymentGatewayAdapter implements PaymentGatewayPort {
 
+    private final RestClient restClient;
+    private final String customerCallbackUrl;
+    private final String ecommerceCallbackUrl;
+
+    public MockPaymentGatewayAdapter(
+        RestClient.Builder builder,
+        @Value("${ecommerce.payment.mock.base-url:http://localhost:8089}") String baseUrl,
+        @Value("${ecommerce.payment.mock.customer-callback-url:http://localhost:3001/payment-result}") String customerCallbackUrl,
+        @Value("${ecommerce.payment.mock.ecommerce-callback-url:http://localhost:8082/api/v1/payment-callbacks/mock}") String ecommerceCallbackUrl) {
+        this.restClient = builder.baseUrl(baseUrl).build();
+        this.customerCallbackUrl = customerCallbackUrl;
+        this.ecommerceCallbackUrl = ecommerceCallbackUrl;
+    }
+
     @Override
-    public PaymentGatewayResult charge(String idempotencyKey, Money amount, String paymentMethodCode) {
-        log.info("Mock gateway: charging {} {} via {} (idempotencyKey={})",
-            amount.amount(), amount.currency(), paymentMethodCode, idempotencyKey);
+    public void charge(UUID orderId, UUID paymentAttemptId, String idempotencyKey, Money amount, String paymentMethodCode) {
+        log.info("Mock gateway: registering payment attempt {} for order {} via {}", paymentAttemptId, orderId, paymentMethodCode);
 
-        // Derive a deterministic transaction id from the idempotency key so that
-        // replaying the same key always yields the same result (gateway-side idempotency).
-        String transactionId = "TXN-" + UUID.nameUUIDFromBytes(idempotencyKey.getBytes());
+        restClient.post()
+            .uri("/api/v1/payment-attempts")
+            .body(new MockPaymentAttemptRequest(
+                paymentAttemptId,
+                orderId,
+                idempotencyKey,
+                paymentMethodCode,
+                amount.amount(),
+                amount.currency(),
+                ecommerceCallbackUrl,
+                customerCallbackUrl))
+            .retrieve()
+            .toBodilessEntity();
+    }
 
-        log.info("Mock gateway: charge approved — transactionId={}", transactionId);
-        return PaymentGatewayResult.succeeded(transactionId);
+    private record MockPaymentAttemptRequest(
+        UUID paymentAttemptId,
+        UUID orderId,
+        String idempotencyKey,
+        String paymentMethodCode,
+        BigDecimal amount,
+        String currency,
+        String ecommerceCallbackUrl,
+        String callbackUrl) {
     }
 }

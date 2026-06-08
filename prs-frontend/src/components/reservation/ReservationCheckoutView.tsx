@@ -52,21 +52,25 @@ export function ReservationCheckoutView({
   const { isAuthenticated } = useAuth();
   const [selectedPaymentMethodCode, setSelectedPaymentMethodCode] =
     useState("");
+  const [currentCheckout, setCurrentCheckout] = useState(checkout);
   const days = getReservationDays(checkIn, checkOut);
   const totalAmount =
-    checkout.amount ?? facility.estimatedPrice?.amount ?? facility.dailyRate;
+    currentCheckout.amount ?? facility.estimatedPrice?.amount ?? facility.dailyRate;
   const paymentMethodsQuery = useQuery({
     queryKey: ["checkout-payment-methods"],
     queryFn: listPaymentMethods,
   });
+  const confirmMutation = useMutation({
+    mutationFn: () => confirmCheckout(currentCheckout.checkoutId),
+    onSuccess: (confirmed) => {
+      setCurrentCheckout(confirmed);
+    },
+  });
   const paymentMutation = useMutation({
-    mutationFn: async (paymentMethodCode: string) => {
-      const confirmed = await confirmCheckout(checkout.checkoutId);
-      // Generate the idempotency key once per mutation invocation so that React Query
-      // retries of the same mutation call reuse the same key.
+    mutationFn: (paymentMethodCode: string) => {
       const idempotencyKey = crypto.randomUUID();
       return initiateCheckoutPayment(
-        confirmed.checkoutId,
+        currentCheckout.checkoutId,
         paymentMethodCode,
         idempotencyKey,
       );
@@ -79,6 +83,7 @@ export function ReservationCheckoutView({
   });
 
   const paymentMethods = paymentMethodsQuery.data ?? [];
+  const isConfirmed = currentCheckout.status === "CONFIRMED";
 
   return (
     <Box
@@ -118,13 +123,19 @@ export function ReservationCheckoutView({
         }}
       >
         <CheckoutDetailsForm
-          isSubmitting={paymentMutation.isPending}
+          checkoutStatus={currentCheckout.status}
+          isConfirming={confirmMutation.isPending}
+          isPaymentEnabled={isConfirmed}
+          isPaying={paymentMutation.isPending}
           onPaymentMethodChange={setSelectedPaymentMethodCode}
-          onSubmit={() => paymentMutation.mutate(selectedPaymentMethodCode)}
-          paymentError={paymentMutation.error}
+          onConfirm={() => confirmMutation.mutate()}
+          onPay={() => paymentMutation.mutate(selectedPaymentMethodCode)}
+          confirmError={confirmMutation.error}
+          confirmSuccess={confirmMutation.isSuccess}
           paymentMethods={paymentMethods}
           paymentMethodsError={paymentMethodsQuery.error}
           paymentMethodsLoading={paymentMethodsQuery.isLoading}
+          paymentError={paymentMutation.error}
           selectedPaymentMethodCode={selectedPaymentMethodCode}
         />
         <ReservationSummary
@@ -133,7 +144,7 @@ export function ReservationCheckoutView({
           days={days}
           facility={facility}
           locale={i18n.language}
-          checkout={checkout}
+          checkout={currentCheckout}
           totalAmount={totalAmount}
         />
       </Box>
@@ -174,9 +185,15 @@ function LoginPrompt() {
 }
 
 interface CheckoutDetailsFormProps {
-  isSubmitting: boolean;
+  checkoutStatus?: string;
+  confirmError: Error | null;
+  confirmSuccess: boolean;
+  isConfirming: boolean;
+  isPaymentEnabled: boolean;
+  isPaying: boolean;
   onPaymentMethodChange: (code: string) => void;
-  onSubmit: () => void;
+  onConfirm: () => void;
+  onPay: () => void;
   paymentError: Error | null;
   paymentMethods: PaymentMethod[];
   paymentMethodsError: Error | null;
@@ -185,9 +202,15 @@ interface CheckoutDetailsFormProps {
 }
 
 function CheckoutDetailsForm({
-  isSubmitting,
+  checkoutStatus,
+  confirmError,
+  confirmSuccess,
+  isConfirming,
+  isPaymentEnabled,
+  isPaying,
   onPaymentMethodChange,
-  onSubmit,
+  onConfirm,
+  onPay,
   paymentError,
   paymentMethods,
   paymentMethodsError,
@@ -199,7 +222,13 @@ function CheckoutDetailsForm({
   const displayName =
     user?.profile.name ?? user?.profile.email ?? t("auth.defaultUser");
   const email = user?.profile.email;
-  const canSubmit = selectedPaymentMethodCode.length > 0 && !isSubmitting;
+  const isConfirmed = checkoutStatus === "CONFIRMED";
+  const canConfirm = !isConfirming && !isPaying && !isConfirmed;
+  const canPay =
+    isPaymentEnabled &&
+    selectedPaymentMethodCode.length > 0 &&
+    !isConfirming &&
+    !isPaying;
 
   return (
     <Stack spacing={3.2}>
@@ -333,86 +362,92 @@ function CheckoutDetailsForm({
         </Stack>
       </Box>
 
-      <Box>
-        <Typography
-          component="h2"
-          sx={{ fontSize: 28, fontWeight: 900, mb: 1 }}
-        >
-          {t("checkout.paymentMethods.title")}
-        </Typography>
-        {paymentMethodsLoading && (
-          <Stack
-            direction="row"
-            spacing={1.5}
-            sx={{ alignItems: "center", py: 2 }}
+      {isPaymentEnabled && (
+        <Box>
+          <Typography
+            component="h2"
+            sx={{ fontSize: 28, fontWeight: 900, mb: 1 }}
           >
-            <CircularProgress size={20} />
-            <Typography color="text.secondary">
-              {t("checkout.paymentMethods.loading")}
-            </Typography>
-          </Stack>
-        )}
-        {paymentMethodsError && (
-          <Alert severity="error" sx={{ mt: 1 }}>
-            {paymentMethodsError.message}
-          </Alert>
-        )}
-        {!paymentMethodsLoading &&
-          !paymentMethodsError &&
-          paymentMethods.length === 0 && (
-            <Alert severity="warning" sx={{ mt: 1 }}>
-              {t("checkout.paymentMethods.empty")}
+            {t("checkout.paymentMethods.title")}
+          </Typography>
+          {paymentMethodsLoading && (
+            <Stack
+              direction="row"
+              spacing={1.5}
+              sx={{ alignItems: "center", py: 2 }}
+            >
+              <CircularProgress size={20} />
+              <Typography color="text.secondary">
+                {t("checkout.paymentMethods.loading")}
+              </Typography>
+            </Stack>
+          )}
+          {paymentMethodsError && (
+            <Alert severity="error" sx={{ mt: 1 }}>
+              {paymentMethodsError.message}
             </Alert>
           )}
-        {paymentMethods.length > 0 && (
-          <FormControl component="fieldset" fullWidth>
-            <RadioGroup
-              aria-label={t("checkout.paymentMethods.title")}
-              onChange={(event) => onPaymentMethodChange(event.target.value)}
-              value={selectedPaymentMethodCode}
-            >
-              <Stack spacing={1.5}>
-                {paymentMethods.map((method) => (
-                  <Paper
-                    elevation={0}
-                    key={method.code}
-                    sx={{
-                      border: 1,
-                      borderColor:
-                        selectedPaymentMethodCode === method.code
-                          ? "secondary.main"
-                          : "divider",
-                      borderRadius: 1.5,
-                      px: 1.5,
-                    }}
-                  >
-                    <FormControlLabel
-                      control={<Radio color="secondary" />}
-                      label={<PaymentMethodLabel method={method} />}
-                      sx={{ alignItems: "center", m: 0, width: "100%" }}
-                      value={method.code}
-                    />
-                  </Paper>
-                ))}
-              </Stack>
-            </RadioGroup>
-          </FormControl>
-        )}
-      </Box>
+          {!paymentMethodsLoading &&
+            !paymentMethodsError &&
+            paymentMethods.length === 0 && (
+              <Alert severity="warning" sx={{ mt: 1 }}>
+                {t("checkout.paymentMethods.empty")}
+              </Alert>
+            )}
+          {paymentMethods.length > 0 && (
+            <FormControl component="fieldset" fullWidth>
+              <RadioGroup
+                aria-label={t("checkout.paymentMethods.title")}
+                onChange={(event) => onPaymentMethodChange(event.target.value)}
+                value={selectedPaymentMethodCode}
+              >
+                <Stack spacing={1.5}>
+                  {paymentMethods.map((method) => (
+                    <Paper
+                      elevation={0}
+                      key={method.code}
+                      sx={{
+                        border: 1,
+                        borderColor:
+                          selectedPaymentMethodCode === method.code
+                            ? "secondary.main"
+                            : "divider",
+                        borderRadius: 1.5,
+                        px: 1.5,
+                      }}
+                    >
+                      <FormControlLabel
+                        control={<Radio color="secondary" />}
+                        label={<PaymentMethodLabel method={method} />}
+                        sx={{ alignItems: "center", m: 0, width: "100%" }}
+                        value={method.code}
+                      />
+                    </Paper>
+                  ))}
+                </Stack>
+              </RadioGroup>
+            </FormControl>
+          )}
+        </Box>
+      )}
 
+      {confirmSuccess && (
+        <Alert severity="success">{t("checkout.confirmationSuccess")}</Alert>
+      )}
+      {confirmError && <Alert severity="error">{confirmError.message}</Alert>}
       {paymentError && <Alert severity="error">{paymentError.message}</Alert>}
 
       <Button
         color="secondary"
-        disabled={!canSubmit}
+        disabled={isPaymentEnabled ? !canPay : !canConfirm}
         endIcon={
-          isSubmitting ? (
+          isConfirming || isPaying ? (
             <CircularProgress color="inherit" size={18} />
           ) : (
             <ArrowForwardIcon />
           )
         }
-        onClick={onSubmit}
+        onClick={isPaymentEnabled ? onPay : onConfirm}
         size="large"
         sx={{
           borderRadius: 999,
@@ -425,12 +460,16 @@ function CheckoutDetailsForm({
         type="button"
         variant="contained"
       >
-        {isSubmitting
-          ? t("checkout.paymentMethods.processing")
-          : t("checkout.payment")}
+        {isConfirming
+          ? t("checkout.confirming")
+          : isPaying
+            ? t("checkout.paymentMethods.processing")
+            : isPaymentEnabled
+              ? t("checkout.payment")
+              : t("checkout.confirmReservation")}
       </Button>
       <Typography align="center" color="text.secondary" sx={{ fontSize: 12 }}>
-        {t("checkout.paymentHint")}
+        {isPaymentEnabled ? t("checkout.paymentHint") : t("checkout.confirmHint")}
       </Typography>
     </Stack>
   );

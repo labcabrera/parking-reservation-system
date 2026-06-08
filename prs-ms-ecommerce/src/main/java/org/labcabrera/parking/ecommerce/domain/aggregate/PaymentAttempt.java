@@ -88,7 +88,7 @@ public class PaymentAttempt {
             throw new IllegalArgumentException("idempotencyKey is required");
         }
         return new PaymentAttempt(
-            UUID.randomUUID(),
+            attemptIdFrom(idempotencyKey),
             orderId,
             idempotencyKey,
             paymentMethodCode,
@@ -96,6 +96,15 @@ public class PaymentAttempt {
             PaymentAttemptStatus.PENDING,
             LocalDateTime.now(),
             null, null, null, null);
+    }
+
+    private static UUID attemptIdFrom(String idempotencyKey) {
+        try {
+            return UUID.fromString(idempotencyKey);
+        }
+        catch (IllegalArgumentException ignored) {
+            return UUID.randomUUID();
+        }
     }
 
     /**

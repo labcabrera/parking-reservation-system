@@ -1,6 +1,6 @@
 import { FormEvent, useMemo, useState } from 'react'
 import { BrowserRouter, Link, Route, Routes, useLocation } from 'react-router-dom'
-import { readPaymentSession, submitPaymentAttempt } from './services/paymentGatewayApi'
+import { capturePaymentAttempt, readPaymentSession, submitPaymentAttempt } from './services/paymentGatewayApi'
 import type { CardFormState, PaymentAttemptResponse, PaymentSession } from './types/payment'
 
 const initialCardForm: CardFormState = {
@@ -46,12 +46,15 @@ function PaymentPage() {
     setError(null)
 
     try {
-      const response = await submitPaymentAttempt({
-        amount: session.amount,
-        callbackUrl: `${window.location.origin}/payment-result`,
-        currency: session.currency,
-        orderId: session.orderId,
-      })
+      const callbackUrl = `${window.location.origin}/payment-result`
+      const response = session.attemptId
+        ? await capturePaymentAttempt(session.attemptId, session.orderId, callbackUrl)
+        : await submitPaymentAttempt({
+            amount: session.amount,
+            callbackUrl,
+            currency: session.currency,
+            orderId: session.orderId,
+          })
       setResult(response)
       if (response.redirectUrl) {
         window.location.assign(response.redirectUrl)

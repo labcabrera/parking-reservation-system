@@ -1,6 +1,17 @@
 spring:
   application:
     name: prs-mock-ms-payment
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/payment_db}
+    username: ${SPRING_DATASOURCE_USERNAME:${DB_USERNAME:parking}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:parking}}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
 server:
   port: 8089
@@ -14,3 +25,4 @@ springdoc:
 mock:
   payment:
     redirect-base-url: ${PAYMENT_REDIRECT_BASE_URL:http://localhost:3001/payment-result}
+    ecommerce-callback-url: ${ECOMMERCE_PAYMENT_CALLBACK_URL:http://localhost:8082/api/v1/payment-callbacks/mock}

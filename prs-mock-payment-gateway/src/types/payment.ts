@@ -6,9 +6,13 @@ export interface PaymentSession {
 }
 
 export interface PaymentAttemptRequest {
+  paymentAttemptId?: string;
   orderId: string;
+  idempotencyKey?: string;
+  paymentMethodCode?: string;
   amount: number;
   currency: string;
+  ecommerceCallbackUrl?: string;
   callbackUrl: string;
 }
 

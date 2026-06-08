@@ -45,6 +45,52 @@ export async function submitPaymentAttempt(request: PaymentAttemptRequest): Prom
   }
 }
 
+export async function capturePaymentAttempt(
+  attemptId: string,
+  orderId: string,
+  callbackUrl: string,
+): Promise<PaymentAttemptResponse> {
+  try {
+    const response = await fetch(`${PAYMENT_ATTEMPTS_URL}/${encodeURIComponent(attemptId)}/pay`, {
+      body: JSON.stringify({ callbackUrl, status: 'SUCCESS' }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    })
+
+    if (!response.ok) {
+      const errorMessage = await buildPaymentErrorMessage(response)
+      if (response.status >= 500 && isProxyFailureMessage(errorMessage)) {
+        return createLocalSuccessResponse({
+          amount: 0,
+          callbackUrl,
+          currency: 'EUR',
+          orderId,
+          paymentAttemptId: attemptId,
+        })
+      }
+
+      throw new Error(errorMessage)
+    }
+
+    return response.json() as Promise<PaymentAttemptResponse>
+  }
+  catch (caught) {
+    if (caught instanceof TypeError || isProxyFailure(caught)) {
+      return createLocalSuccessResponse({
+        amount: 0,
+        callbackUrl,
+        currency: 'EUR',
+        orderId,
+        paymentAttemptId: attemptId,
+      })
+    }
+
+    throw caught
+  }
+}
+
 async function buildPaymentErrorMessage(response: Response) {
   const contentType = response.headers.get('content-type') ?? ''
   const responseBody = contentType.includes('application/json')
@@ -66,7 +112,7 @@ function isProxyFailureMessage(message: string) {
 }
 
 function createLocalSuccessResponse(request: PaymentAttemptRequest): PaymentAttemptResponse {
-  const attemptId = crypto.randomUUID()
+  const attemptId = request.paymentAttemptId ?? crypto.randomUUID()
   const redirectUrl = new URL(request.callbackUrl)
   redirectUrl.searchParams.set('attemptId', attemptId)
   redirectUrl.searchParams.set('orderId', request.orderId)

@@ -210,6 +210,11 @@ const resources = {
         requiredFields: '(*) CAMPOS OBLIGATORIOS',
         payment: 'Elige el metodo de pago',
         paymentHint: 'Solo queda un paso para confirmar tu reserva',
+        confirmReservation: 'Confirmar reserva',
+        confirming: 'Confirmando reserva...',
+        confirmed: 'Reserva confirmada',
+        confirmationSuccess: 'Reserva confirmada correctamente.',
+        confirmHint: 'Confirmaremos tu reserva y bloquearemos la plaza seleccionada.',
         paymentMethods: {
           title: '4. Metodo de pago',
           loading: 'Cargando metodos de pago...',
@@ -496,6 +501,11 @@ const resources = {
         requiredFields: '(*) REQUIRED FIELDS',
         payment: 'Choose payment method',
         paymentHint: 'Only one step left to confirm your booking',
+        confirmReservation: 'Confirm booking',
+        confirming: 'Confirming booking...',
+        confirmed: 'Booking confirmed',
+        confirmationSuccess: 'Booking confirmed successfully.',
+        confirmHint: 'We will confirm your booking and lock the selected parking spot.',
         paymentMethods: {
           title: '4. Payment method',
           loading: 'Loading payment methods...',

@@ -11,7 +11,6 @@ import org.labcabrera.parking.ecommerce.application.cqrs.command.MarkOrderPaymen
 import org.labcabrera.parking.ecommerce.application.cqrs.command.MarkOrderPaymentInProgressCommand;
 import org.labcabrera.parking.ecommerce.application.port.PaymentAttemptRepository;
 import org.labcabrera.parking.ecommerce.application.port.PaymentGatewayPort;
-import org.labcabrera.parking.ecommerce.application.port.PaymentGatewayResult;
 import org.labcabrera.parking.ecommerce.application.port.OrderReadRepository;
 import org.labcabrera.parking.ecommerce.domain.aggregate.Order;
 import org.labcabrera.parking.ecommerce.domain.aggregate.PaymentAttempt;
@@ -93,9 +92,8 @@ public class OrderPaymentService {
 
         // ── 5. Call payment gateway ──────────────────────────────────────────────
         //       The idempotencyKey is forwarded so the gateway can deduplicate.
-        PaymentGatewayResult result;
         try {
-            result = paymentGatewayPort.charge(idempotencyKey, attempt.getAmount(), attempt.getPaymentMethodCode());
+            paymentGatewayPort.charge(orderId, attempt.getId(), idempotencyKey, attempt.getAmount(), attempt.getPaymentMethodCode());
         }
         catch (Exception e) {
             log.error("Payment gateway threw an exception for attempt {} (order {})",
@@ -108,24 +106,35 @@ public class OrderPaymentService {
             throw new DomainException("Payment gateway error: " + e.getMessage());
         }
 
-        // ── 6. Record result ─────────────────────────────────────────────────────
-        if (result.success()) {
-            attempt.markSucceeded(result.transactionId());
-            paymentAttemptRepository.save(attempt);
-            commandGateway.sendAndWait(
-                new MarkOrderPaidCommand(orderId, attempt.getId()), 10, TimeUnit.SECONDS);
-            log.info("Order {} paid successfully via attempt {}", orderId, attempt.getId());
-        }
-        else {
-            attempt.markFailed(result.failureReason());
-            paymentAttemptRepository.save(attempt);
-            commandGateway.sendAndWait(
-                new MarkOrderPaymentFailedCommand(orderId, attempt.getId(), result.failureReason()),
-                10, TimeUnit.SECONDS);
-            log.warn("Payment failed for order {}: {}", orderId, result.failureReason());
-        }
-
+        log.info("Payment attempt {} registered with gateway for order {}", attempt.getId(), orderId);
         return attempt.getId();
+    }
+
+    @Transactional
+    public void completePayment(UUID orderId, UUID paymentAttemptId, String status, String gatewayTransactionId, String failureReason) {
+        PaymentAttempt attempt = paymentAttemptRepository.findById(paymentAttemptId)
+            .orElseThrow(() -> new EntityNotFoundException("Payment attempt not found: " + paymentAttemptId));
+        if (!attempt.getOrderId().equals(orderId)) {
+            throw new DomainException("Payment attempt " + paymentAttemptId + " does not belong to order " + orderId);
+        }
+        if (attempt.getStatus().isTerminal()) {
+            log.info("Ignoring duplicate payment callback for terminal attempt {}", paymentAttemptId);
+            return;
+        }
+        if ("SUCCESS".equalsIgnoreCase(status) || "SUCCEEDED".equalsIgnoreCase(status) || "PAID".equalsIgnoreCase(status)) {
+            attempt.markSucceeded(gatewayTransactionId == null || gatewayTransactionId.isBlank()
+                ? "MOCK-TXN-" + paymentAttemptId
+                : gatewayTransactionId);
+            paymentAttemptRepository.save(attempt);
+            commandGateway.sendAndWait(new MarkOrderPaidCommand(orderId, paymentAttemptId), 10, TimeUnit.SECONDS);
+            log.info("Order {} paid successfully via callback attempt {}", orderId, paymentAttemptId);
+            return;
+        }
+        String reason = failureReason == null || failureReason.isBlank() ? "Payment rejected by gateway" : failureReason;
+        attempt.markFailed(reason);
+        paymentAttemptRepository.save(attempt);
+        commandGateway.sendAndWait(new MarkOrderPaymentFailedCommand(orderId, paymentAttemptId, reason), 10, TimeUnit.SECONDS);
+        log.warn("Order {} payment failed via callback attempt {}: {}", orderId, paymentAttemptId, reason);
     }
 
     // ── Private helpers ──────────────────────────────────────────────────────────
