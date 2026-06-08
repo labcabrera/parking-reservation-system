@@ -17,7 +17,7 @@ public record FacilitiesCorsProperties(
     Boolean allowCredentials,
     Long maxAge) {
 
-    private static final List<String> DEFAULT_ALLOWED_ORIGIN_PATTERNS = List.of("http://localhost:*");
+    private static final List<String> DEFAULT_ALLOWED_ORIGIN_PATTERNS = List.of("http://localhost:[*]");
     private static final List<String> DEFAULT_ALLOWED_METHODS = List.of(
         HttpMethod.DELETE.name(),
         HttpMethod.GET.name(),
