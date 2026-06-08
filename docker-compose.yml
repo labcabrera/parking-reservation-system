@@ -443,7 +443,7 @@ services:
   # -----------------------------------------------------------------------
   # Frontend: Main SPA Frontend
   # -----------------------------------------------------------------------
-  frontend:
+  prs-frontend:
     profiles: [apps]
     build:
       context: prs-frontend
