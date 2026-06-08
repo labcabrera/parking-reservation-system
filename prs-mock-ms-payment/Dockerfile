@@ -5,7 +5,7 @@ COPY gradle gradle
 COPY gradlew gradlew.bat settings.gradle build.gradle ./
 COPY prs-mock-ms-payment/build.gradle prs-mock-ms-payment/build.gradle
 COPY prs-mock-ms-payment/src prs-mock-ms-payment/src
-RUN ./gradlew :prs-mock-ms-payment:bootJar --no-daemon -q
+RUN gradle :prs-mock-ms-payment:bootJar --no-daemon -q
 
 # Stage 2: Runtime
 FROM eclipse-temurin:21-jre-alpine

@@ -1,8 +1,3 @@
-output "database_names" {
-  description = "Names of the created PostgreSQL databases."
-  value       = module.postgres.database_names
-}
-
 output "keycloak_realm_id" {
   description = "Internal Keycloak ID of the created realm."
   value       = module.keycloak.realm_id

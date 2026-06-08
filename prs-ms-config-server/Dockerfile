@@ -5,7 +5,7 @@ COPY gradle gradle
 COPY gradlew gradlew.bat settings.gradle build.gradle ./
 COPY prs-ms-config-server/build.gradle prs-ms-config-server/build.gradle
 COPY prs-ms-config-server/src prs-ms-config-server/src
-RUN ./gradlew :prs-ms-config-server:bootJar --no-daemon -q
+RUN gradle :prs-ms-config-server:bootJar --no-daemon -q
 
 # Stage 2: Runtime
 FROM eclipse-temurin:21-jre-alpine

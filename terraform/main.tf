@@ -1,10 +1,3 @@
-module "postgres" {
-  source = "./modules/postgres"
-
-  databases = var.pg_databases
-  owner     = var.pg_superuser
-}
-
 module "keycloak" {
   source = "./modules/keycloak"
 

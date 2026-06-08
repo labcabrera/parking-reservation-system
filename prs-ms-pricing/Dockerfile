@@ -5,9 +5,9 @@ COPY gradle gradle
 COPY gradlew gradlew.bat settings.gradle build.gradle ./
 COPY prs-ms-pricing/build.gradle prs-ms-pricing/build.gradle
 COPY prs-ms-pricing/src prs-ms-pricing/src
-RUN ./gradlew :prs-ms-pricing:bootJar --no-daemon -q
-RUN mkdir -p /otel && curl -fsSL -o /otel/opentelemetry-javaagent.jar \
-    https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.5.0/opentelemetry-javaagent.jar
+RUN gradle :prs-ms-pricing:bootJar --no-daemon -q
+RUN mkdir -p /otel && curl -fsSL --retry 5 --retry-delay 2 --retry-all-errors -o /otel/opentelemetry-javaagent.jar \
+    https://repo1.maven.org/maven2/io/opentelemetry/javaagent/opentelemetry-javaagent/2.5.0/opentelemetry-javaagent-2.5.0.jar
 
 # Stage 2: Runtime
 FROM eclipse-temurin:21-jre-alpine
