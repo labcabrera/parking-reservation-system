@@ -188,8 +188,6 @@ Un ejemplo de esto es el `ReservationCreatedStreamPublisher`. Este componente de
 
 Para casos donde si que es necesario un tratamiento consistente no usaríamos manejadores de eventos sino que dentro de la lógica de la saga nos aseguraríamos de que el evento ha sido tratado adecuadamente antes de seguir el flujo asíncrono que publicación de eventos de Axon (y luego por Cloud Stream).
 
-NOTE: Nunca he usado Axon en entornos productivos porque generaba un alto grado de acoplamiento respecto a un framework que no está tan extendido, pero si que en todos los lugares donde he estado desde hace un tiempo al menos hice una POC para comparar su funcionamiento respecto a otros sistemas como Eventuate o una implementación manual de los procesos de transaccionalidad distribuida y sistemas de compensación.
-
 NOTE: Dentro del modelo de comunicación basado en Spring Cloud Stream la configuración es cero. Se define el comportamiento de cada consumidor y productor sin más. En entornos reales esta configuración estará ajustada a un duncionamiento más robusto como poíticas de reintos, gestión diferente de tipos de excepciones, etc.
 
 ==== Sagas dentro del ejercicio
