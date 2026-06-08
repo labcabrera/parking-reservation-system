@@ -1,7 +1,11 @@
 import { useState } from 'react';
-import { Alert, Stack } from '@mui/material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import ReplayIcon from '@mui/icons-material/Replay';
+import { Alert, Box, Button, Chip, Paper, Stack, Typography } from '@mui/material';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ParkingResultsSection } from '../components/results/ParkingResultsSection';
 import { ReservationCheckoutView } from '../components/reservation/ReservationCheckoutView';
 import { ParkingSearchForm } from '../components/search/ParkingSearchForm';
@@ -14,6 +18,11 @@ import type { SelectOptionRequest } from '../types/checkout';
 
 export default function SearchPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const paymentStatus = searchParams.get('paymentStatus');
+  const paymentOrderId = searchParams.get('orderId');
+  const paymentAttemptId = searchParams.get('attemptId');
   const [location, setLocation] = useState('');
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
@@ -68,6 +77,17 @@ export default function SearchPage() {
     );
   }
 
+  if (paymentStatus) {
+    return (
+      <PaymentResultView
+        attemptId={paymentAttemptId}
+        onBackToSearch={() => navigate('/', { replace: true })}
+        orderId={paymentOrderId}
+        status={paymentStatus}
+      />
+    );
+  }
+
   return (
     <Stack spacing={4}>
       <SearchHero>
@@ -118,4 +138,104 @@ export default function SearchPage() {
 
 function isCheckOutAfterCheckIn(checkIn: string, checkOut: string) {
   return new Date(checkOut).getTime() > new Date(checkIn).getTime();
+}
+
+type PaymentResultViewProps = {
+  attemptId: string | null;
+  onBackToSearch: () => void;
+  orderId: string | null;
+  status: string;
+};
+
+function PaymentResultView({ attemptId, onBackToSearch, orderId, status }: PaymentResultViewProps) {
+  const { t } = useTranslation();
+  const normalizedStatus = status.toUpperCase();
+  const isSuccess = normalizedStatus === 'SUCCESS' || normalizedStatus === 'PAID';
+
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 3,
+        overflow: 'hidden',
+      }}
+    >
+      <Box
+        sx={{
+          bgcolor: isSuccess ? 'success.light' : 'error.light',
+          color: isSuccess ? 'success.contrastText' : 'error.contrastText',
+          p: { xs: 3, md: 5 },
+        }}
+      >
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ alignItems: 'flex-start' }}>
+          {isSuccess ? <CheckCircleIcon fontSize="large" /> : <InfoOutlinedIcon fontSize="large" />}
+          <Stack spacing={1}>
+            <Chip
+              color={isSuccess ? 'success' : 'error'}
+              label={normalizedStatus}
+              size="small"
+              sx={{ alignSelf: 'flex-start', fontWeight: 800 }}
+            />
+            <Typography component="h1" variant="h3">
+              {isSuccess ? t('paymentResult.successTitle') : t('paymentResult.errorTitle')}
+            </Typography>
+            <Typography sx={{ maxWidth: 720 }} variant="h6">
+              {isSuccess ? t('paymentResult.successSubtitle') : t('paymentResult.errorSubtitle')}
+            </Typography>
+          </Stack>
+        </Stack>
+      </Box>
+
+      <Stack spacing={3} sx={{ p: { xs: 3, md: 5 } }}>
+        <Typography color="text.secondary" variant="body1">
+          {isSuccess ? t('paymentResult.successBody') : t('paymentResult.errorBody')}
+        </Typography>
+
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          spacing={2}
+          sx={{
+            '& > *': {
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 2,
+              flex: 1,
+              minWidth: 0,
+              p: 2,
+            },
+          }}
+        >
+          <Stack spacing={0.75}>
+            <Typography color="text.secondary" variant="overline">
+              {t('paymentResult.orderId')}
+            </Typography>
+            <Typography sx={{ overflowWrap: 'anywhere' }} variant="body2">
+              {orderId ?? t('paymentResult.unavailable')}
+            </Typography>
+          </Stack>
+          <Stack spacing={0.75}>
+            <Typography color="text.secondary" variant="overline">
+              {t('paymentResult.attemptId')}
+            </Typography>
+            <Typography sx={{ overflowWrap: 'anywhere' }} variant="body2">
+              {attemptId ?? t('paymentResult.unavailable')}
+            </Typography>
+          </Stack>
+        </Stack>
+
+        <Button
+          color="primary"
+          onClick={onBackToSearch}
+          size="large"
+          startIcon={<ReplayIcon />}
+          sx={{ alignSelf: 'flex-start' }}
+          variant="contained"
+        >
+          {t('paymentResult.backToSearch')}
+        </Button>
+      </Stack>
+    </Paper>
+  );
 }

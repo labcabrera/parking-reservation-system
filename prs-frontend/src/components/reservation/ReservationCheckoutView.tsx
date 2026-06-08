@@ -222,8 +222,9 @@ function CheckoutDetailsForm({
   const displayName =
     user?.profile.name ?? user?.profile.email ?? t("auth.defaultUser");
   const email = user?.profile.email;
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const isConfirmed = checkoutStatus === "CONFIRMED";
-  const canConfirm = !isConfirming && !isPaying && !isConfirmed;
+  const canConfirm = termsAccepted && !isConfirming && !isPaying && !isConfirmed;
   const canPay =
     isPaymentEnabled &&
     selectedPaymentMethodCode.length > 0 &&
@@ -356,7 +357,15 @@ function CheckoutDetailsForm({
             label={t("checkout.invoice.marketing")}
           />
           <FormControlLabel
-            control={<Checkbox color="secondary" />}
+            control={
+              <Checkbox
+                checked={termsAccepted}
+                color="secondary"
+                disabled={isConfirmed}
+                onChange={(event) => setTermsAccepted(event.target.checked)}
+                required
+              />
+            }
             label={t("checkout.invoice.terms")}
           />
         </Stack>

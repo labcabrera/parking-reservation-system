@@ -203,6 +203,18 @@ const resources = {
         created: 'Reserva iniciada correctamente.',
         createError: 'No se pudo iniciar la reserva.',
       },
+      paymentResult: {
+        successTitle: 'Pago confirmado',
+        successSubtitle: 'Tu reserva se ha pagado correctamente.',
+        successBody: 'La pasarela ha confirmado el pago y hemos actualizado la orden asociada. Guarda estos identificadores si necesitas consultar la operacion.',
+        errorTitle: 'No se pudo confirmar el pago',
+        errorSubtitle: 'La pasarela no ha completado la operacion correctamente.',
+        errorBody: 'Puedes volver a buscar parking e iniciar una nueva reserva. Si el problema persiste, usa los identificadores para revisar la operacion.',
+        orderId: 'Pedido',
+        attemptId: 'Intento de pago',
+        unavailable: 'No disponible',
+        backToSearch: 'Buscar otro parking',
+      },
       checkout: {
         title: 'Rellena los datos',
         loginLink: 'Inicia sesion',
@@ -493,6 +505,18 @@ const resources = {
       reservation: {
         created: 'Booking started successfully.',
         createError: 'Booking could not be started.',
+      },
+      paymentResult: {
+        successTitle: 'Payment confirmed',
+        successSubtitle: 'Your booking has been paid successfully.',
+        successBody: 'The gateway confirmed the payment and the related order has been updated. Keep these identifiers if you need to check the operation.',
+        errorTitle: 'Payment could not be confirmed',
+        errorSubtitle: 'The gateway did not complete the operation successfully.',
+        errorBody: 'You can return to parking search and start a new booking. If the issue persists, use these identifiers to review the operation.',
+        orderId: 'Order',
+        attemptId: 'Payment attempt',
+        unavailable: 'Unavailable',
+        backToSearch: 'Search another parking',
       },
       checkout: {
         title: 'Fill in your details',

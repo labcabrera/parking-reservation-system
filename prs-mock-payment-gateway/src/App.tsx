@@ -1,5 +1,5 @@
 import { FormEvent, useMemo, useState } from 'react'
-import { BrowserRouter, Link, Route, Routes, useLocation } from 'react-router-dom'
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { capturePaymentAttempt, readPaymentSession, submitPaymentAttempt } from './services/paymentGatewayApi'
 import type { CardFormState, PaymentAttemptResponse, PaymentSession } from './types/payment'
 
@@ -29,7 +29,9 @@ function PaymentPage() {
   const [result, setResult] = useState<PaymentAttemptResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<'idle' | 'paying' | 'cancelled'>('idle')
-  const canSubmit = hasRequiredPaymentData(session) && status !== 'paying'
+  const canSubmit = hasRegisteredPaymentAttempt(session) || hasLegacyPaymentData(session)
+    ? status !== 'paying'
+    : false
 
   function updateForm(field: keyof CardFormState, value: string) {
     setForm((current) => ({ ...current, [field]: value }))
@@ -37,7 +39,7 @@ function PaymentPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!hasRequiredPaymentData(session)) {
+    if (!hasRegisteredPaymentAttempt(session) && !hasLegacyPaymentData(session)) {
       setError('Faltan datos del pago en la URL.')
       return
     }
@@ -47,7 +49,7 @@ function PaymentPage() {
 
     try {
       const callbackUrl = `${window.location.origin}/payment-result`
-      const response = session.attemptId
+      const response = hasRegisteredPaymentAttempt(session)
         ? await capturePaymentAttempt(session.attemptId, session.orderId, callbackUrl)
         : await submitPaymentAttempt({
             amount: session.amount,
@@ -77,9 +79,9 @@ function PaymentPage() {
       <section className="gateway-card" aria-labelledby="payment-title">
         <PaymentHeader />
 
-        {!hasRequiredPaymentData(session) && (
+        {!hasRegisteredPaymentAttempt(session) && !hasLegacyPaymentData(session) && (
           <div className="alert alert-error" role="alert">
-            No se puede iniciar el pago porque faltan orderId, amount o currency en la URL.
+            No se puede iniciar el pago porque faltan orderId e attemptId en la URL.
           </div>
         )}
 
@@ -220,26 +222,35 @@ function PaymentResultPage() {
   const orderId = params.get('orderId') ?? '-'
   const attemptId = params.get('attemptId') ?? '-'
   const isSuccess = status === 'SUCCESS'
+  const frontendUrl = buildFrontendReturnUrl(status, orderId, attemptId)
 
   return (
     <main className="gateway-shell">
       <section className="gateway-card result-card" aria-labelledby="result-title">
         <p className={isSuccess ? 'result-icon success' : 'result-icon failed'}>{isSuccess ? 'OK' : '!'}</p>
         <h1 id="result-title">{isSuccess ? 'Pago autorizado' : 'Pago no completado'}</h1>
-        <p className="muted">Estado recibido: {status}</p>
+        <p className="muted">
+          {isSuccess
+            ? 'El pago se ha comunicado correctamente al comercio. Ya puedes volver a Parking Reservation System.'
+            : `Estado recibido: ${status}`}
+        </p>
         <div className="result-details">
           <SummaryRow label="Pedido" value={orderId} />
           <SummaryRow label="Intento" value={attemptId} />
         </div>
-        <Link className="button button-primary" to={`/payment${location.search}`}>
-          Volver al pago
-        </Link>
+        <a className="button button-primary" href={frontendUrl}>
+          Volver al frontal
+        </a>
       </section>
     </main>
   )
 }
 
-function hasRequiredPaymentData(session: PaymentSession): session is Required<Pick<PaymentSession, 'amount' | 'currency' | 'orderId'>> & PaymentSession {
+function hasRegisteredPaymentAttempt(session: PaymentSession): session is Required<Pick<PaymentSession, 'attemptId' | 'orderId'>> & PaymentSession {
+  return Boolean(session.orderId && session.attemptId)
+}
+
+function hasLegacyPaymentData(session: PaymentSession): session is Required<Pick<PaymentSession, 'amount' | 'currency' | 'orderId'>> & PaymentSession {
   return Boolean(session.orderId && session.currency && session.amount != null)
 }
 
@@ -252,6 +263,19 @@ function formatMoney(amount: number | undefined, currency: string | undefined) {
     currency,
     style: 'currency',
   }).format(amount)
+}
+
+function buildFrontendReturnUrl(status: string, orderId: string, attemptId: string) {
+  const frontendBaseUrl = (import.meta.env.VITE_FRONTEND_URL as string | undefined) ?? 'http://localhost:3000'
+  const returnUrl = new URL(frontendBaseUrl)
+  returnUrl.searchParams.set('paymentStatus', status)
+  if (orderId !== '-') {
+    returnUrl.searchParams.set('orderId', orderId)
+  }
+  if (attemptId !== '-') {
+    returnUrl.searchParams.set('attemptId', attemptId)
+  }
+  return returnUrl.toString()
 }
 
 export default App

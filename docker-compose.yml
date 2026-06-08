@@ -491,6 +491,8 @@ services:
     build:
       context: prs-mock-payment-gateway
       dockerfile: Dockerfile
+      args:
+        VITE_FRONTEND_URL: http://localhost:3000
     environment:
       VITE_PAYMENT_SERVICE_URL: ""
     ports:

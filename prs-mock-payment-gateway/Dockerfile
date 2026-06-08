@@ -4,6 +4,8 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
 COPY . .
+ARG VITE_FRONTEND_URL=http://localhost:3000
+ENV VITE_FRONTEND_URL=$VITE_FRONTEND_URL
 RUN npm run build
 
 # Stage 2: Serve with nginx
