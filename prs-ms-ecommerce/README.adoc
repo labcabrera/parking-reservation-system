@@ -1,0 +1,487 @@
+= Ecommerce Service
+:toc: left
+:toc-title: Table of Contents
+:toclevels: 3
+:sectnums:
+:sectnumlevels: 2
+:icons: font
+:doctype: book
+:reproducible:
+:source-highlighter: rouge
+:chapter-label:
+:!chapter-signifier:
+:doc-version: 1.0-draft
+:fecha-documento: 2026-06-08
+v{doc-version}, {fecha-documento}
+
+== Context
+
+`prs-ms-ecommerce` is the bounded context responsible for ecommerce orders, checkout payment methods, and payment attempts in the parking reservation system.
+
+The service is created around a confirmed parking reservation hold. It consumes reservation-created messages from Kafka, creates an order linked to the reservation hold, and later coordinates payment attempts through a payment gateway port.
+
+== Responsibilities
+
+* Consume confirmed reservation events from Kafka.
+* Create one ecommerce order per reservation hold.
+* Store and query order read models.
+* Expose supported payment methods for checkout.
+* Initiate payment attempts for orders.
+* Enforce payment idempotency at application, database, and gateway levels.
+* Update order state according to payment progress and gateway result.
+
+== Technology Stack
+
+[cols="1,2", options="header"]
+|===
+| Concern | Implementation
+
+| Runtime
+| Spring Boot 4, Java 21
+
+| Domain/CQRS
+| Axon Framework command gateway and event-sourced aggregates
+
+| Persistence
+| Spring Data JPA with PostgreSQL
+
+| Messaging
+| Spring Cloud Stream with Kafka binder
+
+| Cache/config support
+| Redis dependency and Spring Cloud Config
+
+| API documentation
+| SpringDoc OpenAPI
+
+| Payment provider
+| `PaymentGatewayPort`, with `MockPaymentGatewayAdapter` as the default adapter
+|===
+
+== Package Structure
+
+[source,text]
+----
+org.labcabrera.parking.ecommerce
++-- domain
+|   +-- aggregate        # Order, PaymentAttempt, PaymentMethod
+|   +-- event            # Order lifecycle events
+|   +-- exception        # Domain exceptions
+|   +-- valueobject      # Money, OrderStatus, PaymentAttemptStatus, ...
++-- application
+|   +-- cqrs             # Commands, queries and query handlers
+|   +-- port             # Read repositories and payment gateway port
+|   +-- saga             # Reservation-to-order orchestration
+|   +-- service          # Payment orchestration and payment method service
++-- infrastructure
+|   +-- config           # Security, Axon and catalog initializer configuration
+|   +-- gateway          # Payment gateway adapter
+|   +-- jpa              # JPA projections and repository adapters
++-- interfaces
+    +-- rest             # Orders and payment method APIs
+    +-- stream           # Kafka consumer
+----
+
+== Configuration
+
+The module imports configuration from Config Server using:
+
+[source,yaml]
+----
+spring:
+  config:
+    import: configserver:${CLOUD_CONFIG_SERVER_URI:http://localhost:8888}
+  cloud:
+    config:
+      name: prs-ms-ecommerce-config,actuator-config,jpa-config,redis-config,axon-config,spring-doc-config,resource-server-config
+----
+
+The service-specific configuration lives in `cloud-config/microservices/prs-ms-ecommerce-config.yml`.
+
+[cols="1,1,2", options="header"]
+|===
+| Property | Default | Description
+
+| `server.port`
+| `8082`
+| HTTP port used by the ecommerce service.
+
+| `spring.datasource.url`
+| `jdbc:postgresql://localhost:5432/ecommerce_db`
+| PostgreSQL database for orders, payment attempts and payment methods.
+
+| `spring.cloud.stream.bindings.reservationCreatedConsumer-in-0.destination`
+| `parking-facilities.reservation.created.v1`
+| Kafka topic consumed when a reservation is confirmed.
+
+| `spring.cloud.stream.bindings.reservationCreatedConsumer-in-0.group`
+| `prs-ms-ecommerce`
+| Kafka consumer group.
+
+| `spring.cloud.stream.kafka.binder.brokers`
+| `localhost:9092`
+| Kafka bootstrap servers.
+
+| `ecommerce.order.ttl-minutes`
+| `15`
+| Fallback order TTL used when the reservation event does not include an expiration timestamp.
+
+| `ecommerce.payment.gateway`
+| `mock`
+| Selects the payment gateway adapter. The mock adapter is active when this property is `mock` or missing.
+|===
+
+== Kafka Integration
+
+=== Consumed Event
+
+The service consumes `ReservationCreatedMessage` from `parking-facilities.reservation.created.v1`.
+
+[cols="1,2", options="header"]
+|===
+| Field | Meaning
+
+| `reservationId`
+| Confirmed reservation identifier. This becomes the order `holdId`.
+
+| `facilityId`
+| Reserved parking facility identifier.
+
+| `userId`
+| Authenticated user identifier, when the checkout was authenticated.
+
+| `bookingSessionId`
+| Stable checkout session identifier used for anonymous and authenticated traceability.
+
+| `checkIn`, `checkOut`
+| Reservation interval.
+
+| `expiresAt`
+| Deadline for completing payment.
+
+| `amount`, `currency`
+| Amount to charge.
+
+| `occurredAt`, `eventVersion`
+| Event metadata.
+|===
+
+=== Duplicate Event Handling
+
+Kafka delivery is assumed to be at-least-once. `OrderSaga` handles duplicate reservation-created messages by checking whether an order already exists for the `holdId` before creating a new one.
+
+The `orders.hold_id` column is unique, which provides the database-level backstop for duplicate order creation attempts.
+
+== REST API
+
+The current security configuration permits all requests. Authorization and ownership checks are expected to be enforced by the upstream BFF while this service is used as an internal service.
+
+[cols="1,2,3", options="header"]
+|===
+| Method | Path | Description
+
+| `POST`
+| `/api/v1/orders`
+| Creates an order from a confirmed hold. Used for direct/internal creation.
+
+| `GET`
+| `/api/v1/orders`
+| Searches orders with optional `status` and `holdId` filters.
+
+| `GET`
+| `/api/v1/orders/{id}`
+| Returns order details.
+
+| `POST`
+| `/api/v1/orders/{id}/pay`
+| Initiates an idempotent payment attempt for the order.
+
+| `GET`
+| `/api/v1/payment-methods`
+| Lists supported payment methods, optionally filtering only active methods.
+
+| `POST`
+| `/api/v1/payment-methods`
+| Registers a supported payment method.
+
+| `PUT`
+| `/api/v1/payment-methods/{id}`
+| Updates a supported payment method.
+
+| `GET`
+| `/api/v1/payments/methods`
+| Checkout-oriented endpoint that returns active payment methods.
+|===
+
+== Payment Flow
+
+=== End-to-End Flow From Kafka Event to Paid Order
+
+The normal happy path is:
+
+1. `prs-ms-parking-facilities` confirms a reservation and publishes `ReservationCreatedMessage` to Kafka.
+2. `ReservationCreatedStreamListener` receives the message through Spring Cloud Stream.
+3. The listener maps the transport message to `ReservationCreatedForOrder`.
+4. `OrderSaga` checks `OrderReadRepository.findByHoldId(reservationId)`.
+5. If an order already exists, the message is treated as a duplicate and no new command is sent.
+6. If no order exists, `OrderSaga` creates a new `orderId` and sends `CreateOrderCommand`.
+7. `Order` handles `CreateOrderCommand` and applies `OrderCreatedEvent`.
+8. `OrderProjection` persists the read model into `orders`.
+9. The BFF or an internal client calls `POST /api/v1/orders/{id}/pay` with an `idempotencyKey` and `paymentMethodCode`.
+10. `OrderPaymentService` checks whether a payment attempt already exists for the `idempotencyKey`.
+11. The order is loaded and validated:
+    * it must not be `PAID`;
+    * it must not be `CANCELLED` or `EXPIRED`;
+    * it must be `PENDING_PAYMENT` or `PAYMENT_FAILED`;
+    * it must not be past `expiresAt`.
+12. A `PaymentAttempt` is created in `PENDING` status and immediately moved to `PROCESSING`.
+13. The attempt is persisted in `payment_attempts`.
+14. `MarkOrderPaymentInProgressCommand` is sent to the `Order` aggregate.
+15. `Order` applies `OrderPaymentInProgressEvent`, moving the order to `PAYMENT_IN_PROGRESS`.
+16. `PaymentGatewayPort.charge(...)` is called with the same `idempotencyKey`, amount and payment method.
+17. On gateway success:
+    * the attempt moves to `SUCCEEDED`;
+    * the gateway transaction id is stored;
+    * `MarkOrderPaidCommand` is sent;
+    * `Order` applies `OrderPaidEvent` and moves to `PAID`.
+18. On gateway failure:
+    * the attempt moves to `FAILED`;
+    * the failure reason is stored;
+    * `MarkOrderPaymentFailedCommand` is sent;
+    * `Order` moves to `PAYMENT_FAILED`.
+
+=== Sequence Diagram
+
+[source,text]
+----
+Kafka topic: parking-facilities.reservation.created.v1
+        |
+        v
+ReservationCreatedStreamListener
+        |
+        v
+OrderSaga
+        |-- findByHoldId(reservationId)
+        |      |-- exists  -> skip duplicate event
+        |      `-- missing -> send CreateOrderCommand
+        v
+Order aggregate
+        |-- apply OrderCreatedEvent
+        v
+OrderProjection -> orders table
+        |
+        v
+POST /api/v1/orders/{orderId}/pay
+        |
+        v
+OrderPaymentService
+        |-- findByIdempotencyKey(idempotencyKey)
+        |-- validate order state and expiry
+        |-- create PaymentAttempt(PENDING)
+        |-- mark PaymentAttempt(PROCESSING)
+        |-- send MarkOrderPaymentInProgressCommand
+        |-- paymentGateway.charge(idempotencyKey, amount, method)
+        |      |-- success -> PaymentAttempt(SUCCEEDED), Order(PAID)
+        |      `-- failure -> PaymentAttempt(FAILED), Order(PAYMENT_FAILED)
+----
+
+== State Models
+
+=== Order States
+
+[cols="1,3", options="header"]
+|===
+| State | Meaning
+
+| `PENDING_PAYMENT`
+| Order was created and is waiting for payment.
+
+| `PAYMENT_IN_PROGRESS`
+| A payment attempt is currently being processed.
+
+| `PAID`
+| Payment succeeded. Terminal state.
+
+| `PAYMENT_FAILED`
+| Last payment attempt failed. Terminal according to `OrderStatus.isTerminal()`.
+
+| `EXPIRED`
+| The order expired before payment. Terminal state.
+
+| `CANCELLED`
+| The order was cancelled. Terminal state.
+|===
+
+=== Payment Attempt States
+
+[cols="1,3", options="header"]
+|===
+| State | Meaning
+
+| `PENDING`
+| Attempt was created but has not started processing yet.
+
+| `PROCESSING`
+| Attempt is being processed by the gateway adapter.
+
+| `SUCCEEDED`
+| Gateway approved the payment. Terminal state.
+
+| `FAILED`
+| Gateway failed or rejected the payment. Terminal state.
+|===
+
+== Payment Idempotency
+
+Payment idempotency is enforced in three layers.
+
+=== 1. Application-Level Idempotency
+
+Before a new `PaymentAttempt` is created, `OrderPaymentService` calls:
+
+[source,java]
+----
+paymentAttemptRepository.findByIdempotencyKey(idempotencyKey)
+----
+
+If an attempt already exists:
+
+[cols="1,3", options="header"]
+|===
+| Existing status | Behavior
+
+| `SUCCEEDED`
+| Return the existing attempt id. The gateway is not called again.
+
+| `PROCESSING`
+| Return the existing attempt id. The request is treated as a replay while processing is still in progress.
+
+| `FAILED`
+| Throw a domain exception. The caller must submit a new request with a new idempotency key to retry.
+
+| Any unexpected status
+| Throw a domain exception.
+|===
+
+=== 2. Database-Level Idempotency
+
+The `payment_attempts.idempotency_key` column is unique:
+
+[source,java]
+----
+@Column(name = "idempotency_key", nullable = false, unique = true, length = 100)
+private String idempotencyKey;
+----
+
+This protects against concurrent duplicate inserts if two requests with the same key pass the initial application-level lookup at the same time.
+
+=== 3. Gateway-Level Idempotency
+
+The same `idempotencyKey` is forwarded unchanged to `PaymentGatewayPort.charge(...)`.
+
+The default mock gateway derives a deterministic transaction id from the key:
+
+[source,java]
+----
+"TXN-" + UUID.nameUUIDFromBytes(idempotencyKey.getBytes())
+----
+
+This mimics how a real payment provider would deduplicate repeated charge requests.
+
+== Data Model
+
+[cols="1,2,3", options="header"]
+|===
+| Table | Key columns | Notes
+
+| `orders`
+| `id`, `hold_id`, `booking_session_id`, `status`, `expires_at`, `last_payment_attempt_id`
+| `hold_id` is unique, preventing duplicate orders for the same reservation.
+
+| `payment_attempts`
+| `id`, `order_id`, `idempotency_key`, `status`, `gateway_transaction_id`
+| `idempotency_key` is unique, preventing duplicate attempts with the same client key.
+
+| `payment_methods`
+| `id`, `code`, `display_name`, `status`, `display_order`
+| Used to expose supported checkout payment methods.
+|===
+
+== Local Execution
+
+=== Run With Docker Compose
+
+[source,bash]
+----
+docker compose --profile apps up prs-ms-ecommerce
+----
+
+=== Run With Gradle
+
+Start the required infrastructure first: PostgreSQL, Kafka, Redis and Config Server.
+
+[source,bash]
+----
+./gradlew :prs-ms-ecommerce:bootRun
+----
+
+=== Health Check
+
+[source,bash]
+----
+curl http://localhost:8082/actuator/health
+----
+
+== Useful API Examples
+
+=== Search Orders by Hold Id
+
+[source,bash]
+----
+curl "http://localhost:8082/api/v1/orders?holdId=<reservation-id>&page=0&size=20"
+----
+
+=== Initiate Payment
+
+[source,bash]
+----
+curl -X POST "http://localhost:8082/api/v1/orders/<order-id>/pay" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "idempotencyKey": "4c7181a0-0f44-4c48-b03e-a36537a75f80",
+    "paymentMethodCode": "VISA"
+  }'
+----
+
+=== List Active Payment Methods
+
+[source,bash]
+----
+curl "http://localhost:8082/api/v1/payment-methods?activeOnly=true&page=0&size=20"
+----
+
+== Observability
+
+The service uses structured application logs around:
+
+* Kafka message reception.
+* Duplicate reservation-created events.
+* Order creation from reservation holds.
+* Payment initiation and idempotency replay.
+* Gateway success or failure.
+* Order payment state transitions.
+
+Actuator is imported through shared configuration and is available at:
+
+[source,bash]
+----
+curl http://localhost:8082/actuator/health
+----
+
+== Current Limitations and Follow-Up Work
+
+* The active payment gateway implementation is a mock adapter. A production gateway adapter should implement `PaymentGatewayPort`.
+* The Kafka consumer currently uses auto-commit configuration from `prs-ms-ecommerce-config.yml`. For stricter processing guarantees, review manual acknowledgement, retries and DLQ configuration.
+* The service security configuration currently permits all requests. In production, this service should be treated as internal or protected with service-to-service authentication.
+* Failed payment attempts are terminal for the same idempotency key. A retry must use a fresh key.
+* There are no explicit database migration files in this module. Schema management depends on the current JPA/Hibernate runtime configuration.

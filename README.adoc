@@ -166,9 +166,11 @@ Para la implementación basada en Java las reglas que se han seguido son:
 - Otras decisiones de diseño han sido:
 
 ** Uso de *PostgreSQL* como base de datos principal con un modelo relacional tradicional con separación por dominios.
-** Uso de *OpenAPI* code-first para la documentación de las APIs.
+** Uso de *SpringDoc* para la generación de documentación OpenAPI.
 ** Uso de *Redis* como caché distribuída.
 ** Uso de *Spring Cloud Config* para la gestión centralizada de la configuración y reutilización de configuraciones comunes.
+** Uso de *Mapstruct* para el mapeo entre entidades y DTOs.
+** Uso de *Lombok* para reducir el código boilerplate.
 
 [TIP]
 ====
@@ -247,18 +249,17 @@ http://localhost:9090/query?g0.expr=jvm_memory_used_bytes
 
 == Ejecución local
 
-Para ejecutar el proyecto localmente primero compilaremos los proyectos Java con _gradle_:
+Para ejecutar el proyecto localmente primero compilaremos los proyectos Java con _gradle_ para ver que todo compila correctamente. Para esto ejecutaremos el siguiente comando desde la raíz del proyecto:
 
 [source, bash]
 ----
 ./gradlew clean build -x test
 ----
 
-Después podremos levantar los servicios con docker compose. En el fichero _docker-compose.yaml_ se han definido los siguientes perfiles:
+Si todo ha ido bien, el siguiente paso será levantar los servicios de infraestructura necesarios para el funcionamiento del sistema. Para esto se ha incluido un fichero _docker-compose.yaml_ con la definición de los servicios necesarios para el desarrollo local. Se han definido los siguientes perfiles:
 
-- `infrastructure`: para los servicios de infraestructura (PostgreSQL, Redis, Kafka, Keycloak el servidor de configuración).
+- `infrastructure`: para los servicios de infraestructura (PostgreSQL, Redis, Kafka, Keycloak, Prometheus, Grafana, OpenTelemetry y el servidor de configuración basado en Spring Config Server).
 - `apps`: para los microservicios y frontends.
-- `observability`: para los servicios de observabilidad (OpenTelemetry Collector, Prometheus y Grafana).
 
 En primer lugar levantaremos los servicios de infraestructura y usaremos _Terraform_ para crear las bases de datos y la configuración del _Realm_ de Keycloak.
 
