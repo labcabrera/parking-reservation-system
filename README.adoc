@@ -184,7 +184,7 @@ Siguiendo este modelo, el uso del framework no deja de ser una comodidad que ten
 
 Una de las ventajas de este sistema es que podemos controlar de que forma un servicio interactúa con la saga: si es un mecanismo que se puede ejecutar de forma aśincrona con posibilidad de fallo a modo de proyección como un manejador de eventos, o de si es un proceso crítico que requiere un tratamiento diferente y entonces no sería tratado como un evento emitido sino como parte de una unidad de procesamiento transaccional.
 
-Un ejemplo de esto es el `ReservationCreatedStreamPublisher`. Este componente define que es un `@EventHandler` de un determinado tipo de evento que sucede en el sistema que sucede en otro ámbito de ejecución al del procesamiento del order. En este caso, si la publicación del evento falla, puede aceptarse que es un mal asumible porque se trataría de una degradación completa del sistema sin que esto afecte a lo importante que son las órdenes de pago: "sentimos no poder confirmar su reserva".
+Un ejemplo de esto es el `ReservationCreatedStreamPublisher`. Este componente define que es un `@EventHandler` de un determinado tipo de evento que sucede en el sistema en otro hilo de ejecución. En este caso, si la publicación del evento falla, puede aceptarse que es un mal asumible porque se trataría de una degradación completa del sistema sin que esto afecte a lo importante que son las órdenes de pago: "sentimos no poder confirmar su reserva".
 
 Para casos donde si que es necesario un tratamiento consistente no usaríamos manejadores de eventos sino que dentro de la lógica de la saga nos aseguraríamos de que el evento ha sido tratado adecuadamente antes de seguir el flujo asíncrono que publicación de eventos de Axon (y luego por Cloud Stream).
 
