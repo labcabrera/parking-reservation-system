@@ -93,6 +93,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    await userManager.removeUser();
+    setUser(null);
     await userManager.signoutRedirect();
   }, [user]);
 
