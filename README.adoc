@@ -31,11 +31,11 @@ image:../diagrams/c4-context-diagram.png[width=100%]
 
 Al diseñar el sistema el enfoque ha sido en primer lugar la identificación de los *bounded contexts* del dominio y la definición de los microservicios correspondientes, asegurando una clara separación de responsabilidades y un acoplamiento bajo entre ellos. Dentro de esta separación de lógica los problemas identificados son:
 
-- *Gestión de catálogo de aparcamientos y disponibilidad en tiempo real*: modelado de un sistema que permita búsquedas ligeras junto con un sistema de bloqueo de plazas disponibles con políticas de sobreventa que tenga capacidades de tarificación.
+- *Gestión de catálogo de aparcamientos y disponibilidad*: sistema que permite búsquedas sobre parkings disponibles en función de criterios de búsqueda (ubicación, fechas, etc) y lleva el control de las plazas disponibles estableciendo mecanismos de bloqueo para evitar sobreventa bajo alta concurrencia.
 
-- *Gestión del ciclo de vida de una orden de compra* a partir de un hold de plaza, incluyendo confirmación de precio, pago y cancelación.
+- *Gestión del ciclo de vida de una orden de compra* a partir de un hold de plaza de aparcamiento gestiona el ciclo de vida de una orden de compra e interactúa con los sistemas de pago.
 
-- *Sistema de cálculo de tarifas* configurable y dinámico en función de la disponibilidad.
+- *Sistema de cálculo de tarifas* configurable y dinámico en función de la disponibilidad. Ofrecerá tarifas bajo demanda, permitirá establecer reglas para mantener una proyección de precios para las búsquedas.
 
 - *Modelo de autenticación híbrido* para permitir operaciones anónimas (búsquedas e intento de bloqueo de un slot) y operaciones autenticadas (procesado del _Order_).
 
@@ -43,8 +43,10 @@ Al diseñar el sistema el enfoque ha sido en primer lugar la identificación de 
 
 A partir de estas premisas y dado que no existen requisitos funcionales específicos se el diseño se ha realizado tomando las siguientes decisiones:
 
-- Dentro del compromiso entre escalabilidad y consistencia en el sistema de bloqueos se ha optado por la escalabilidad. Cuando un usuario realiza una búsqueda de parking, en lugar de realizar un bloqueo agresivo de todas las plazas disponibles para mantener un precio fijo desde la búsqueda hasta la reserva, se ha optado por un sistema de cálculo aproximado de precios. Cuando un usuario realiza una búsqueda el sistema no realiza los cálculos complejos de tarificación y sólamente devuelve una estimación de precio que posteriormente será calculada en el momento de comenzar el proceso de reserva.
-Este sistema tiene el handicap de no ofrecer inicialmente un precio fijo al usuario pero a cambio hace que el modelo de búsqueda sea mucho más ligero e implique el bloqueo de plazas en la búsqueda. Este funcionamiento no ofrece un precio fijo y puede generar una mala experiencia, pero para picos de demanda masiva es mas esalable y se pueden diseñar políticas de estimación tan precisas como deseemos.
+- Dentro del compromiso entre escalabilidad y consistencia en el sistema de bloqueos se ha optado por la escalabilidad. Cuando un usuario realiza una búsqueda de parking, en lugar de realizar un bloqueo agresivo de todas las plazas disponibles para mantener un precio fijo desde la búsqueda hasta la reserva, se ha optado por un sistema de cálculo aproximado de precios usando una proyección generada por el módulo de precios.
+Cuando un usuario realiza una búsqueda el sistema no realiza los cálculos complejos de tarificación y sólamente devuelve una estimación de precio que posteriormente será calculada en el momento de comenzar el proceso de reserva.
+Este sistema tiene el handicap de no ofrecer inicialmente un precio fijo al usuario pero a cambio hace que el modelo de búsqueda sea mucho más ligero e implique el bloqueo de plazas en la búsqueda. Este funcionamiento no ofrece un precio fijo y puede generar una mala experiencia, pero para picos de demanda masiva es mas esalable y se pueden diseñar políticas de estimación con alta precisión.
+El módulo de pricing irá procesando los eventos de cambios de disponibilidad y a partir de sus reglas de cálculo irá actualizando esta proyección de precios para que el sistema de búsqueda pueda ofrecer una estimación lo más precisa posible.
 
 - Autenticación híbrida. Los requisitos no establecen si un usuario sin autenticación puede realizar una reserva. En la implementación se ha optado por un modelo en el que para el comienzo del proceso de reserva no es necesaria la autenticación pero para la confirmación si que es necesario el registro.
 
