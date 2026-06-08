@@ -316,7 +316,28 @@ curl --location 'http://localhost:8081/api/v1/parking-facilities?page=0&size=1' 
 
 Si todo ha ido bien abriremos la interfaz de usuario en http://localhost:3000/
 
-## Enlaces
+=== Pruebas de estrés
+
+Dentro de la carpeta _resources/stress-basic-tests_ tenemos algunos scripts para hacer unas pruebas muy básicas de estrés sobre el sistema.
+
+Para ejecutar los scripts usaremos el comando time para medir los tiempos totales y pasaremos como argumento el número de peticiones y el nivel de concurrencia. Por ejemplo, para ejecutar 1000 peticiones de bloqueo con una concurrencia de 100:
+
+[source, bash]
+----
+$ time ./basic-reservation-stress-test.sh 1000 100
+Fetching facility ID from catalog...
+Using facility ID: 2e707e7a-5e04-4491-ac32-26c7ef48b697
+Sending 1000 requests with concurrency 100...
+  HTTP 201 : 1000 requests
+Total time: 1s
+
+real	0m0,686s
+user	0m4,689s
+sys	0m3,761s
+
+----
+
+== Enlaces
 
 .Swagger
 |===

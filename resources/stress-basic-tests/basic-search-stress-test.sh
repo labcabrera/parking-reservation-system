@@ -1,7 +1,7 @@
 #!/bin/bash
 
-COUNT=1000
-CONCURRENCY=50
+COUNT=${1:-1000}
+CONCURRENCY=${2:-50}
 
 FACILITY_ID="790fee9f-1c34-4fd2-9046-050cee6d7978"
 URL="http://localhost:8081/api/v1/reservations"
