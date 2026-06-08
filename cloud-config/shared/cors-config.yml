@@ -3,7 +3,8 @@ security:
     allowed-origins:
       - http://localhost:3000
       - http://localhost:3001
-      - http://localhost:5173
+    allowedOriginPatterns:
+      - http://localhost:*
     allowed-methods:
       - GET
       - POST

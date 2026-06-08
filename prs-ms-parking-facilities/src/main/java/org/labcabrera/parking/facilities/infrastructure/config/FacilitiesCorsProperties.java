@@ -4,37 +4,58 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 
-@ConfigurationProperties(prefix = "facilities.security.cors")
+@ConfigurationProperties(prefix = "security.cors")
 public record FacilitiesCorsProperties(
     List<String> allowedOrigins,
-    List<String> allowedOriginPatterns) {
+    List<String> allowedOriginPatterns,
+    List<String> allowedMethods,
+    List<String> allowedHeaders,
+    List<String> exposedHeaders,
+    Boolean allowCredentials,
+    Long maxAge) {
 
-    private static final List<String> DEFAULT_ALLOWED_ORIGINS = List.of(
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://localhost:3002",
-        "http://localhost:3003",
-        "http://localhost:5173",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:3001",
-        "http://127.0.0.1:3002",
-        "http://127.0.0.1:3003",
-        "http://127.0.0.1:5173");
+    private static final List<String> DEFAULT_ALLOWED_ORIGIN_PATTERNS = List.of("http://localhost:*");
+    private static final List<String> DEFAULT_ALLOWED_METHODS = List.of(
+        HttpMethod.DELETE.name(),
+        HttpMethod.GET.name(),
+        HttpMethod.OPTIONS.name(),
+        HttpMethod.PATCH.name(),
+        HttpMethod.POST.name(),
+        HttpMethod.PUT.name());
+    private static final List<String> DEFAULT_ALLOWED_HEADERS = List.of(
+        HttpHeaders.ACCEPT,
+        HttpHeaders.AUTHORIZATION,
+        HttpHeaders.CONTENT_TYPE,
+        "X-Requested-With");
+    private static final List<String> DEFAULT_EXPOSED_HEADERS = List.of(HttpHeaders.LOCATION);
 
     public FacilitiesCorsProperties {
         List<String> normalizedOrigins = normalize(allowedOrigins)
-            .filter(origin -> !"*".equals(origin))
+            .filter(origin -> !origin.contains("*"))
             .toList();
         List<String> wildcardOrigins = normalize(allowedOrigins)
-            .filter("*"::equals)
+            .filter(origin -> origin.contains("*"))
             .toList();
         List<String> normalizedPatterns = Stream
             .concat(normalize(allowedOriginPatterns), wildcardOrigins.stream())
             .distinct()
             .toList();
-        allowedOrigins = normalizedOrigins.isEmpty() ? DEFAULT_ALLOWED_ORIGINS : normalizedOrigins;
-        allowedOriginPatterns = normalizedPatterns;
+
+        allowedOrigins = normalizedOrigins;
+        allowedOriginPatterns = normalizedPatterns.isEmpty() ? DEFAULT_ALLOWED_ORIGIN_PATTERNS : normalizedPatterns;
+        allowedMethods = withDefault(allowedMethods, DEFAULT_ALLOWED_METHODS);
+        allowedHeaders = withDefault(allowedHeaders, DEFAULT_ALLOWED_HEADERS);
+        exposedHeaders = withDefault(exposedHeaders, DEFAULT_EXPOSED_HEADERS);
+        allowCredentials = allowCredentials == null ? Boolean.TRUE : allowCredentials;
+        maxAge = maxAge == null ? 3600L : maxAge;
+    }
+
+    private static List<String> withDefault(List<String> values, List<String> defaultValues) {
+        List<String> normalized = normalize(values).toList();
+        return normalized.isEmpty() ? defaultValues : normalized;
     }
 
     private static Stream<String> normalize(List<String> values) {

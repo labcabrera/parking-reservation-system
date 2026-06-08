@@ -1,12 +1,8 @@
 package org.labcabrera.parking.facilities.infrastructure.config;
 
-import java.util.List;
-
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -42,20 +38,11 @@ public class FacilitiesSecurityConfig {
                 CorsConfiguration configuration = new CorsConfiguration();
                 configuration.setAllowedOrigins(corsProperties.allowedOrigins());
                 configuration.setAllowedOriginPatterns(corsProperties.allowedOriginPatterns());
-                configuration.setAllowedMethods(List.of(
-                        HttpMethod.DELETE.name(),
-                        HttpMethod.GET.name(),
-                        HttpMethod.OPTIONS.name(),
-                        HttpMethod.PATCH.name(),
-                        HttpMethod.POST.name(),
-                        HttpMethod.PUT.name()));
-                configuration.setAllowedHeaders(List.of(
-                        HttpHeaders.ACCEPT,
-                        HttpHeaders.AUTHORIZATION,
-                        HttpHeaders.CONTENT_TYPE,
-                        "X-Requested-With"));
-                configuration.setExposedHeaders(List.of(HttpHeaders.LOCATION));
-                configuration.setAllowCredentials(true);
+                configuration.setAllowedMethods(corsProperties.allowedMethods());
+                configuration.setAllowedHeaders(corsProperties.allowedHeaders());
+                configuration.setExposedHeaders(corsProperties.exposedHeaders());
+                configuration.setAllowCredentials(corsProperties.allowCredentials());
+                configuration.setMaxAge(corsProperties.maxAge());
 
                 UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
                 source.registerCorsConfiguration("/**", configuration);
