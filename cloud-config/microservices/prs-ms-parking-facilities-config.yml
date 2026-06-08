@@ -10,13 +10,21 @@ spring:
     password: ${DB_PASSWORD:parking}
     driver-class-name: org.postgresql.Driver
   cloud:
+    function:
+      definition: orderPaymentExpiredConsumer
     stream:
       default-binder: kafka
       bindings:
         reservationCreated-out-0:
           destination: parking-facilities.reservation.created.v1
           content-type: application/json
+        orderPaymentExpiredConsumer-in-0:
+          destination: ecommerce.order.payment-expired.v1
+          group: prs-ms-parking-facilities
+          content-type: application/json
       kafka:
+        binder:
+          brokers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
         bindings:
           reservationCreated-out-0:
             producer:
@@ -24,6 +32,9 @@ spring:
                 acks: all
                 enable.idempotence: true
                 key.serializer: org.apache.kafka.common.serialization.StringSerializer
+          orderPaymentExpiredConsumer-in-0:
+            consumer:
+              autoCommitOffset: true
 
 #TODO rename to facilities
 catalog:

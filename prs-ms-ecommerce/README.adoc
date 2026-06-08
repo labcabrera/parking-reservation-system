@@ -1,18 +1,4 @@
 = Ecommerce Service
-:toc: left
-:toc-title: Table of Contents
-:toclevels: 3
-:sectnums:
-:sectnumlevels: 2
-:icons: font
-:doctype: book
-:reproducible:
-:source-highlighter: rouge
-:chapter-label:
-:!chapter-signifier:
-:doc-version: 1.0-draft
-:fecha-documento: 2026-06-08
-v{doc-version}, {fecha-documento}
 
 == Context
 

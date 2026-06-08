@@ -6,6 +6,7 @@ import org.labcabrera.parking.facilities.domain.event.ReservationConfirmedEvent;
 import org.labcabrera.parking.facilities.domain.event.ReservationExpiredEvent;
 import org.labcabrera.parking.facilities.domain.event.ReservationFailedEvent;
 import org.labcabrera.parking.facilities.domain.event.ReservationHeldEvent;
+import org.labcabrera.parking.facilities.domain.event.ReservationPaymentExpiredEvent;
 import org.labcabrera.parking.facilities.domain.event.ReservationStartedEvent;
 import org.labcabrera.parking.facilities.domain.valueobject.ReservationStatus;
 import org.labcabrera.parking.facilities.infrastructure.jpa.entities.ReservationJpaEntity;
@@ -71,6 +72,12 @@ class ReservationProjection {
     @Transactional
     public void on(ReservationExpiredEvent event) {
         updateStatus(event.reservationId(), ReservationStatus.EXPIRED, null);
+    }
+
+    @EventHandler
+    @Transactional
+    public void on(ReservationPaymentExpiredEvent event) {
+        updateStatus(event.reservationId(), ReservationStatus.PAYMENT_EXPIRED, null);
     }
 
     private void updateStatus(java.util.UUID reservationId, ReservationStatus status, String failureReason) {

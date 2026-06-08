@@ -19,6 +19,9 @@ spring:
           destination: parking-facilities.reservation.created.v1
           group: prs-ms-ecommerce
           content-type: application/json
+        orderPaymentExpired-out-0:
+          destination: ecommerce.order.payment-expired.v1
+          content-type: application/json
       kafka:
         binder:
           brokers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
@@ -26,10 +29,18 @@ spring:
           reservationCreatedConsumer-in-0:
             consumer:
               autoCommitOffset: true
+          orderPaymentExpired-out-0:
+            producer:
+              configuration:
+                acks: all
+                enable.idempotence: true
+                key.serializer: org.apache.kafka.common.serialization.StringSerializer
 
 ecommerce:
   order:
     ttl-minutes: 15
+    expiration-scan-fixed-delay-ms: 30000
+    expiration-scan-batch-size: 100
   payment:
     gateway: mock
     mock:

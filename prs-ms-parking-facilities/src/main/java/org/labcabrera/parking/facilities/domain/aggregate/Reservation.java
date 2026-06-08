@@ -13,6 +13,7 @@ import org.axonframework.spring.stereotype.Aggregate;
 import org.labcabrera.parking.facilities.application.cqrs.command.CancelReservationCommand;
 import org.labcabrera.parking.facilities.application.cqrs.command.ConfirmReservationCommand;
 import org.labcabrera.parking.facilities.application.cqrs.command.ExpireReservationCommand;
+import org.labcabrera.parking.facilities.application.cqrs.command.ExpireReservationPaymentCommand;
 import org.labcabrera.parking.facilities.application.cqrs.command.MarkReservationFailedCommand;
 import org.labcabrera.parking.facilities.application.cqrs.command.MarkReservationHeldCommand;
 import org.labcabrera.parking.facilities.application.cqrs.command.StartReservationCommand;
@@ -21,6 +22,7 @@ import org.labcabrera.parking.facilities.domain.event.ReservationConfirmedEvent;
 import org.labcabrera.parking.facilities.domain.event.ReservationExpiredEvent;
 import org.labcabrera.parking.facilities.domain.event.ReservationFailedEvent;
 import org.labcabrera.parking.facilities.domain.event.ReservationHeldEvent;
+import org.labcabrera.parking.facilities.domain.event.ReservationPaymentExpiredEvent;
 import org.labcabrera.parking.facilities.domain.event.ReservationStartedEvent;
 import org.labcabrera.parking.facilities.domain.exception.InvalidReservationStateException;
 import org.labcabrera.parking.facilities.domain.valueobject.ReservationStatus;
@@ -204,5 +206,20 @@ public class Reservation {
     @EventSourcingHandler
     void on(ReservationExpiredEvent ev) {
         this.status = ReservationStatus.EXPIRED;
+    }
+
+    @CommandHandler
+    void handle(ExpireReservationPaymentCommand cmd) {
+        log.info("Expiring payment window for confirmed reservation {} from order {}", cmd.reservationId(), cmd.orderId());
+        if (status != ReservationStatus.CONFIRMED) {
+            log.info("Reservation {} is in status {}; ignoring payment expiration", cmd.reservationId(), status);
+            return;
+        }
+        apply(new ReservationPaymentExpiredEvent(cmd.reservationId(), cmd.orderId(), facilityId, checkIn, checkOut));
+    }
+
+    @EventSourcingHandler
+    void on(ReservationPaymentExpiredEvent ev) {
+        this.status = ReservationStatus.PAYMENT_EXPIRED;
     }
 }

@@ -153,7 +153,9 @@ public class Order {
 
     @CommandHandler
     void handle(ExpireOrderCommand command) {
-        if (status == OrderStatus.PENDING_PAYMENT || status == OrderStatus.PAYMENT_FAILED) {
+        if (status == OrderStatus.PENDING_PAYMENT
+            || status == OrderStatus.PAYMENT_IN_PROGRESS
+            || status == OrderStatus.PAYMENT_FAILED) {
             apply(new OrderExpiredEvent(command.orderId()));
         }
     }

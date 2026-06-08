@@ -1,5 +1,6 @@
 package org.labcabrera.parking.ecommerce.infrastructure.jpa;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -10,6 +11,7 @@ import org.labcabrera.parking.ecommerce.domain.aggregate.Order;
 import org.labcabrera.parking.ecommerce.domain.valueobject.OrderStatus;
 import org.labcabrera.parking.ecommerce.infrastructure.jpa.entities.OrderJpaEntity;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
@@ -51,5 +53,16 @@ class OrderRepositoryAdapter implements OrderReadRepository {
             return cb.and(predicates.toArray(new Predicate[0]));
         };
         return repository.findAll(spec, pageable).map(mapper::toDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Order> findExpiredPaymentWindow(LocalDateTime now, int limit) {
+        return repository.findByStatusInAndExpiresAtLessThanEqual(
+            List.of(OrderStatus.PENDING_PAYMENT, OrderStatus.PAYMENT_IN_PROGRESS, OrderStatus.PAYMENT_FAILED),
+            now,
+            PageRequest.of(0, Math.max(1, limit))).stream()
+            .map(mapper::toDomain)
+            .toList();
     }
 }
