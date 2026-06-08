@@ -170,6 +170,38 @@ Para la implementación basada en Java las reglas que se han seguido son:
 Se ha optado por una aproximación pragmática a la hora de realizar la separación de capas dentro del paradigma de arquitectura héxagonal usando Axon. Si bien una separación purista de capas haría que el uso de elementos como @Aggregate o @Saga estuvieran a nivel de infraescructura, para aprovechar las ventajas de estos frameworks y evitar niveles de abstracción innencesarios se ha optado por aceptar este acoplamiento a nivel de la capa de aplicación. Si bien es posible aislarlo, al hacerlo se pierden muchas de las ventajas de usar Spring y se requiere de mas código manual para gestionar aspectos que el framework ya gestiona de forma automática.
 ====
 
+=== Axon, Sagas y esos extraños compañeros de cama
+
+La idea de usar Axon es para mantener una coherencia dentro del modelo de eventos que sea fácilmente entendible y ahorrarme lineas de cñodigo. Podría haberse sustuituído por otro modelo de gestión de eventos como Spring Cloud Stream y una implementación manual de llamadas a servicios ya sea de un modo coreografiado o de un modo orquestado. Para el caso en el que lo he usado es para centralizar los casos de uso que implican el tratamiento de los eventos que ha sucedido en el sistema sin independientemente de cual haya sido su origen (eventos locales manejados por el framework, commands publicados en el bus interno vía Spring Cloud Stream o a través de un controlador REST o cualquier otro servicio del sistema).
+
+Este patrón desacopla bastante la lógica de servicios ya que las interfaces externas simplemente reaccionarán emitiendo eventos independientemente de cómo han sido generados.
+
+Dentro de estas consideraciones hay que tener en cuenta la naturaleza de cada evento y de si se requiere de una consistencia fuerte usando el patrón Outbox o si simplemente es un evento que se puede emitir localmente para luego ser tratado por otros componentes (principalmente por proyecciones que lo publican en sistemas externos).
+
+Para el primer caso usaríamos una escritura transaccional dentro del mismo contexto que realiza la operación y un dispacher de eventos que gestione su publicación. Dentro de este MVP no se ha implementado ya que en los casos donde tiene sentido (aquellos de gestión de dinero) ocurren fuera del sistema y los casos de uso que no lo usan no se han definido como críticos: por ejemplo, si un proceso de bloqueo de una plaza falla el sistema llegado a su deadline lo compensará automáticamente. Se habrá bloqueado un slot X tiempo pero tampoco puedes hacer mucho mas en este caso.
+
+Siguiendo este modelo, el uso del framework no deja de ser una comodidad que tenemos respecto a crear todos los servicios tradicionales a través de los cuales gestionaríamos los mismos casos de uso.
+
+Una de las ventajas de este sistema es que podemos controlar de que forma un servicio interactúa con la saga: si es un mecanismo que se puede ejecutar de forma aśincrona con posibilidad de fallo a modo de proyección o de si es un proceso crítico que requiere un tratamiento diferente y entonces no sería tratado como un evento emitido para ser tratado posteriormente.
+
+Un ejemplo de esto es el `ReservationCreatedStreamPublisher`. Este componente define que es un `@EventHandler` de un determinado tipo de evento que sucede en el sistema que sucede en otro ámbito de ejecución al del procesamiento del order. En este caso, si la publicación del evento falla puede aceptarse que es un mal asumible porque se trataría de una degradación completa del sistema sin que esto afecte a nada que tiene que ver con las órdenes de pago: "sentimos no poder confirmar su reserva".
+
+Para casos donde si que es necesario un tratamiento consistente no usaríamos manejadores de eventos sino que dentro de la lógica de la saga nos aseguraríamos de que el evento ha sido tratado adecuadamente antes de seguir el flujo asíncrono que publicación de eventos de Axon.
+
+NOTE: Nunca he usado Axon en entornos productivos porque generaba un alto grado de acoplamiento respecto a un framework que no está tan extendido, pero si que en todos los lugares donde he estado desde hace un tiempo al menos hice una POC para comparar su funcionamiento respecto a otros sistemas como Eventuate o una implementación manual de los procesos de transaccionalidad distribuida y sistemas de compensación.
+
+==== Sagas dentro del ejercicio
+
+Las principales son las del proceso de reserva y la del tratamiento de orders. En el primer caso el problema principal es que una Reserva confirmada (con bloqueo de plaza) se quede indefinidamente bloqueada en el sistema (las que no están cofirmadas se purgan automáticamente con el `@DeadlineHandler` que establece su TTL).
+
+En el segundo caso, las órdenes de compra tienen una expiración que viene determinada por el valor del hold y que se recibe dentro del evento. Pasado ese tiempo se marca como expirada, se emite el evento correspondiente y para que el sistema de reservas libere la plaza.
+
+En ambos casos una degradación del sistema no impacta de forma crítica en el funcionamiento. Ante una catástrofe el sistema seguirá manteniendo bloqueos de plazas, que es un problema gordo porque dejas de facturar pero si ha fallado el proceso es que tu sistema está caído y si todo está mal, pues tampoco puedes hacer mucho mas.
+
+Una consideración interesante sobre este modelo sería que la pasarela de pago si que tuviese este comportamiento: "el usuario X ha pagado pero no se ha podido hacer una llamada OK al sistema de recepción de pagos". También, en este caso la responsabilidad de asegurar la consistencia sería del sistema externo, no el de _ecommerce_ que sólo es capaz de manejar la información que le ha llegado.
+
+De este modo, para el ámbito del ejercicio el modelo de Outbox no se ha tenido en cuenta dado que en los casos donde el sistema falla la compensación es automática dentro del deadline de cada operación (la de la reserva que es la que determina también la de la orden de compra).
+
 === Seguridad
 
 El sistema tiene la particularidad de aceptar operaciones anónimas para la búsqueda y bloqueo de plazas pero requiere autenticación para la confirmación de la reserva. Para esto se ha diseñado un modelo híbrido en el que el módulo BFF es el encargado de gestionar esta lógica y delegar las operaciones a los módulos backend correspondientes.

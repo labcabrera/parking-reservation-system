@@ -37,10 +37,6 @@ spring:
                 key.serializer: org.apache.kafka.common.serialization.StringSerializer
 
 ecommerce:
-  order:
-    ttl-minutes: 15
-    expiration-scan-fixed-delay-ms: 30000
-    expiration-scan-batch-size: 100
   payment:
     gateway: mock
     mock:

@@ -55,6 +55,13 @@ class BffSecurityConfigTest {
     }
 
     @Test
+    void checkoutSearchWithQueryParamsIgnoresInvalidBearerTokenBecauseItIsPublic() throws Exception {
+        mockMvc.perform(get("/api/v1/checkout/search?q=madrid&checkIn=2026-06-08T10:00&checkOut=2026-06-09T10:00")
+                .header("Authorization", "Bearer expired-or-invalid"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
     void paymentMethodsArePublic() throws Exception {
         mockMvc.perform(get("/api/v1/payment-methods"))
             .andExpect(status().isOk());
@@ -75,6 +82,19 @@ class BffSecurityConfigTest {
     @Test
     void checkoutReadIsPublic() throws Exception {
         mockMvc.perform(get("/api/v1/checkout/{checkoutId}", UUID.randomUUID()))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void checkoutPaymentAttemptIsPublic() throws Exception {
+        mockMvc.perform(post("/api/v1/checkout/{checkoutId}/payment-attempts", UUID.randomUUID()))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void checkoutPaymentAttemptIgnoresInvalidBearerTokenBecauseItIsPublic() throws Exception {
+        mockMvc.perform(post("/api/v1/checkout/{checkoutId}/payment-attempts", UUID.randomUUID())
+                .header("Authorization", "Bearer expired-or-invalid"))
             .andExpect(status().isOk());
     }
 
@@ -124,6 +144,11 @@ class BffSecurityConfigTest {
 
         @PostMapping("/checkout/{checkoutId}/confirm")
         String confirm(@PathVariable UUID checkoutId) {
+            return checkoutId.toString();
+        }
+
+        @PostMapping("/checkout/{checkoutId}/payment-attempts")
+        String paymentAttempt(@PathVariable UUID checkoutId) {
             return checkoutId.toString();
         }
 
