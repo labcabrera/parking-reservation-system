@@ -334,7 +334,19 @@ Total time: 1s
 real	0m0,686s
 user	0m4,689s
 sys	0m3,761s
+----
 
+En este caso veremos que aunque las peticiones devuelven un 201 sin error (ya que el proceso de bloqueo es asíncrono), al exceder la capacidad cuando consultemos las reservas veremos que quedan en estado `FAILED`. En los logs del servicio de catálogo de parking veremos:
+
+----
+08:48:46.440 INFO  [http-nio-8081-exec-123] o.l.p.f.a.c.h.ParkingFacilityQueryHandler - Handling GetParkingFacilitiesQuery GetParkingFacilitiesQuery[rsql=null, pageable=Page request [number: 0, size 1, sort: UNSORTED]]
+08:48:46.460 INFO  [http-nio-8081-exec-128] o.l.p.f.i.rest.ReservationController - Received StartReservationRequest for facility 2e707e7a-5e04-4491-ac32-26c7ef48b697 from 2026-06-08T10:00 to 2026-06-15T12:00
+08:48:46.460 DEBUG [http-nio-8081-exec-128] o.l.p.f.domain.aggregate.Reservation - Starting reservation 1c378c4e-32d2-4ce5-b0cb-3e1000ba3763 for facility 2e707e7a-5e04-4491-ac32-26c7ef48b697 from 2026-06-08T10:00 to 2026-06-15T12:00, expires in 5 minutes
+08:48:46.465 INFO  [EventProcessor[ReservationSagaProcessor]-0] o.l.p.f.a.saga.ReservationSaga - Received ReservationStartedEvent for reservation 1c378c4e-32d2-4ce5-b0cb-3e1000ba3763 on facility 2e707e7a-5e04-4491-ac32-26c7ef48b697 from 2026-06-08T10:00 to 2026-06-15T12:00, expires at 2026-06-08T08:53:46.460412295
+08:48:46.465 INFO  [EventProcessor[ReservationSagaProcessor]-0] o.l.p.f.a.saga.ReservationSaga - Saga started for reservation 1c378c4e-32d2-4ce5-b0cb-3e1000ba3763 on facility 2e707e7a-5e04-4491-ac32-26c7ef48b697 from 2026-06-08T10:00 to 2026-06-15T12:00
+08:48:46.465 INFO  [EventProcessor[ReservationSagaProcessor]-0] o.l.p.f.a.s.InventoryHoldService - Attempting inventory hold for facility 2e707e7a-5e04-4491-ac32-26c7ef48b697, checkIn 2026-06-08T10:00, checkOut 2026-06-15T12:00
+08:48:46.467 INFO  [EventProcessor[ReservationSagaProcessor]-0] o.l.p.f.a.s.InventoryHoldService - Hold failed on slot SlotKey[facilityId=2e707e7a-5e04-4491-ac32-26c7ef48b697, slotStart=2026-06-08T00:00, blockType=LONG_TERM] after retries; compensating 0 previously held slots
+08:48:46.467 INFO  [EventProcessor[ReservationSagaProcessor]-0] o.l.p.f.domain.aggregate.Reservation - Marking reservation 1c378c4e-32d2-4ce5-b0cb-3e1000ba3763 as FAILED due to No capacity on slot 2026-06-08T00:00
 ----
 
 == Enlaces
