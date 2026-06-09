@@ -1,0 +1,86 @@
+@startuml sequence-diagram-02
+title Sequence diagram 02
+hide footbox
+
+skinparam sequence {
+    ParticipantBackgroundColor #005b72
+    ParticipantFontColor #ffffff
+    ArrowColor #235872
+    LifeLineBorderColor #005b72
+    LifeLineBackgroundColor #005b72
+}
+
+
+participant "Customer" as Customer
+participant "Frontend" as Frontend
+participant "B F F" as BFF
+participant "Ecommerce" as Ecommerce
+participant "Mock Payment Gateway" as MockGateway
+participant "Mock Payment Service" as MockPayment
+participant "Postgre" as Postgre
+
+== Pago ==
+
+note over BFF,Ecommerce
+El frontend inicia el proceso de pago enviando un payment-attempt al BFF que realiza la llamada a ecommerce.
+Este registra el intento de pago en su base de datos y hace una llamada REST al servicio de pago mockeado
+para registrar el intento de pago en la pasarela mockeada.
+El servicio de pago mockeado devuelve una URL de redirección a la pasarela mockeada.
+
+El navegador del cliente es redirigido a la pasarela mockeada que llama a la API del servicio de pago
+mockeado. Este notifica a ecommerce mediante el callback, que actualiza el estado de la Order a pagado.
+end note
+
+
+Customer -> Frontend : Seleccionar método de pago
+activate Customer
+activate Frontend
+Frontend -> BFF : POST /checkout/{id}/payment-attempts
+activate BFF
+BFF -> Ecommerce : POST /api/v1/orders/{id}/payment-attempts
+activate Ecommerce
+Ecommerce --> Postgre : Registrar intento de pago (PENDING)
+activate Postgre
+Postgre --> Ecommerce : OK
+deactivate Postgre
+Ecommerce -> MockPayment : Registrar intento en pasarela mock (REST)
+activate MockPayment
+MockPayment --> Postgre : Guardar intento de pago
+activate Postgre
+Postgre --> MockPayment : OK
+deactivate Postgre
+MockPayment --> Ecommerce : redirectUrl
+deactivate MockPayment
+Ecommerce --> BFF : redirectUrl + attemptId
+deactivate Ecommerce
+BFF --> Frontend : redirectUrl + attemptId
+deactivate BFF
+Frontend --> Customer : Redirigir a pasarela de pago
+deactivate Frontend
+deactivate Customer
+
+Customer -> MockGateway : Accede a la pasarela de pago (browser redirect)
+activate Customer
+activate MockGateway
+MockGateway -> MockPayment : POST /api/v1/payment-attempts/{attemptId}/pay
+activate MockPayment
+MockPayment --> Postgre : Actualizar intento → SUCCESS
+activate Postgre
+Postgre --> MockPayment : OK
+deactivate Postgre
+MockPayment -> Ecommerce : POST /api/v1/payment-callbacks/mock
+activate Ecommerce
+Ecommerce -> Ecommerce : Verificar pago y activar saga
+Ecommerce --> Postgre : Actualizar Order → PAID
+activate Postgre
+Postgre --> Ecommerce : OK
+deactivate Postgre
+Ecommerce --> MockPayment : 202 Accepted
+deactivate Ecommerce
+MockPayment --> MockGateway : redirectUrl con status=SUCCESS
+deactivate MockPayment
+MockGateway --> Customer : Redirigir a página de resultado
+deactivate MockGateway
+deactivate Customer
+
+@enduml

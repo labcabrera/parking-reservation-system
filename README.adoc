@@ -174,9 +174,7 @@ Se ha optado por una aproximación pragmática a la hora de realizar la separaci
 
 image:../diagrams/sequence-diagram-01.png[width=100%]
 
-TODO: añadir diagrama de secuencia del proceso de pago.
-
-Al seleccionar un método de pago el frontal realiza un payment-attempt a la API de ecommerce pasando por el BFF. Entonces ecommerce realiza la llamada REST al módulo de pago que guarda la información en una tabla de su sistema. Posteriormente el navegador del cliente es redirigido a la pasarela mockeada de pago. Esta llama a la API del servicio también mockeado de pago que al recibirlo lo propaga al sistema de ecommerce. Este verifica que el pago está OK y actualiza el estado de Order a pagado.
+image:../diagrams/sequence-diagram-02.png[width=100%]
 
 === Manejo de Sagas
 

@@ -1,5 +1,5 @@
-@startuml sequence-diagram
-title Sequence diagram
+@startuml sequence-diagram-01
+title Sequence diagram 01
 hide footbox
 
 skinparam sequence {
@@ -10,7 +10,6 @@ skinparam sequence {
     LifeLineBackgroundColor #005b72
 }
 
-
 participant "Customer" as Customer
 participant "Frontend" as Frontend
 participant "B F F" as BFF
@@ -18,7 +17,6 @@ participant "Parking Facilities" as ParkingFacilities
 participant "Ecommerce" as Ecommerce
 participant "Pricing" as Pricing
 participant "Kafka" as Kafka
-participant "Keycloak" as Keycloak
 participant "Postgre" as Postgre
 
 == Búsqueda de parkings ==
@@ -43,6 +41,7 @@ activate ParkingFacilities
 ParkingFacilities -> Postgre : Search parking
 activate Postgre
 Postgre --> ParkingFacilities : Search results
+ParkingFacilities --> ParkingFacilities: Estimación de precios (mockeado. Debería leer proyección)
 deactivate Postgre
 ParkingFacilities --> BFF : Search results
 deactivate ParkingFacilities
@@ -52,16 +51,15 @@ Frontend --> Customer : Show parking lots
 deactivate Customer
 deactivate Frontend
 
-== Confirmación ==
+== Inicio de la reserva ==
 
 note over BFF,Ecommerce
-Diagrama simplificado con los pasos principales. En la confirmación de una reserva primero
-se intena realizar un hold sobre la tabla de slots. Si el resultado es correcto entonces
-se llama al servicio de cálculo de tarifas enviando la información sobre la disponibilidad
-del parking seleccionado.
+La creación de la reserva realiza el intento de bloqueo de slots disponibles. Si el resultado
+es correcto entonces llama al servicio de cálculo de tarifas enviando la información sobre la
+disponibilidad del parking seleccionado para obtener el precio dinámico (en el MVP se ha
+mockeado este proceso por falta de tiempo).
 
-Una vez actualizado el precio se persiste la reserva con estado confirmado y se propaga el
-evento a través de Kafka. El módulo ecommerce lo recibe y crea la orden asociada.
+Una vez establecido el precio la reserva se persiste con estado HELD.
 end note
 
 Customer -> Frontend: Comienzo de reserva por facilityId
@@ -71,7 +69,7 @@ Frontend -> BFF : Propaga llamada a la API
 activate BFF
 BFF -> ParkingFacilities : Get parking details
 activate ParkingFacilities
-ParkingFacilities -> ParkingFacilities: Activación de saga: obtener precio
+ParkingFacilities -> ParkingFacilities: Inicio de la Saga de Reserva
 ParkingFacilities --> Postgre : Intento de bloqueo con optimistic locking
 activate Postgre
 Postgre --> ParkingFacilities : Resultado bloqueo
@@ -84,9 +82,43 @@ deactivate Pricing
 ParkingFacilities --> ParkingFacilities: Activación de saga: establecer estado confirmado
 ParkingFacilities --> Postgre : Actualizar reserva
 activate Postgre
-Postgre --> ParkingFacilities : Reserva actualizada
+Postgre --> ParkingFacilities : Reserva actualizada con estado HELD
 deactivate Postgre
-ParkingFacilities --> Kafka : Publicar evento de reserva confirmada
+ParkingFacilities --> BFF : Respuesta
+deactivate ParkingFacilities
+BFF --> Frontend : Respuesta
+deactivate BFF
+Frontend --> Customer : Respuesta 201 del objeto Reservation
+deactivate Frontend
+deactivate Customer
+
+== Confirmación de la reserva ==
+
+note over BFF,Ecommerce
+El proceso de confirmación simplemente actualiza el estado de la reserva a CONFIRMADA y
+realiza la publicación del evento a través de Kafka.
+
+NOTA: Para este caso no se ha implementado un sistema de outboxing de eventos por dos razones, la
+falta de tiempo y que esta operación podría no requerir de una consistencia tan fuerte ya que en
+el peor de los casos el usuario simplemente se queda sin poder realizar el pago, la Saga finaliza
+y desbloquea las plazas y el usuario podría volver a reintentarlo. Sería fácil implementar el
+modelo de outboxing para persistir el evento en lugar de publicarlo directamente.
+end note
+
+Customer -> Frontend: Comienzo de reserva por facilityId
+activate Customer
+activate Frontend
+Frontend -> BFF : Propaga llamada a la API
+activate BFF
+BFF -> ParkingFacilities : Get parking details
+activate ParkingFacilities
+ParkingFacilities -> ParkingFacilities: Activación de saga: confirmación
+ParkingFacilities --> ParkingFacilities: Activación de saga: establecer estado confirmado
+ParkingFacilities --> Postgre : Actualizar reserva
+activate Postgre
+Postgre --> ParkingFacilities : Reserva actualizada con estado CONFIRMED
+deactivate Postgre
+ParkingFacilities --> Kafka : Publicar evento de reserva confirmada (Cloud Stream)
 activate Kafka
 ParkingFacilities --> BFF : Detalles del parking y precio
 deactivate ParkingFacilities
