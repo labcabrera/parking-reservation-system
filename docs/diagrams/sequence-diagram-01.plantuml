@@ -10,6 +10,7 @@ skinparam sequence {
     LifeLineBackgroundColor #005b72
 }
 
+
 participant "Customer" as Customer
 participant "Frontend" as Frontend
 participant "B F F" as BFF
@@ -21,6 +22,16 @@ participant "Keycloak" as Keycloak
 participant "Postgre" as Postgre
 
 == Búsqueda de parkings ==
+
+note over BFF,Ecommerce
+Flujo de búsqueda. En este caso no se muestra el proceso de estimación
+de los precios que deberían ser calculados a través de una proyección
+creada por el servicio de pricing. Para este MVP simplemente se tiene
+asociada una tarifa dentro de ParkingFacility que se usa para calcular
+el precio.
+
+Este proceso no realiza ningún bloqueo.
+end note
 
 Customer -> Frontend: Start booking process
 activate Customer
@@ -42,6 +53,16 @@ deactivate Customer
 deactivate Frontend
 
 == Confirmación ==
+
+note over BFF,Ecommerce
+Diagrama simplificado con los pasos principales. En la confirmación de una reserva primero
+se intena realizar un hold sobre la tabla de slots. Si el resultado es correcto entonces
+se llama al servicio de cálculo de tarifas enviando la información sobre la disponibilidad
+del parking seleccionado.
+
+Una vez actualizado el precio se persiste la reserva con estado confirmado y se propaga el
+evento a través de Kafka. El módulo ecommerce lo recibe y crea la orden asociada.
+end note
 
 Customer -> Frontend: Comienzo de reserva por facilityId
 activate Customer
