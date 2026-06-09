@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 import org.labcabrera.parking.ecommerce.application.port.PaymentGatewayPort;
+import org.labcabrera.parking.ecommerce.domain.exception.PaymentGatewayError;
 import org.labcabrera.parking.ecommerce.domain.valueobject.Money;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -46,20 +47,25 @@ public class MockPaymentGatewayAdapter implements PaymentGatewayPort {
     @Override
     public void charge(UUID orderId, UUID paymentAttemptId, String idempotencyKey, Money amount, String paymentMethodCode) {
         log.info("Mock gateway: registering payment attempt {} for order {} via {}", paymentAttemptId, orderId, paymentMethodCode);
+        try {
 
-        restClient.post()
-            .uri("/api/v1/payment-attempts")
-            .body(new MockPaymentAttemptRequest(
-                paymentAttemptId,
-                orderId,
-                idempotencyKey,
-                paymentMethodCode,
-                amount.amount(),
-                amount.currency(),
-                ecommerceCallbackUrl,
-                customerCallbackUrl))
-            .retrieve()
-            .toBodilessEntity();
+            restClient.post()
+                .uri("/api/v1/payment-attempts")
+                .body(new MockPaymentAttemptRequest(
+                    paymentAttemptId,
+                    orderId,
+                    idempotencyKey,
+                    paymentMethodCode,
+                    amount.amount(),
+                    amount.currency(),
+                    ecommerceCallbackUrl,
+                    customerCallbackUrl))
+                .retrieve()
+                .toBodilessEntity();
+        }
+        catch (Exception ex) {
+            throw new PaymentGatewayError("Failed to register payment attempt with mock gateway", ex);
+        }
     }
 
     private record MockPaymentAttemptRequest(

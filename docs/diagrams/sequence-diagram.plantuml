@@ -12,29 +12,76 @@ skinparam sequence {
 
 participant "Customer" as Customer
 participant "Frontend" as Frontend
+participant "B F F" as BFF
+participant "Parking Facilities" as ParkingFacilities
+participant "Ecommerce" as Ecommerce
+participant "Pricing" as Pricing
 participant "Kafka" as Kafka
 participant "Keycloak" as Keycloak
-participant "Parking Discovery API" as ParkingDiscoveryAPI
-participant "Booking Service" as BookingService
-participant "Keycloak" as Keycloak
-participant "Parking DB" as ParkingDB
+participant "Postgre" as Postgre
 
-== Search available options ==
+== Búsqueda de parkings ==
 
 Customer -> Frontend: Start booking process
-Frontend -> ParkingDiscoveryAPI : Text search
-ParkingDiscoveryAPI -> ParkingDB : Search parking
-ParkingDB --> ParkingDiscoveryAPI : Search results
-ParkingDiscoveryAPI --> Frontend : Search results
+activate Customer
+activate Frontend
+Frontend -> BFF : Llamada al BFF
+activate BFF
+BFF -> ParkingFacilities : Propaga llamada a la API
+activate ParkingFacilities
+ParkingFacilities -> Postgre : Search parking
+activate Postgre
+Postgre --> ParkingFacilities : Search results
+deactivate Postgre
+ParkingFacilities --> BFF : Search results
+deactivate ParkingFacilities
+BFF --> Frontend : Search results
+deactivate BFF
+Frontend --> Customer : Show parking lots
+deactivate Customer
+deactivate Frontend
 
-== Booking creation ==
+== Confirmación ==
 
-Customer -> Frontend: Select parking lot
-Frontend --> Customer : Search parking lots
+Customer -> Frontend: Comienzo de reserva por facilityId
+activate Customer
+activate Frontend
+Frontend -> BFF : Propaga llamada a la API
+activate BFF
+BFF -> ParkingFacilities : Get parking details
+activate ParkingFacilities
+ParkingFacilities -> ParkingFacilities: Activación de saga: obtener precio
+ParkingFacilities --> Postgre : Intento de bloqueo con optimistic locking
+activate Postgre
+Postgre --> ParkingFacilities : Resultado bloqueo
+deactivate Postgre
+ParkingFacilities --> ParkingFacilities: Activación de saga: obtener precio
+ParkingFacilities --> Pricing : Obtener precio dinámico (REST)
+activate Pricing
+Pricing --> ParkingFacilities : Precio dinámico
+deactivate Pricing
+ParkingFacilities --> ParkingFacilities: Activación de saga: establecer estado confirmado
+ParkingFacilities --> Postgre : Actualizar reserva
+activate Postgre
+Postgre --> ParkingFacilities : Reserva actualizada
+deactivate Postgre
+ParkingFacilities --> Kafka : Publicar evento de reserva confirmada
+activate Kafka
+ParkingFacilities --> BFF : Detalles del parking y precio
+deactivate ParkingFacilities
+BFF --> Frontend : Detalles del parking y precio
+deactivate BFF
+Frontend --> Customer : Mostrar detalles del parking y precio
+deactivate Frontend
+deactivate Customer
 
-' Customer -> Frontend: Login OIDC
-
-' TODO COMPLETAR
-
+Kafka --> Ecommerce : Consumir evento de reserva confirmada
+deactivate Kafka
+activate Ecommerce
+Ecommerce -> Ecommerce : Activación de saga: crear orden
+Ecommerce --> Postgre : Crear orden con estado pendiente
+activate Postgre
+Postgre --> Ecommerce : Orden creada
+deactivate Postgre
 
 @enduml

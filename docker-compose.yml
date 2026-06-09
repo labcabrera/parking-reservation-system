@@ -480,8 +480,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      prs-ms-ecommerce:
-        condition: service_healthy
 
   # -----------------------------------------------------------------------
   # Frontend: Payment Gateway SPA
@@ -497,8 +495,6 @@ services:
       VITE_PAYMENT_SERVICE_URL: ""
     ports:
       - "3001:80"
-    depends_on:
-      - prs-mock-ms-payment
 
 volumes:
   postgres_data:

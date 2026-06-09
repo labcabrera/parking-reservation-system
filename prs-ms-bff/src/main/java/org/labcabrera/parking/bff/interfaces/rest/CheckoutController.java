@@ -189,7 +189,8 @@ public class CheckoutController {
         assertCheckoutBelongsToCaller(existingReservation, authentication, bookingSessionId);
         reservationsApi.confirmWithHttpInfo(existingReservation.getId());
         Reservation reservation = findReservationById(existingReservation.getId());
-        return ResponseEntity.ok(checkoutMapper.toCheckoutDto(reservation, null));
+        Order order = awaitOrder(existingReservation.getId());
+        return ResponseEntity.ok(checkoutMapper.toCheckoutDto(reservation, order));
     }
 
     /**
@@ -206,10 +207,11 @@ public class CheckoutController {
         HttpServletRequest httpRequest,
         Authentication authentication) {
 
+        log.info("Received payment attempt for checkoutId={}, paymentMethodCode={}", checkoutId, request.paymentMethodCode());
         String bookingSessionId = resolveBookingSessionId(bookingSessionHeader, httpRequest);
         Reservation reservation = findReservationByIdOrHeldForCaller(checkoutId, authentication, bookingSessionId);
         assertCheckoutBelongsToCaller(reservation, authentication, bookingSessionId);
-        Order order = findOrderByHoldId(reservation.getId());
+        Order order = awaitOrder(reservation.getId());
 
         UUID idempotencyKey = request.idempotencyKey() != null
             ? request.idempotencyKey()
@@ -217,13 +219,11 @@ public class CheckoutController {
         ordersApi.payWithHttpInfo(order.getId(), new InitiatePaymentRequest()
             .idempotencyKey(idempotencyKey)
             .paymentMethodCode(request.paymentMethodCode()));
-
         String redirectUrl = mockPaymentRedirectBaseUrl
             + "?orderId=" + order.getId()
             + "&amount=" + order.getAmount()
             + "&currency=" + order.getCurrency()
             + "&attemptId=" + idempotencyKey;
-
         return ResponseEntity.ok(new PaymentAttemptResultDto(idempotencyKey, "PENDING", redirectUrl));
     }
 
@@ -328,12 +328,17 @@ public class CheckoutController {
         }
     }
 
-    private Order findOrderByHoldId(UUID holdId) {
-        Order order = findOrderByHoldIdOrNull(holdId);
-        if (order == null) {
-            throw new IllegalStateException("No order found for checkout " + holdId + ". Confirm the checkout first.");
+    private Order awaitOrder(UUID holdId) {
+        for (int attempt = 0; attempt < reservationRefreshAttempts; attempt++) {
+            if (attempt > 0) {
+                sleepBeforeReservationRefresh();
+            }
+            Order order = findOrderByHoldIdOrNull(holdId);
+            if (order != null) {
+                return order;
+            }
         }
-        return order;
+        throw new IllegalStateException("No order found for checkout " + holdId + ". Confirm the checkout first.");
     }
 
     private Order findOrderByHoldIdOrNull(UUID holdId) {
