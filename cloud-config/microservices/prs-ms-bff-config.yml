@@ -16,11 +16,6 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          # jwk-set-uri is used to fetch signing keys (Docker-internal hostname works here).
-          # issuer-uri is only used as the expected value of the "iss" claim validator;
-          # Spring does NOT call the OIDC discovery endpoint when jwk-set-uri is also present.
-          # This allows the BFF to validate tokens whose "iss" was set by Keycloak using the
-          # browser-visible hostname (localhost) while fetching keys via the Docker network.
           jwk-set-uri: ${OIDC_JWK_SET_URI:http://localhost:8080/realms/parking/protocol/openid-connect/certs}
           issuer-uri: ${OIDC_ISSUER_URI:http://localhost:8080/realms/parking}
 

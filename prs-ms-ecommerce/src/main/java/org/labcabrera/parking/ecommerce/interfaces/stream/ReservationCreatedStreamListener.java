@@ -2,7 +2,6 @@ package org.labcabrera.parking.ecommerce.interfaces.stream;
 
 import java.util.function.Consumer;
 
-import org.axonframework.eventhandling.gateway.EventGateway;
 import org.labcabrera.parking.ecommerce.application.saga.OrderSaga;
 import org.labcabrera.parking.ecommerce.application.saga.ReservationCreatedForOrder;
 import org.springframework.context.annotation.Bean;

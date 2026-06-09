@@ -239,6 +239,7 @@ public class CheckoutController {
         HttpServletRequest httpRequest,
         Authentication authentication) {
 
+        log.info("Received getCheckout for checkoutId={}", checkoutId);
         String bookingSessionId = resolveBookingSessionId(bookingSessionHeader, httpRequest);
         Reservation reservation = findReservationByIdOrHeldForCaller(checkoutId, authentication, bookingSessionId);
         assertCheckoutBelongsToCaller(reservation, authentication, bookingSessionId);
@@ -269,12 +270,11 @@ public class CheckoutController {
             .size(10);
         PageResponse response = reservationsApi.callListWithHttpInfo(
             LocalDateTime.now().minusDays(1),
-            LocalDateTime.now().plusYears(5),
+            LocalDateTime.now().plusYears(1),
             pageable,
             null,
             userId,
             userId == null ? bookingSessionId : null).getBody();
-
         List<Reservation> heldReservations = response == null || response.getContent() == null
             ? List.of()
             : response.getContent().stream()

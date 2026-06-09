@@ -401,7 +401,7 @@ En este caso veremos que aunque las peticiones devuelven un 201 sin error (ya qu
 | *Keycloak admin console*    | http://localhost:8080/
 | *Kafka UI*                  | http://localhost:8090/
 | *Ejemplo de configuración*  | http://localhost:8888/actuator-config/default/develop
-| *Prometheus*                | http://localhost:9090/targets
+| *Prometheus*                | http://localhost:9090/
 | *Grafana*                   | http://localhost:3002/
 |===
 
