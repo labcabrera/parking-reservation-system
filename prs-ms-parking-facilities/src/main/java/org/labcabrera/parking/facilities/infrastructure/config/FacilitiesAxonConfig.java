@@ -5,7 +5,7 @@ import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.SimpleDeadlineManager;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
-import org.labcabrera.parking.facilities.domain.aggregate.ReservationConfig;
+import org.labcabrera.parking.facilities.domain.valueobject.ReservationConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

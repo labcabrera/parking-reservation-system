@@ -1,4 +1,4 @@
-package org.labcabrera.parking.facilities.domain.aggregate;
+package org.labcabrera.parking.facilities.domain.valueobject;
 
 /**
  * Lightweight configuration value object injected into aggregate command handlers (Axon

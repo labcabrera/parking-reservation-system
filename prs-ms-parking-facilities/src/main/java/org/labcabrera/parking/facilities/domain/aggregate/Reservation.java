@@ -25,6 +25,7 @@ import org.labcabrera.parking.facilities.domain.event.ReservationHeldEvent;
 import org.labcabrera.parking.facilities.domain.event.ReservationPaymentExpiredEvent;
 import org.labcabrera.parking.facilities.domain.event.ReservationStartedEvent;
 import org.labcabrera.parking.facilities.domain.exception.InvalidReservationStateException;
+import org.labcabrera.parking.facilities.domain.valueobject.ReservationConfig;
 import org.labcabrera.parking.facilities.domain.valueobject.ReservationStatus;
 
 import lombok.Getter;
